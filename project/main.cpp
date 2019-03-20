@@ -9,7 +9,7 @@ int main() {
 	netCDF::NcFile file("data/2018-05-27T12.nc", netCDF::NcFile::read);
 
 	SphericalVectorField f(file);
-
+	f.loopOverCells();
 
 
 	// Playing with eigen3

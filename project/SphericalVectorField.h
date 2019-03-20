@@ -8,12 +8,14 @@ class SphericalVectorField {
 public:
 	SphericalVectorField(const netCDF::NcFile& file);
 
-	Eigen::Vector3d& operator()(size_t level, size_t lat, size_t lng);
-	const Eigen::Vector3d& operator()(size_t level, size_t lat, size_t lng) const;
+	void loopOverCells();
 
-	size_t numLevels() { return levels.size(); }
-	size_t numLats() { return lats.size	(); }
-	size_t numLongs() { return longs.size(); }
+	Eigen::Vector3d& operator()(size_t lvl, size_t lat, size_t lng);
+	const Eigen::Vector3d& operator()(size_t lvl, size_t lat, size_t lng) const;
+
+	const int NUM_LEVELS = 37;
+	const int NUM_LATS = 721;
+	const int NUM_LONGS = 1440;
 
 private:
 	std::vector<Eigen::Vector3d> data;
