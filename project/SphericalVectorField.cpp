@@ -1,57 +1,66 @@
 #include "SphericalVectorField.h"
 
 // TODO this better
-SphericalVectorField::SphericalVectorField(const netCDF::NcFile& file) {
+SphericalVectorField::SphericalVectorField(const netCDF::NcFile& file) : 
+	data(NUM_LONGS * NUM_LATS * NUM_LEVELS),
+	levels(NUM_LEVELS), 
+	lats(NUM_LATS),
+	longs(NUM_LONGS) {
 
-	// Get list of variables in file
-	std::multimap<std::string, netCDF::NcVar> vars = file.getVars();
+	// Get values for levels, latitude, and longitude
+	double* levelArry = new double[NUM_LEVELS];
+	double* latArry = new double[NUM_LATS];
+	double* longArry = new double[NUM_LONGS];
 
-	std::vector<std::vector<double>> varDatas;
-	for (std::pair<std::string, netCDF::NcVar> p : vars) {
+	file.getVar("level").getVar(levelArry);
+	file.getVar("latitude").getVar(latArry);
+	file.getVar("longitude").getVar(longArry);
 
-		// Get all the dimensions and attributes
-		std::vector<netCDF::NcDim> dims = p.second.getDims();
-		std::map<std::string, netCDF::NcVarAtt> atts = p.second.getAtts();
+	levels.assign(levelArry, levelArry + NUM_LEVELS);
+	lats.assign(latArry, latArry + NUM_LATS);
+	longs.assign(longArry, longArry + NUM_LONGS);
 
-		// Calculate total size (multiply size of each dim)
-		size_t size = 1;
-		for (netCDF::NcDim dim : dims) {
-			size *= dim.getSize();
-		}
+	delete[] levelArry;
+	delete[] latArry;
+	delete[] longArry;
 
-		// Grab raw data from file
-		double* dataArry = new double[size];
-		p.second.getVar(dataArry);
+	// Get wind components
+	netCDF::NcVar uVar = file.getVar("u");
+	netCDF::NcVar vVar = file.getVar("v");
+	netCDF::NcVar wVar = file.getVar("w");
 
-		// Get scale factor and add offset if they exist
-		double scaleFactor = 1.0;
-		double addOffset = 0.0;
+	double uScale, vScale, wScale, uOffset, vOffset, wOffset;
 
-		auto scaleFactorIt = atts.find("scale_factor");
-		if (scaleFactorIt != atts.end()) {
-			(*scaleFactorIt).second.getValues(&scaleFactor);
-		}
+	uVar.getAtt("scale_factor").getValues(&uScale);
+	vVar.getAtt("scale_factor").getValues(&vScale);
+	wVar.getAtt("scale_factor").getValues(&wScale);
+	uVar.getAtt("add_offset").getValues(&uOffset);
+	vVar.getAtt("add_offset").getValues(&vOffset);
+	wVar.getAtt("add_offset").getValues(&wOffset);
 
-		auto addOffsetIt = atts.find("add_offset");
-		if (addOffsetIt != atts.end()) {
-			(*addOffsetIt).second.getValues(&addOffset);
-		}
+	// u, v, and w have same dimensions
+	size_t size = NUM_LONGS * NUM_LATS * NUM_LEVELS;
 
-		// Apply scale factor and add offset
-		for (int i = 0; i < size; i++) {
-			dataArry[i] = dataArry[i] * scaleFactor + addOffset;
-		}
+	double* uArry = new double[size];
+	double* vArry = new double[size];
+	double* wArry = new double[size];
 
-		varDatas.push_back(std::vector<double>(dataArry, dataArry + size));
-		delete[] dataArry;
+	uVar.getVar(uArry);
+	vVar.getVar(vArry);
+	wVar.getVar(wArry);
+
+	// Apply scale and offset and add to data vector
+	for (size_t i = 0; i < size; i++) {
+		double u = uArry[i] * uScale + uOffset;
+		double v = vArry[i] * vScale + vOffset;
+		double w = wArry[i] * wScale + wOffset;
+
+		data[i] = (Eigen::Vector3d(u, v, w));
 	}
 
-	for (size_t i = 0; i < varDatas[4].size(); i++) {
-		data.push_back(Eigen::Vector3d(varDatas[4][i], varDatas[5][i], varDatas[6][i]));
-	}
-	lats = varDatas[0];
-	levels = varDatas[1];
-	longs = varDatas[2];
+	delete[] uArry;
+	delete[] vArry;
+	delete[] wArry;
 }
 
 
