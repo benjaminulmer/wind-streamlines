@@ -92,11 +92,11 @@ std::vector<Eigen::Vector3i> SphericalVectorField::findCriticalPoints() {
 				
 				Eigen::Vector4d b(0.0, 0.0, 0.0, 1.0);
 
-				Eigen::Vector4d x1 = a1.fullPivLu().solve(b);
-				Eigen::Vector4d x2 = a2.fullPivLu().solve(b);
-				Eigen::Vector4d x3 = a3.fullPivLu().solve(b);
-				Eigen::Vector4d x4 = a4.fullPivLu().solve(b);
-				Eigen::Vector4d x5 = a5.fullPivLu().solve(b);
+				Eigen::Vector4d x1 = a1.partialPivLu().solve(b);
+				Eigen::Vector4d x2 = a2.partialPivLu().solve(b);
+				Eigen::Vector4d x3 = a3.partialPivLu().solve(b);
+				Eigen::Vector4d x4 = a4.partialPivLu().solve(b);
+				Eigen::Vector4d x5 = a5.partialPivLu().solve(b);
 
 				if ((x1.array() >= 0.0).all()) {
 					points.push_back(Eigen::Vector3i(lvl, lat, lng));

@@ -130,6 +130,7 @@
     <ClCompile Include="Renderable.cpp" />
     <ClCompile Include="RenderEngine.cpp" />
     <ClCompile Include="ShaderTools.cpp" />
+    <ClCompile Include="SphCoord.cpp" />
     <ClCompile Include="SphericalVectorField.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -142,7 +143,12 @@
     <ClInclude Include="Renderable.h" />
     <ClInclude Include="RenderEngine.h" />
     <ClInclude Include="ShaderTools.h" />
+    <ClInclude Include="SphCoord.h" />
     <ClInclude Include="SphericalVectorField.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\main.frag" />
+    <None Include="shaders\main.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -7,6 +7,7 @@
 
 #include "Camera.h"
 #include "RenderEngine.h"
+#include "SphericalVectorField.h"
 
 
 enum class RadialBound {
@@ -33,7 +34,10 @@ private:
 	Camera* camera;
 
 	Renderable coastLines;
+	Renderable criticalPoints;
 	std::vector<const Renderable*> objects;
+
+	SphericalVectorField field;
 
 	double radius;
 

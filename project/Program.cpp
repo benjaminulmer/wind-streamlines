@@ -3,6 +3,7 @@
 
 #include <GL/glew.h>
 #include <glm/gtx/intersect.hpp>
+#include <netcdf>
 #include <SDL2/SDL_opengl.h>
 
 #include <algorithm>
@@ -14,6 +15,7 @@
 #include "ContentReadWrite.h"
 #include "InputHandler.h"
 #include "Geometry.h"
+#include "SphCoord.h"
 
 Program::Program() {
 
@@ -50,13 +52,35 @@ void Program::start() {
 	// Load coastline vector data
 	rapidjson::Document cl = ContentReadWrite::readJSON("data/coastlines.json");
 	coastLines = Renderable(cl);
-	RenderEngine::assignBuffers(coastLines, false);
+
+	// Load vector field and find critical points
+	netCDF::NcFile file("data/2018-05-27T12.nc", netCDF::NcFile::read);
+	field = SphericalVectorField(file);
+	std::vector<Eigen::Vector3i> criticalIndices = field.findCriticalPoints();
+
+	for (const Eigen::Vector3i& i : criticalIndices) {
+		Eigen::Vector3d coords = field.indexToCoords(i);
+		SphCoord sph(coords(0), coords(1), false);
+		
+		double alt = altToAbs(coords(2));
+		criticalPoints.verts.push_back(sph.toCartesian(alt));
+
+		float norm = (coords(2) / 33000.0);
+		criticalPoints.colours.push_back(glm::vec3(norm, 0.f, 0.f));
+	}
 
 	// Objects to draw initially
 	objects.push_back(&coastLines);
+	objects.push_back(&criticalPoints);
+
 	coastLines.doubleToFloats();
+	criticalPoints.doubleToFloats();
+
+	RenderEngine::assignBuffers(coastLines, false);
+	RenderEngine::assignBuffers(criticalPoints, false);
 
 	RenderEngine::setBufferData(coastLines, false);
+	RenderEngine::setBufferData(criticalPoints, false);
 
 	mainLoop();
 }
