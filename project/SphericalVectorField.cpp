@@ -8,9 +8,9 @@ SphericalVectorField::SphericalVectorField(const netCDF::NcFile& file) :
 	longs(NUM_LONGS) {
 
 	// Get values for levels, latitude, and longitude
-	double* levelArry = new double[NUM_LEVELS];
-	double* latArry = new double[NUM_LATS];
-	double* longArry = new double[NUM_LONGS];
+	int* levelArry = new int[NUM_LEVELS];
+	float* latArry = new float[NUM_LATS];
+	float* longArry = new float[NUM_LONGS];
 
 	file.getVar("level").getVar(levelArry);
 	file.getVar("latitude").getVar(latArry);
@@ -64,9 +64,10 @@ SphericalVectorField::SphericalVectorField(const netCDF::NcFile& file) :
 }
 
 
-void SphericalVectorField::loopOverCells() {
+std::vector<Eigen::Vector3i> SphericalVectorField::findCriticalPoints() {
 
-	int found = 0;
+	std::vector<Eigen::Vector3i> points;
+
 	for (size_t lvl = 0; lvl < NUM_LEVELS - 1; lvl++) {
 		for (size_t lat = 0; lat < NUM_LATS - 1; lat++) {
 			for (size_t lng = 0; lng < NUM_LONGS - 1; lng++) {
@@ -91,30 +92,39 @@ void SphericalVectorField::loopOverCells() {
 				
 				Eigen::Vector4d b(0.0, 0.0, 0.0, 1.0);
 
-
 				Eigen::Vector4d x1 = a1.fullPivLu().solve(b);
 				Eigen::Vector4d x2 = a2.fullPivLu().solve(b);
 				Eigen::Vector4d x3 = a3.fullPivLu().solve(b);
 				Eigen::Vector4d x4 = a4.fullPivLu().solve(b);
+				Eigen::Vector4d x5 = a5.fullPivLu().solve(b);
 
-				if ((x1.array() >= 0.0).all() || (x2.array() >= 0.0).all() || (x3.array() >= 0.0).all() || (x4.array() >= 0.0).all()) {
-					//std::cout << x << std::endl << std::endl;
-					found++;
-				} 
+				if ((x1.array() >= 0.0).all()) {
+					points.push_back(Eigen::Vector3i(lvl, lat, lng));
+				}
+				else if ((x2.array() >= 0.0).all()) {
+					points.push_back(Eigen::Vector3i(lvl, lat, lng));
+				}
+				else if ((x3.array() >= 0.0).all()) {
+					points.push_back(Eigen::Vector3i(lvl, lat, lng));
+				}
+				else if ((x4.array() >= 0.0).all()) {
+					points.push_back(Eigen::Vector3i(lvl, lat, lng));
+				}
+				else if ((x5.array() >= 0.0).all()) {
+					points.push_back(Eigen::Vector3i(lvl, lat, lng));
+				}
 			}
 		}
 	}
-	int cells = (NUM_LEVELS - 1) * (NUM_LATS - 1) * NUM_LONGS;
-	std::cout << "found: " << found << std::endl << "cells " << cells << std::endl;
-
+	return points;
 }
 
 
-Eigen::Vector3d & SphericalVectorField::operator()(size_t lvl, size_t lat, size_t lng) {
+Eigen::Vector3d& SphericalVectorField::operator()(size_t lvl, size_t lat, size_t lng) {
 	return data[lng + NUM_LONGS * (lat + NUM_LATS * lvl)];
 }
 
 
-const Eigen::Vector3d & SphericalVectorField::operator()(size_t lvl, size_t lat, size_t lng) const {
-	return data[lng + longs.size() * (lat + lats.size() * lvl)];
+const Eigen::Vector3d& SphericalVectorField::operator()(size_t lvl, size_t lat, size_t lng) const {
+	return data[lng + NUM_LONGS * (lat + NUM_LATS * lvl)];
 }
