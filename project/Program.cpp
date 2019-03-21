@@ -68,7 +68,7 @@ void Program::start() {
 		float norm = (coords(2) / 33000.0);
 		criticalPoints.colours.push_back(glm::vec3(norm, 0.f, 0.f));
 	}
-
+	std::cout << criticalIndices.size() << std::endl;
 	// Objects to draw initially
 	objects.push_back(&coastLines);
 	objects.push_back(&criticalPoints);

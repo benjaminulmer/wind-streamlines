@@ -20,6 +20,8 @@ public:
 	Eigen::Vector3d indexToCoords(size_t lvl, size_t lat, size_t lng) { return Eigen::Vector3d(lats[lat], longs[lng], mbToMeters(levels[lvl])); }
 	Eigen::Vector3d indexToCoords(const Eigen::Vector3i& i) { return indexToCoords(i(0), i(1), i(2)); }
 
+	size_t multiIndexToIndex(size_t lvl, size_t lat, size_t lng) { return lng + NUM_LONGS * (lat + NUM_LATS * lvl); }
+
 	Eigen::Vector3d& operator()(size_t lvl, size_t lat, size_t lng);
 	const Eigen::Vector3d& operator()(size_t lvl, size_t lat, size_t lng) const;
 
@@ -32,5 +34,11 @@ private:
 	std::vector<int> levels;
 	std::vector<float> lats;
 	std::vector<float> longs;
+
+	int sign(const Eigen::Vector4d& v0, const Eigen::Vector4d& v1,
+	         const Eigen::Vector4d& v2, const Eigen::Vector4d& v3,
+	         size_t i0, size_t i1, size_t i2, size_t i3);
+
+	bool criticalPointInSimplex(size_t i0, size_t i1, size_t i2, size_t i3);
 };
 
