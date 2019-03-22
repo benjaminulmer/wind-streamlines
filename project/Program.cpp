@@ -59,7 +59,7 @@ void Program::start() {
 	std::vector<std::pair<Eigen::Vector3i, int>> criticalIndices = field.findCriticalPoints();
 
 	for (const std::pair<Eigen::Vector3i, int>& i : criticalIndices) {
-		Eigen::Vector3d coords = field.indexToCoords(i.first);
+		Eigen::Vector3d coords = field.sphCoords(i.first);
 		SphCoord sph(coords(0), coords(1), false);
 		
 		double alt = altToAbs(coords(2));
