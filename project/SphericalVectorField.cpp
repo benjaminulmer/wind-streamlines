@@ -64,9 +64,9 @@ SphericalVectorField::SphericalVectorField(const netCDF::NcFile& file) :
 }
 
 
-std::vector<Eigen::Vector3i> SphericalVectorField::findCriticalPoints() {
+std::vector<std::pair<Eigen::Vector3i, int>> SphericalVectorField::findCriticalPoints() {
 
-	std::vector<Eigen::Vector3i> points;
+	std::vector<std::pair<Eigen::Vector3i, int>> points;
 
 	for (size_t lvl = 0; lvl < NUM_LEVELS - 1; lvl++) {
 		for (size_t lat = 0; lat < NUM_LATS - 1; lat++) {
@@ -80,82 +80,29 @@ std::vector<Eigen::Vector3i> SphericalVectorField::findCriticalPoints() {
 				int i5 = multiIndexToIndex(lvl + 1, lat + 1, (lng + 1) % NUM_LONGS);
 				int i6 = multiIndexToIndex(lvl, lat, (lng + 1) % NUM_LONGS);
 				int i7 = multiIndexToIndex(lvl, lat + 1, lng);
-
-				if (criticalPointInSimplex(i0, i1, i2, i3)) {
-					points.push_back(Eigen::Vector3i(lvl, lat, lng));
+				
+				int pi;
+				if ((pi = criticalPointInSimplex(i0, i1, i2, i3)) != 0) {
+					Eigen::Vector3i i(lvl, lat, lng);
+					points.push_back(std::pair<Eigen::Vector3i, int>(i, pi));
+					//points.push_back(Eigen::Vector3i(lvl, lat, lng));
 				}
-				else if (criticalPointInSimplex(i4, i5, i3, i2)) {
-					points.push_back(Eigen::Vector3i(lvl, lat, lng));
+				else if ((pi = criticalPointInSimplex(i4, i5, i3, i2)) != 0) {
+					Eigen::Vector3i i(lvl, lat, lng);
+					points.push_back(std::pair<Eigen::Vector3i, int>(i, pi));
 				}
-				else if (criticalPointInSimplex(i0, i7, i4, i2)) {
-					points.push_back(Eigen::Vector3i(lvl, lat, lng));
+				else if ((pi = criticalPointInSimplex(i0, i7, i4, i2)) != 0) {
+					Eigen::Vector3i i(lvl, lat, lng);
+					points.push_back(std::pair<Eigen::Vector3i, int>(i, pi));
 				}
-				else if (criticalPointInSimplex(i0, i6, i4, i3)) {
-					points.push_back(Eigen::Vector3i(lvl, lat, lng));
+				else if ((pi = criticalPointInSimplex(i0, i6, i4, i3)) != 0) {
+					Eigen::Vector3i i(lvl, lat, lng);
+					points.push_back(std::pair<Eigen::Vector3i, int>(i, pi));
 				}
-				else if (criticalPointInSimplex(i2, i3, i0, i4)) {
-					points.push_back(Eigen::Vector3i(lvl, lat, lng));
+				else if ((pi = criticalPointInSimplex(i2, i3, i0, i4)) != 0) {
+					Eigen::Vector3i i(lvl, lat, lng);
+					points.push_back(std::pair<Eigen::Vector3i, int>(i, pi));
 				}
-
-				//a1 << v0, v1, v2, v3;
-				//a2 << v4, v5, v3, v2;
-				//a3 << v0, v7, v4, v2;
-				//a4 << v0, v6, v4, v3;
-				//a5 << v2, v3, v0, v4;	
-
-
-				//Eigen::Vector4d v0, v1, v2, v3, v4, v5, v6, v7;
-				//v0 << (*this)(lvl, lat, lng), 1.0;
-				//v1 << (*this)(lvl + 1, lat, lng), 1.0;
-				//v2 << (*this)(lvl + 1, lat + 1, lng), 1.0;
-				//v3 << (*this)(lvl + 1, lat, (lng + 1) % NUM_LONGS), 1.0;
-
-				//v4 << (*this)(lvl, lat + 1, (lng + 1) % NUM_LONGS), 1.0;
-				//v5 << (*this)(lvl + 1, lat + 1, (lng + 1) % NUM_LONGS), 1.0;
-				//v6 << (*this)(lvl, lat, (lng + 1) % NUM_LONGS), 1.0;
-				//v7 << (*this)(lvl, lat + 1, lng), 1.0;
-
-				//Eigen::Matrix4Xd a(4, 8);
-				//a << v0, v1, v2, v3, v4, v5, v6, v7;
-				//Eigen::Vector4d b(0.0, 0.0, 0.0, 1.0);
-
-				//Eigen::VectorXd x = a.completeOrthogonalDecomposition().solve(b);
-
-				//if ((x.array() >= 0.0).all()) {
-				//	points.push_back(Eigen::Vector3i(lvl, lat, lng));
-				//}
-				//sign(v0, v1, v2, v3, 3, 4, 5, 2);
-
-				//Eigen::Matrix4d a1, a2, a3, a4, a5;
-				//a1 << v0, v1, v2, v3;
-				//a2 << v4, v5, v3, v2;
-				//a3 << v0, v7, v4, v2;
-				//a4 << v0, v6, v4, v3;
-				//a5 << v2, v3, v0, v4;		
-				//
-				//Eigen::Vector4d b(0.0, 0.0, 0.0, 1.0);
-
-				//Eigen::Vector4d x1 = a1.fullPivLu().solve(b);
-				//Eigen::Vector4d x2 = a2.fullPivLu().solve(b);
-				//Eigen::Vector4d x3 = a3.fullPivLu().solve(b);
-				//Eigen::Vector4d x4 = a4.fullPivLu().solve(b);
-				//Eigen::Vector4d x5 = a5.fullPivLu().solve(b);
-
-				//if ((x1.array() >= 0.0).all()) {
-				//	points.push_back(Eigen::Vector3i(lvl, lat, lng));
-				//}
-				//else if ((x2.array() >= 0.0).all()) {
-				//	points.push_back(Eigen::Vector3i(lvl, lat, lng));
-				//}
-				//else if ((x3.array() >= 0.0).all()) {
-				//	points.push_back(Eigen::Vector3i(lvl, lat, lng));
-				//}
-				//else if ((x4.array() >= 0.0).all()) {
-				//	points.push_back(Eigen::Vector3i(lvl, lat, lng));
-				//}
-				//else if ((x5.array() >= 0.0).all()) {
-				//	points.push_back(Eigen::Vector3i(lvl, lat, lng));
-				//}
 			}
 		}
 	}
@@ -178,12 +125,13 @@ int SphericalVectorField::sign(const Eigen::Vector4d& v0, const Eigen::Vector4d&
 	m << v0, v1, v2, v3;
 
 	double det = m.determinant();
+	if (det == 0.0) std::cout << "zero" << std::endl;
 	int detSign = (det <= 0) ? -1 : 1;
 
 	return (invCount % 2 == 0) ? detSign : -detSign;
 }
 
-bool SphericalVectorField::criticalPointInSimplex(size_t i0, size_t i1, size_t i2, size_t i3) {
+int SphericalVectorField::criticalPointInSimplex(size_t i0, size_t i1, size_t i2, size_t i3) {
 
 	Eigen::Vector4d v0, v1, v2, v3;
 	v0 << data[i0], 1.0;
@@ -191,30 +139,44 @@ bool SphericalVectorField::criticalPointInSimplex(size_t i0, size_t i1, size_t i
 	v2 << data[i2], 1.0;
 	v3 << data[i3], 1.0;
 
-	int simplexSign = sign(v0, v1, v2, v3, i0, i1, i2, i3);
 	Eigen::Vector4d zeroPoint(0.0, 0.0, 0.0, 1.0);
+	int simplexSign = sign(zeroPoint, v1, v2, v3, i0, i1, i2, i3);
 
-	if (sign(zeroPoint, v1, v2, v3, i0, i1, i2, i3) != simplexSign) {
-		return false;
-	}
 	if (sign(v0, zeroPoint, v2, v3, i0, i1, i2, i3) != simplexSign) {
-		return false;
+		return 0;
 	}
 	if (sign(v0, v1, zeroPoint, v3, i0, i1, i2, i3) != simplexSign) {
-		return false;
+		return 0;
 	}
 	if (sign(v0, v1, v2, zeroPoint, i0, i1, i2, i3) != simplexSign) {
-		return false;
+		return 0;
 	}
-	return true;
-}
 
+	size_t i0lng = i0 % NUM_LONGS;
+	size_t i1lng = i1 % NUM_LONGS;
+	size_t i2lng = i2 % NUM_LONGS;
+	size_t i3lng = i3 % NUM_LONGS;
 
-Eigen::Vector3d& SphericalVectorField::operator()(size_t lvl, size_t lat, size_t lng) {
-	return data[lng + NUM_LONGS * (lat + NUM_LATS * lvl)];
-}
+	size_t i0lat = (i0 / NUM_LONGS) % NUM_LATS;
+	size_t i1lat = (i1 / NUM_LONGS) % NUM_LATS;
+	size_t i2lat = (i2 / NUM_LONGS) % NUM_LATS;
+	size_t i3lat = (i3 / NUM_LONGS) % NUM_LATS;
 
+	size_t i0lvl = ((i0 / NUM_LONGS) / NUM_LATS);
+	size_t i1lvl = ((i1 / NUM_LONGS) / NUM_LATS);
+	size_t i2lvl = ((i2 / NUM_LONGS) / NUM_LATS);
+	size_t i3lvl = ((i3 / NUM_LONGS) / NUM_LATS);
 
-const Eigen::Vector3d& SphericalVectorField::operator()(size_t lvl, size_t lat, size_t lng) const {
-	return data[lng + NUM_LONGS * (lat + NUM_LATS * lvl)];
+	Eigen::Vector4d p0, p1, p2, p3;
+	p0 << indexToCoords(i0lvl, i0lat, i0lng), 1.0;
+	p1 << indexToCoords(i1lvl, i1lat, i1lng), 1.0;
+	p2 << indexToCoords(i2lvl, i2lat, i2lng), 1.0;
+	p3 << indexToCoords(i3lvl, i3lat, i3lng), 1.0;
+
+	if (sign(p0, p1, p2, p3, i0, i1, i2, i3) != simplexSign) {
+		return -1;
+	}
+	else {
+		return 1;
+	}
 }

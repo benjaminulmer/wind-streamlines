@@ -56,17 +56,23 @@ void Program::start() {
 	// Load vector field and find critical points
 	netCDF::NcFile file("data/2018-05-27T12.nc", netCDF::NcFile::read);
 	field = SphericalVectorField(file);
-	std::vector<Eigen::Vector3i> criticalIndices = field.findCriticalPoints();
+	std::vector<std::pair<Eigen::Vector3i, int>> criticalIndices = field.findCriticalPoints();
 
-	for (const Eigen::Vector3i& i : criticalIndices) {
-		Eigen::Vector3d coords = field.indexToCoords(i);
+	for (const std::pair<Eigen::Vector3i, int>& i : criticalIndices) {
+		Eigen::Vector3d coords = field.indexToCoords(i.first);
 		SphCoord sph(coords(0), coords(1), false);
 		
 		double alt = altToAbs(coords(2));
 		criticalPoints.verts.push_back(sph.toCartesian(alt));
 
-		float norm = (coords(2) / 33000.0);
-		criticalPoints.colours.push_back(glm::vec3(norm, 0.f, 0.f));
+		float norm = (coords(2) / 66000.0) + 0.5f;
+		if (i.second == 1) {
+			criticalPoints.colours.push_back(glm::vec3(norm, 0.f, 0.f));
+		}
+		else {
+			criticalPoints.colours.push_back(glm::vec3(0.f, 0.f, norm));
+		}
+
 	}
 	std::cout << criticalIndices.size() << std::endl;
 	// Objects to draw initially

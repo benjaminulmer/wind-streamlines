@@ -13,7 +13,7 @@ public:
 	SphericalVectorField() = default;
 	SphericalVectorField(const netCDF::NcFile& file);
 
-	std::vector<Eigen::Vector3i> findCriticalPoints();
+	std::vector<std::pair<Eigen::Vector3i, int>> findCriticalPoints();
 
 	double mbToMeters(double mb) { return 0.3048 * 145366.45 * (1.0 - pow(mb / 1013.25, 0.190284)); }
 
@@ -22,8 +22,8 @@ public:
 
 	size_t multiIndexToIndex(size_t lvl, size_t lat, size_t lng) { return lng + NUM_LONGS * (lat + NUM_LATS * lvl); }
 
-	Eigen::Vector3d& operator()(size_t lvl, size_t lat, size_t lng);
-	const Eigen::Vector3d& operator()(size_t lvl, size_t lat, size_t lng) const;
+	Eigen::Vector3d& operator()(size_t lvl, size_t lat, size_t lng) { return data[lng + NUM_LONGS * (lat + NUM_LATS * lvl)]; }
+	const Eigen::Vector3d& operator()(size_t lvl, size_t lat, size_t lng) const { return data[lng + NUM_LONGS * (lat + NUM_LATS * lvl)]; }
 
 	Eigen::Vector3d& operator()(const Eigen::Vector3i& i) { return operator()(i(0), i(1), i(2)); }
 	const Eigen::Vector3d& operator()(const Eigen::Vector3i& i) const { return operator()(i(0), i(1), i(2)); }
@@ -39,6 +39,6 @@ private:
 	         const Eigen::Vector4d& v2, const Eigen::Vector4d& v3,
 	         size_t i0, size_t i1, size_t i2, size_t i3);
 
-	bool criticalPointInSimplex(size_t i0, size_t i1, size_t i2, size_t i3);
+	int criticalPointInSimplex(size_t i0, size_t i1, size_t i2, size_t i3);
 };
 
