@@ -56,36 +56,59 @@ void Program::start() {
 	// Load vector field and find critical points
 	netCDF::NcFile file("data/2018-05-27T12.nc", netCDF::NcFile::read);
 	field = SphericalVectorField(file);
-	std::vector<std::pair<Eigen::Vector3i, int>> criticalIndices = field.findCriticalPoints();
 
-	for (const std::pair<Eigen::Vector3i, int>& i : criticalIndices) {
-		Eigen::Vector3d coords = field.sphCoords(i.first);
-		SphCoord sph(coords(0), coords(1), false);
-		
-		double alt = altToAbs(coords(2));
-		criticalPoints.verts.push_back(sph.toCartesian(alt));
+	testLine.drawMode = GL_LINE_STRIP;
+	std::vector<Eigen::Vector3d> line = field.streamLine(Eigen::Vector3d(0.2, -2.2, 500.0));
 
-		float norm = (coords(2) / 66000.0) + 0.5f;
-		if (i.second == 1) {
-			criticalPoints.colours.push_back(glm::vec3(norm, 0.f, 0.f));
-		}
-		else {
-			criticalPoints.colours.push_back(glm::vec3(0.f, 0.f, norm));
-		}
+	for (const Eigen::Vector3d& p : line) {
+		SphCoord sph(p(0), p(1));
+			
+		double alt = altToAbs(SphericalVectorField::mbToMeters(p(2)));
+		testLine.verts.push_back(sph.toCartesian(alt));
 
+		float norm = (SphericalVectorField::mbToMeters(p(2)) / 66000.0) + 0.5f;
+
+		testLine.colours.push_back(glm::vec3(0.0, norm, 0.f));
+
+		//std::cout << p << std::endl;
 	}
-	std::cout << criticalIndices.size() << std::endl;
+
+	//std::vector<std::pair<Eigen::Vector3i, int>> criticalIndices = field.findCriticalPoints();
+
+	//for (const std::pair<Eigen::Vector3i, int>& i : criticalIndices) {
+	//	Eigen::Vector3d coords = field.sphCoords(i.first);
+	//	SphCoord sph(coords(0), coords(1));
+	//	
+	//	double alt = altToAbs(coords(2));
+	//	criticalPoints.verts.push_back(sph.toCartesian(alt));
+
+	//	float norm = (coords(2) / 66000.0) + 0.5f;
+	//	if (i.second == 1) {
+	//		criticalPoints.colours.push_back(glm::vec3(norm, 0.f, 0.f));
+	//	}
+	//	else {
+	//		criticalPoints.colours.push_back(glm::vec3(0.f, 0.f, norm));
+	//	}
+
+	//}
+	//std::cout << criticalIndices.size() << std::endl;
+
+
 	// Objects to draw initially
 	objects.push_back(&coastLines);
+	objects.push_back(&testLine);
 	objects.push_back(&criticalPoints);
 
 	coastLines.doubleToFloats();
+	testLine.doubleToFloats();
 	criticalPoints.doubleToFloats();
 
 	RenderEngine::assignBuffers(coastLines, false);
+	RenderEngine::assignBuffers(testLine, false);
 	RenderEngine::assignBuffers(criticalPoints, false);
 
 	RenderEngine::setBufferData(coastLines, false);
+	RenderEngine::setBufferData(testLine, false);
 	RenderEngine::setBufferData(criticalPoints, false);
 
 	mainLoop();

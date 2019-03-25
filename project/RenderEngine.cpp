@@ -26,7 +26,7 @@ RenderEngine::RenderEngine(SDL_Window* window) : window(window), fade(true) {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glPointSize(5.f);
-	glLineWidth(1.5f);
+	glLineWidth(1.f);
 	glClearColor(0.4f, 0.4f, 0.4f, 1.f);
 }
 

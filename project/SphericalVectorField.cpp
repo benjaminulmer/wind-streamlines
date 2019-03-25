@@ -1,5 +1,9 @@
+#define _USE_MATH_DEFINES
 #include "SphericalVectorField.h"
 
+#include "Constants.h"
+
+#include <cmath>
 
 // Construct vector field from data provided in NetCDF file
 // Assumes data is of a certain format, does not work for general files
@@ -23,6 +27,13 @@ SphericalVectorField::SphericalVectorField(const netCDF::NcFile& file) :
 	levels.assign(levelArry, levelArry + NUM_LEVELS);
 	lats.assign(latArry, latArry + NUM_LATS);
 	longs.assign(longArry, longArry + NUM_LONGS);
+
+	for (size_t i = 0; i < NUM_LATS; i++) {
+		lats[i] *= (M_PI / 180.0);
+	}
+	for (size_t i = 0; i < NUM_LONGS; i++) {
+		longs[i] *= (M_PI / 180.0);
+	}
 
 	delete[] levelArry;
 	delete[] latArry;
@@ -59,7 +70,7 @@ SphericalVectorField::SphericalVectorField(const netCDF::NcFile& file) :
 		double v = vArry[i] * vScale + vOffset;
 		double w = wArry[i] * wScale + wOffset;
 
-		data[i] = (Eigen::Vector3d(u, v, w));
+		data[i] = (Eigen::Vector3d(v, u, w));
 	}
 
 	delete[] uArry;
@@ -197,6 +208,100 @@ int SphericalVectorField::criticalPointInTet(size_t i0, size_t i1, size_t i2, si
 	else {
 		return 1;
 	}
+}
+
+
+std::vector<Eigen::Vector3d> SphericalVectorField::streamLine(const Eigen::Vector3d& seed) {
+
+	std::vector<Eigen::Vector3d> points;
+
+	double timeStep = 1.0;
+
+	Eigen::Vector3d currPos = seed;
+	for (int i = 0; i < 1000000; i++) {
+
+		points.push_back(currPos);
+		Eigen::Vector3d k1 = timeStep * velocityAt(currPos);
+		Eigen::Vector3d k2 = timeStep * velocityAt(newPos(currPos, k1 / 2.0));
+		Eigen::Vector3d k3 = timeStep * velocityAt(newPos(currPos, k2 / 2.0));
+		Eigen::Vector3d k4 = timeStep * velocityAt(newPos(currPos, k3));
+
+		Eigen::Vector3d updateVel = (k1 + 2.0 * k2 + 2.0 * k3 + k4) / 6.0;
+		currPos = newPos(currPos, updateVel);
+	}
+	return points;
+}
+
+
+Eigen::Vector3d SphericalVectorField::velocityAt(const Eigen::Vector3d& pos) {
+
+
+	size_t latIndex = (size_t)(720.0 - (pos(0) + M_PI_2) * 4.0 * (180.0 / M_PI));
+	size_t longIndex = fmod(pos(1), 2.0 * M_PI) * 4.0 * (180.0 / M_PI);
+	size_t levelIndex = 0;
+
+	size_t endIndex = NUM_LEVELS - 1;
+	while (pos(2) >= levels[levelIndex + 1]) {
+
+		size_t mid = (levelIndex + endIndex) / 2;
+		if (pos(2) >= levels[mid]) {
+			levelIndex = mid;
+		}
+		else {
+			endIndex = mid;
+		}
+		if (levelIndex == NUM_LEVELS - 2) {
+			if (pos(2) >= levels[NUM_LEVELS - 1]) {
+				levelIndex++;
+			}
+			break;
+		}
+	}
+	double latPerc = abs(pos(0) - lats[latIndex]) / (lats[latIndex + 1] - lats[latIndex]);
+	double longPerc = abs(pos(1) - longs[longIndex]) / (longs[(longIndex + 1) % NUM_LONGS] - longs[longIndex]);
+	double levelPerc = abs(pos(2) - levels[levelIndex]) / (levels[levelIndex + 1] - levels[levelIndex]);
+
+	Eigen::Vector3d _100 = (*this)(latIndex, longIndex, levelIndex);
+	Eigen::Vector3d _110 = (*this)(latIndex, (longIndex + 1) % NUM_LONGS, levelIndex);
+	Eigen::Vector3d _000 = (*this)(latIndex + 1, longIndex, levelIndex);
+	Eigen::Vector3d _010 = (*this)(latIndex + 1, (longIndex + 1) % NUM_LONGS, levelIndex);
+	Eigen::Vector3d _101 = (*this)(latIndex, longIndex, levelIndex + 1);
+	Eigen::Vector3d _111 = (*this)(latIndex, (longIndex + 1) % NUM_LONGS, levelIndex + 1); 
+	Eigen::Vector3d _001 = (*this)(latIndex + 1, longIndex, levelIndex + 1);
+	Eigen::Vector3d _011 = (*this)(latIndex + 1, (longIndex + 1) % NUM_LONGS, levelIndex + 1);
+
+	// Multiply each point by its total contribution
+	_000 *= (1.0 - latPerc) * (1.0 - longPerc) * (1.0 - levelPerc);
+	_001 *= (1.0 - latPerc) * (1.0 - longPerc) * levelPerc;
+	_010 *= (1.0 - latPerc) * longPerc * (1.0 - levelPerc);
+	_011 *= (1.0 - latPerc) * longPerc * levelPerc;
+	_100 *= latPerc * (1.0 - longPerc) * (1.0 - levelPerc);
+	_101 *= latPerc * (1.0 - longPerc) * levelPerc;
+	_110 *= latPerc * longPerc * (1.0 - levelPerc);
+	_111 *= latPerc * longPerc * levelPerc;
+
+	// Sum contributions and add to list
+	return _000 + _001 + _010 + _011 + _100 + _101 + _110 + _111;
+}
+
+
+Eigen::Vector3d SphericalVectorField::newPos(const Eigen::Vector3d& currPos, const Eigen::Vector3d& velocity) {
+
+	Eigen::Vector3d newPos;
+
+	double absRadius = RADIUS_EARTH_M + mbToMeters(currPos(2));
+
+	newPos(0) = currPos(0) + velocity(0) / absRadius;
+	newPos(1) = currPos(1) + velocity(1) / (cos(currPos(0)) * absRadius);
+	newPos(2) = currPos(2) + velocity(2) * 0.01;
+
+	if (newPos(0) > M_PI_2) newPos(0) = M_PI_2;
+	if (newPos(0) < -M_PI_2) newPos(0) = -M_PI_2 + 0.00000000001;
+	if (newPos(1) < 0.0) newPos(1) += 2.0 * M_PI;
+	if (newPos(2) > levels[NUM_LEVELS - 1]) newPos(2) = levels[NUM_LEVELS - 1] - 0.00000000001;
+	if (newPos(2) < levels[0]) newPos(2) = levels[0];
+
+	return newPos;
 }
 
 

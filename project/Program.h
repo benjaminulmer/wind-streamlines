@@ -35,6 +35,7 @@ private:
 
 	Renderable coastLines;
 	Renderable criticalPoints;
+	Renderable testLine;
 	std::vector<const Renderable*> objects;
 
 	SphericalVectorField field;

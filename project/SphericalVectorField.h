@@ -20,6 +20,8 @@ public:
 
 	std::vector<std::pair<Eigen::Vector3i, int>> findCriticalPoints();
 
+	std::vector<Eigen::Vector3d> streamLine(const Eigen::Vector3d& seed);
+
 	Eigen::Vector3d sphCoords(size_t i) const;
 	Eigen::Vector3d sphCoords(size_t lat, size_t lng, size_t lvl) const;
 	Eigen::Vector3d sphCoords(const Eigen::Vector3i& i) const;
@@ -49,5 +51,8 @@ private:
 	         size_t i0, size_t i1, size_t i2, size_t i3);
 
 	int criticalPointInTet(size_t i0, size_t i1, size_t i2, size_t i3);
+
+	Eigen::Vector3d velocityAt(const Eigen::Vector3d& pos);
+	Eigen::Vector3d newPos(const Eigen::Vector3d& currPos, const Eigen::Vector3d& velocity);
 };
 
