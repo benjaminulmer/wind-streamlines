@@ -58,17 +58,36 @@ void Program::start() {
 	field = SphericalVectorField(file);
 
 	testLine.drawMode = GL_LINE_STRIP;
-	std::vector<Eigen::Vector3d> line = field.streamLine(Eigen::Vector3d(0.2, -2.2, 500.0));
+	testLine2.drawMode = GL_LINE_STRIP;
+
+	std::cout << "Integrating small h" << std::endl;
+	std::vector<Eigen::Vector3d> line = field.streamLine(Eigen::Vector3d(-0.9, 3.2, 990), 1000000.0, 1.0);
+
+	std::cout << "Integrating large h" << std::endl;
+	std::vector<Eigen::Vector3d> line2 = field.streamLine(Eigen::Vector3d(-0.9, 3.2, 990.0), 1000000.0, 10.0);
 
 	for (const Eigen::Vector3d& p : line) {
 		SphCoord sph(p(0), p(1));
 			
-		double alt = altToAbs(SphericalVectorField::mbToMeters(p(2)));
+		double alt = altToAbs(SphericalVectorField::mbarsToMeters(p(2)));
 		testLine.verts.push_back(sph.toCartesian(alt));
 
-		float norm = (SphericalVectorField::mbToMeters(p(2)) / 66000.0) + 0.5f;
+		float norm = (SphericalVectorField::mbarsToMeters(p(2)) / 66000.0) + 0.5f;
 
-		testLine.colours.push_back(glm::vec3(0.0, norm, 0.f));
+		testLine.colours.push_back(glm::vec3(0.f, norm, 0.f));
+
+		//std::cout << p << std::endl;
+	}
+
+	for (const Eigen::Vector3d& p : line2) {
+		SphCoord sph(p(0), p(1));
+
+		double alt = altToAbs(SphericalVectorField::mbarsToMeters(p(2)));
+		testLine2.verts.push_back(sph.toCartesian(alt));
+
+		float norm = (SphericalVectorField::mbarsToMeters(p(2)) / 66000.0) + 0.5f;
+
+		testLine2.colours.push_back(glm::vec3(norm, 0.f, 0.f));
 
 		//std::cout << p << std::endl;
 	}
@@ -97,18 +116,22 @@ void Program::start() {
 	// Objects to draw initially
 	objects.push_back(&coastLines);
 	objects.push_back(&testLine);
+	objects.push_back(&testLine2);
 	objects.push_back(&criticalPoints);
 
 	coastLines.doubleToFloats();
 	testLine.doubleToFloats();
+	testLine2.doubleToFloats();
 	criticalPoints.doubleToFloats();
 
 	RenderEngine::assignBuffers(coastLines, false);
 	RenderEngine::assignBuffers(testLine, false);
+	RenderEngine::assignBuffers(testLine2, false);
 	RenderEngine::assignBuffers(criticalPoints, false);
 
 	RenderEngine::setBufferData(coastLines, false);
 	RenderEngine::setBufferData(testLine, false);
+	RenderEngine::setBufferData(testLine2, false);
 	RenderEngine::setBufferData(criticalPoints, false);
 
 	mainLoop();

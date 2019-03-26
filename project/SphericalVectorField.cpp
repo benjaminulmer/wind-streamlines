@@ -3,6 +3,7 @@
 
 #include "Constants.h"
 
+#include <algorithm>
 #include <cmath>
 
 // Construct vector field from data provided in NetCDF file
@@ -211,56 +212,91 @@ int SphericalVectorField::criticalPointInTet(size_t i0, size_t i1, size_t i2, si
 }
 
 
-std::vector<Eigen::Vector3d> SphericalVectorField::streamLine(const Eigen::Vector3d& seed) {
+// Forward integrates streamline starting at given seed
+std::vector<Eigen::Vector3d> SphericalVectorField::streamLine(const Eigen::Vector3d& seed, double totalTime, double tol) {
 
 	std::vector<Eigen::Vector3d> points;
 
-	double timeStep = 1.0;
-
 	Eigen::Vector3d currPos = seed;
-	for (int i = 0; i < 1000000; i++) {
+	double timeStep = 100.0;
+	double accTime = 0.0;
+
+	while (accTime < totalTime) {
 
 		points.push_back(currPos);
-		Eigen::Vector3d k1 = timeStep * velocityAt(currPos);
-		Eigen::Vector3d k2 = timeStep * velocityAt(newPos(currPos, k1 / 2.0));
-		Eigen::Vector3d k3 = timeStep * velocityAt(newPos(currPos, k2 / 2.0));
-		Eigen::Vector3d k4 = timeStep * velocityAt(newPos(currPos, k3));
 
-		Eigen::Vector3d updateVel = (k1 + 2.0 * k2 + 2.0 * k3 + k4) / 6.0;
-		currPos = newPos(currPos, updateVel);
+		bool cont = true;
+		while (cont) {
+
+			// RKF45 with adaptive step size
+			Eigen::Vector3d k1 = timeStep * velocityAt(currPos);
+			Eigen::Vector3d k2 = timeStep * velocityAt(newPos(currPos, 1.0 / 4.0       * k1));
+			Eigen::Vector3d k3 = timeStep * velocityAt(newPos(currPos, 3.0 / 32.0      * k1 + 9.0 / 32.0      * k2));
+			Eigen::Vector3d k4 = timeStep * velocityAt(newPos(currPos, 1932.0 / 2197.0 * k1 - 7200.0 / 2197.0 * k2 + 7296.0 / 2197.0 * k3));
+			Eigen::Vector3d k5 = timeStep * velocityAt(newPos(currPos, 439.0 / 216.0   * k1 - 8.0             * k2 + 3680.0 / 513.0  * k3 - 845.0 / 4104.0  * k4));
+			Eigen::Vector3d k6 = timeStep * velocityAt(newPos(currPos, -8.0 / 27.0     * k1 + 2.0             * k2 - 3544.0 / 2565.0 * k3 + 1859.0 / 4104.0 * k4 - 11.0 / 40.0 * k5));
+
+			Eigen::Vector3d highOrder = 16.0 / 135.0 * k1 + 6656.0 / 12825.0 * k3 + 28561.0 / 56430.0 * k4 - 9.0 / 50.0 * k5 + 2.0 / 55.0 * k6;
+			Eigen::Vector3d lowOrder  = 25.0 / 216.0 * k1 + 1408.0 / 2665.0  * k3 + 2197.0 / 4104.0   * k4 - 1.0 / 5.0  * k5;
+
+			double error = (highOrder - lowOrder).norm();
+			if (error < tol) {
+				cont = false;
+				currPos = newPos(currPos, highOrder);
+				accTime += timeStep;
+			}
+			timeStep *= 0.9 * (tol / error);
+			if (timeStep < 0.01) {
+				std::cout << "small step" << std::endl;
+				std::cout << velocityAt(currPos) << std::endl;
+				cont = false;
+				accTime = totalTime;
+			}
+		}
 	}
+	std::cout << std::endl << points.size() << std::endl;
 	return points;
 }
 
 
+// Returns the velocity at the given position
+//
+// pos - (lat, long, altitude) in rads and mbars
 Eigen::Vector3d SphericalVectorField::velocityAt(const Eigen::Vector3d& pos) {
 
-
-	size_t latIndex = (size_t)(720.0 - (pos(0) + M_PI_2) * 4.0 * (180.0 / M_PI));
-	size_t longIndex = fmod(pos(1), 2.0 * M_PI) * 4.0 * (180.0 / M_PI);
+	size_t latIndex = (size_t)(720.0 - (pos.x() + M_PI_2) * 4.0 * (180.0 / M_PI));
+	size_t longIndex = fmod(pos.y(), 2.0 * M_PI) * 4.0 * (180.0 / M_PI);
 	size_t levelIndex = 0;
 
 	size_t endIndex = NUM_LEVELS - 1;
-	while (pos(2) >= levels[levelIndex + 1]) {
+	while (pos.z() >= levels[levelIndex + 1]) {
 
 		size_t mid = (levelIndex + endIndex) / 2;
-		if (pos(2) >= levels[mid]) {
+		if (pos.z() >= levels[mid]) {
 			levelIndex = mid;
 		}
 		else {
 			endIndex = mid;
 		}
 		if (levelIndex == NUM_LEVELS - 2) {
-			if (pos(2) >= levels[NUM_LEVELS - 1]) {
+			if (pos.z() >= levels[NUM_LEVELS - 1]) {
 				levelIndex++;
 			}
 			break;
 		}
 	}
-	double latPerc = abs(pos(0) - lats[latIndex]) / (lats[latIndex + 1] - lats[latIndex]);
-	double longPerc = abs(pos(1) - longs[longIndex]) / (longs[(longIndex + 1) % NUM_LONGS] - longs[longIndex]);
-	double levelPerc = abs(pos(2) - levels[levelIndex]) / (levels[levelIndex + 1] - levels[levelIndex]);
+	double latPerc = (pos.x() - lats[latIndex]) / (lats[latIndex + 1] - lats[latIndex]);
+	double longPerc = (pos.y() - longs[longIndex]) / (longs[(longIndex + 1) % NUM_LONGS] - longs[longIndex]);
+	double levelPerc = (pos.z() - levels[levelIndex]) / (levels[levelIndex + 1] - levels[levelIndex]);
 
+	if (latPerc > 1.0) latPerc = 1.0;
+	if (latPerc < 0.0) latPerc = 0.0;
+	if (longPerc > 1.0) longPerc = 1.0;
+	if (longPerc < 0.0) longPerc = 0.0;
+	if (levelPerc > 1.0) levelPerc = 1.0;
+	if (levelPerc < 0.0) levelPerc = 0.0;
+
+	// 8 corners of hexahedron
 	Eigen::Vector3d _100 = (*this)(latIndex, longIndex, levelIndex);
 	Eigen::Vector3d _110 = (*this)(latIndex, (longIndex + 1) % NUM_LONGS, levelIndex);
 	Eigen::Vector3d _000 = (*this)(latIndex + 1, longIndex, levelIndex);
@@ -280,7 +316,6 @@ Eigen::Vector3d SphericalVectorField::velocityAt(const Eigen::Vector3d& pos) {
 	_110 *= latPerc * longPerc * (1.0 - levelPerc);
 	_111 *= latPerc * longPerc * levelPerc;
 
-	// Sum contributions and add to list
 	return _000 + _001 + _010 + _011 + _100 + _101 + _110 + _111;
 }
 
@@ -288,18 +323,20 @@ Eigen::Vector3d SphericalVectorField::velocityAt(const Eigen::Vector3d& pos) {
 Eigen::Vector3d SphericalVectorField::newPos(const Eigen::Vector3d& currPos, const Eigen::Vector3d& velocity) {
 
 	Eigen::Vector3d newPos;
+	double absRadius = RADIUS_EARTH_M + mbarsToMeters(currPos.z());
 
-	double absRadius = RADIUS_EARTH_M + mbToMeters(currPos(2));
+	// TODO singularities at poles, how to account for this? Doing in physical space is not stable?
+	newPos.x() = currPos.x() + velocity.x() / absRadius;
+	newPos.y() = currPos.y() + velocity.y() / (cos(currPos.x()) * absRadius);
+	newPos.z() = currPos.z() + velocity.z() * 0.01;
 
-	newPos(0) = currPos(0) + velocity(0) / absRadius;
-	newPos(1) = currPos(1) + velocity(1) / (cos(currPos(0)) * absRadius);
-	newPos(2) = currPos(2) + velocity(2) * 0.01;
-
-	if (newPos(0) > M_PI_2) newPos(0) = M_PI_2;
-	if (newPos(0) < -M_PI_2) newPos(0) = -M_PI_2 + 0.00000000001;
-	if (newPos(1) < 0.0) newPos(1) += 2.0 * M_PI;
-	if (newPos(2) > levels[NUM_LEVELS - 1]) newPos(2) = levels[NUM_LEVELS - 1] - 0.00000000001;
-	if (newPos(2) < levels[0]) newPos(2) = levels[0];
+	// TODO properly account for edge cases as opposed to this hacky method
+	if (newPos.x() > M_PI_2) newPos.x() = M_PI_2;
+	if (newPos.x() < -M_PI_2) newPos.x() = -M_PI_2 + 0.00000000001;
+	if (newPos.y() < 0.0) newPos.y() += 2.0 * M_PI;
+	if (newPos.y() > 2.0 * M_PI) newPos.y() -= 2.0 * M_PI;
+	if (newPos.z() > levels[NUM_LEVELS - 1]) newPos.z() = levels[NUM_LEVELS - 1] - 0.00000000001;
+	if (newPos.z() < levels[0]) newPos.z() = levels[0];
 
 	return newPos;
 }
@@ -308,7 +345,7 @@ Eigen::Vector3d SphericalVectorField::newPos(const Eigen::Vector3d& currPos, con
 // Returns the spherical coordinates of the grid point at absolute index i
 //
 // i - absolute 1D index
-// return - (lat, long, altitude) in degrees and meters
+// return - (lat, long, altitude) in rads and meters
 Eigen::Vector3d SphericalVectorField::sphCoords(size_t i) const {
 	return sphCoords(offsetToIndex(i));
 }
@@ -319,18 +356,18 @@ Eigen::Vector3d SphericalVectorField::sphCoords(size_t i) const {
 // lat - latitude index
 // lng - longitude index
 // lvl - level index
-// return - (lat, long, altitude) in degrees and meters
+// return - (lat, long, altitude) in rads and meters
 Eigen::Vector3d SphericalVectorField::sphCoords(size_t lat, size_t lng, size_t lvl) const {
-	return Eigen::Vector3d(lats[lat], longs[lng], mbToMeters(levels[lvl]));
+	return Eigen::Vector3d(lats[lat], longs[lng], mbarsToMeters(levels[lvl]));
 }
 
 
 // Returns the spherical coordinates of the grid at (lat, long, level) index
 //
 // i - (lat, long, level) indices
-// return - (lat, long, altitude) in degrees and meters
+// return - (lat, long, altitude) in rads and meters
 Eigen::Vector3d SphericalVectorField::sphCoords(const Eigen::Vector3i& i) const {
-	return sphCoords(i(0), i(1), i(2));
+	return sphCoords(i.x(), i.y(), i.z());
 }
 
 
@@ -341,9 +378,9 @@ Eigen::Vector3d SphericalVectorField::sphCoords(const Eigen::Vector3i& i) const 
 Eigen::Vector3i SphericalVectorField::offsetToIndex(size_t i) const {
 
 	Eigen::Vector3i v;
-	v(0) = (i / NUM_LONGS) % NUM_LATS;
-	v(1) = i % NUM_LONGS;
-	v(2) = (i / NUM_LONGS) / NUM_LATS;
+	v.x() = (i / NUM_LONGS) % NUM_LATS;
+	v.y() = i % NUM_LONGS;
+	v.z() = (i / NUM_LONGS) / NUM_LATS;
 
 	return v;
 }
@@ -365,7 +402,7 @@ size_t SphericalVectorField::indexToOffset(size_t lat, size_t lng, size_t lvl) c
 // i - (lat, long, level) indices
 // return - absolute 1D index
 size_t SphericalVectorField::indexToOffset(const Eigen::Vector3i& i) const {
-	return indexToOffset(i(0), i(1), i(2));
+	return indexToOffset(i.x(), i.y(), i.z());
 }
 
 
@@ -414,7 +451,7 @@ const Eigen::Vector3d& SphericalVectorField::operator()(size_t lat, size_t lng, 
 // i - (lat, long, level) indices
 // return - vector at index
 Eigen::Vector3d& SphericalVectorField::operator()(const Eigen::Vector3i& i) {
-	return operator()(i(0), i(1), i(2));
+	return operator()(i.x(), i.y(), i.z());
 }
 
 
@@ -423,5 +460,5 @@ Eigen::Vector3d& SphericalVectorField::operator()(const Eigen::Vector3i& i) {
 // i - (lat, long, level) indices
 // return - vector at index
 const Eigen::Vector3d& SphericalVectorField::operator()(const Eigen::Vector3i& i) const {
-	return operator()(i(0), i(1), i(2));
+	return operator()(i.x(), i.y(), i.z());
 }
