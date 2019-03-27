@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 
+
 // Construct vector field from data provided in NetCDF file
 // Assumes data is of a certain format, does not work for general files
 //
@@ -17,28 +18,17 @@ SphericalVectorField::SphericalVectorField(const netCDF::NcFile& file) :
 	longs(NUM_LONGS) {
 
 	// Get values for levels, latitude, and longitude
-	int* levelArry = new int[NUM_LEVELS];
-	float* latArry = new float[NUM_LATS];
-	float* longArry = new float[NUM_LONGS];
+	file.getVar("level").getVar(levels.data());
+	file.getVar("latitude").getVar(lats.data());
+	file.getVar("longitude").getVar(longs.data());
 
-	file.getVar("level").getVar(levelArry);
-	file.getVar("latitude").getVar(latArry);
-	file.getVar("longitude").getVar(longArry);
-
-	levels.assign(levelArry, levelArry + NUM_LEVELS);
-	lats.assign(latArry, latArry + NUM_LATS);
-	longs.assign(longArry, longArry + NUM_LONGS);
-
+	// Convert from degrees to radians
 	for (size_t i = 0; i < NUM_LATS; i++) {
 		lats[i] *= (M_PI / 180.0);
 	}
 	for (size_t i = 0; i < NUM_LONGS; i++) {
 		longs[i] *= (M_PI / 180.0);
 	}
-
-	delete[] levelArry;
-	delete[] latArry;
-	delete[] longArry;
 
 	// Get wind components
 	netCDF::NcVar uVar = file.getVar("u");
@@ -91,7 +81,7 @@ std::vector<std::pair<Eigen::Vector3i, int>> SphericalVectorField::findCriticalP
 		for (size_t lat = 0; lat < NUM_LATS - 1; lat++) {
 			for (size_t lng = 0; lng < NUM_LONGS - 1; lng++) {
 
-				// 8 vertices of hex
+				// 8 vertices of hexahedron
 				int i0 = indexToOffset(lat, lng, lvl);
 				int i1 = indexToOffset(lat, lng, lvl + 1);
 				int i2 = indexToOffset(lat + 1, lng, lvl + 1);
@@ -142,9 +132,9 @@ std::vector<std::pair<Eigen::Vector3i, int>> SphericalVectorField::findCriticalP
 // i2 - index of v2
 // i3 - index of v3
 // return - sign which is +1 or -1
-int SphericalVectorField::sign(const Eigen::Vector4d& v0, const Eigen::Vector4d& v1,
-                               const Eigen::Vector4d& v2, const Eigen::Vector4d& v3,
-                               size_t i0, size_t i1, size_t i2, size_t i3) {
+int SphericalVectorField::signTet(const Eigen::Vector4d& v0, const Eigen::Vector4d& v1,
+                                  const Eigen::Vector4d& v2, const Eigen::Vector4d& v3,
+                                  size_t i0, size_t i1, size_t i2, size_t i3) {
 	
 	// Inversion count tells us orientation of tet. Loop unwrapped
 	int invCount = 0;
@@ -184,15 +174,15 @@ int SphericalVectorField::criticalPointInTet(size_t i0, size_t i1, size_t i2, si
 
 	// Test if tet contains critical point
 	Eigen::Vector4d zeroPoint(0.0, 0.0, 0.0, 1.0);
-	int simplexSign = sign(zeroPoint, v1, v2, v3, i0, i1, i2, i3);
+	int simplexSign = signTet(zeroPoint, v1, v2, v3, i0, i1, i2, i3);
 
-	if (sign(v0, zeroPoint, v2, v3, i0, i1, i2, i3) != simplexSign) {
+	if (signTet(v0, zeroPoint, v2, v3, i0, i1, i2, i3) != simplexSign) {
 		return 0;
 	}
-	if (sign(v0, v1, zeroPoint, v3, i0, i1, i2, i3) != simplexSign) {
+	if (signTet(v0, v1, zeroPoint, v3, i0, i1, i2, i3) != simplexSign) {
 		return 0;
 	}
-	if (sign(v0, v1, v2, zeroPoint, i0, i1, i2, i3) != simplexSign) {
+	if (signTet(v0, v1, v2, zeroPoint, i0, i1, i2, i3) != simplexSign) {
 		return 0;
 	}
 
@@ -203,7 +193,7 @@ int SphericalVectorField::criticalPointInTet(size_t i0, size_t i1, size_t i2, si
 	p2 << sphCoords(i2), 1.0;
 	p3 << sphCoords(i3), 1.0;
 
-	if (sign(p0, p1, p2, p3, i0, i1, i2, i3) != simplexSign) {
+	if (signTet(p0, p1, p2, p3, i0, i1, i2, i3) != simplexSign) {
 		return -1;
 	}
 	else {
@@ -213,61 +203,115 @@ int SphericalVectorField::criticalPointInTet(size_t i0, size_t i1, size_t i2, si
 
 
 // Forward integrates streamline starting at given seed
+//
+// seed - starting seed point (lat, long, rad) in rads and mbars
+// totalTime - total amount of time to integrate forwards and backwards
+// tol - error tolerance
+// return - list of points in streamline in coordinates (lat, long, rad) in rads and mbars
 std::vector<Eigen::Vector3d> SphericalVectorField::streamLine(const Eigen::Vector3d& seed, double totalTime, double tol) {
 
-	std::vector<Eigen::Vector3d> points;
+	std::vector<Eigen::Vector3d> pointsF;
+	std::vector<Eigen::Vector3d> pointsB;
 
 	Eigen::Vector3d currPos = seed;
 	double timeStep = 100.0;
 	double accTime = 0.0;
 
+	// Forward integrate in time
 	while (accTime < totalTime) {
 
-		points.push_back(currPos);
+		pointsF.push_back(currPos);
+		currPos = RKF45Adaptive(currPos, timeStep, tol);
 
-		bool cont = true;
-		while (cont) {
-
-			// RKF45 with adaptive step size
-			Eigen::Vector3d k1 = timeStep * velocityAt(currPos);
-			Eigen::Vector3d k2 = timeStep * velocityAt(newPos(currPos, 1.0 / 4.0       * k1));
-			Eigen::Vector3d k3 = timeStep * velocityAt(newPos(currPos, 3.0 / 32.0      * k1 + 9.0 / 32.0      * k2));
-			Eigen::Vector3d k4 = timeStep * velocityAt(newPos(currPos, 1932.0 / 2197.0 * k1 - 7200.0 / 2197.0 * k2 + 7296.0 / 2197.0 * k3));
-			Eigen::Vector3d k5 = timeStep * velocityAt(newPos(currPos, 439.0 / 216.0   * k1 - 8.0             * k2 + 3680.0 / 513.0  * k3 - 845.0 / 4104.0  * k4));
-			Eigen::Vector3d k6 = timeStep * velocityAt(newPos(currPos, -8.0 / 27.0     * k1 + 2.0             * k2 - 3544.0 / 2565.0 * k3 + 1859.0 / 4104.0 * k4 - 11.0 / 40.0 * k5));
-
-			Eigen::Vector3d highOrder = 16.0 / 135.0 * k1 + 6656.0 / 12825.0 * k3 + 28561.0 / 56430.0 * k4 - 9.0 / 50.0 * k5 + 2.0 / 55.0 * k6;
-			Eigen::Vector3d lowOrder  = 25.0 / 216.0 * k1 + 1408.0 / 2665.0  * k3 + 2197.0 / 4104.0   * k4 - 1.0 / 5.0  * k5;
-
-			double error = (highOrder - lowOrder).norm();
-			if (error < tol) {
-				cont = false;
-				currPos = newPos(currPos, highOrder);
-				accTime += timeStep;
-			}
-			timeStep *= 0.9 * (tol / error);
-			if (timeStep < 0.01) {
-				std::cout << "small step" << std::endl;
-				std::cout << velocityAt(currPos) << std::endl;
-				cont = false;
-				accTime = totalTime;
-			}
+		accTime += timeStep;
+		if (accTime == 0.0) {
+			break;
 		}
 	}
+	currPos = seed;
+	timeStep = -100.0;
+	accTime = 0.0;
+
+	// Backward integrate in time
+	while (accTime > -totalTime) {
+
+		pointsB.push_back(currPos);
+		currPos = RKF45Adaptive(currPos, timeStep, tol);
+
+		accTime += timeStep;
+		if (accTime == 0.0) {
+			break;
+		}
+	}
+
+	// Combine forward and backward paths into one chronological path
+	std::vector<Eigen::Vector3d> points(pointsB.size() + pointsF.size());
+	for (size_t i = 0; i < pointsB.size(); i++) {
+		points[i] = pointsB[pointsB.size() - 1 - i];
+	}
+
+	for (size_t i = 0; i < pointsF.size(); i++) {
+		points[pointsB.size() + i] = pointsF[i];
+	}
+
 	std::cout << std::endl << points.size() << std::endl;
 	return points;
+}
+
+
+// Performs one step of RKF45 integration with adaptive step size 
+// https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta%E2%80%93Fehlberg_method
+//
+// currPos - current position (lat, long, rad) in rads and mbars
+// timeStep - current step size in and updated step size out. Gets set to 0 if it becomes prohibitively small
+// tol - error tolerance 
+// return - next position (lat, long, rad) in rads and mbars
+Eigen::Vector3d SphericalVectorField::RKF45Adaptive(const Eigen::Vector3d& currPos, double& timeStep, double tol) {
+
+	// Loop until error is low enough, almost always <= 2 itterations
+	while (true) {
+
+		Eigen::Vector3d k1 = timeStep * velocityAt(currPos);
+		Eigen::Vector3d k2 = timeStep * velocityAt(newPos(currPos, 1.0 / 4.0       * k1));
+		Eigen::Vector3d k3 = timeStep * velocityAt(newPos(currPos, 3.0 / 32.0      * k1 + 9.0 / 32.0      * k2));
+		Eigen::Vector3d k4 = timeStep * velocityAt(newPos(currPos, 1932.0 / 2197.0 * k1 - 7200.0 / 2197.0 * k2 + 7296.0 / 2197.0 * k3));
+		Eigen::Vector3d k5 = timeStep * velocityAt(newPos(currPos, 439.0 / 216.0   * k1 - 8.0             * k2 + 3680.0 / 513.0  * k3 - 845.0 / 4104.0  * k4));
+		Eigen::Vector3d k6 = timeStep * velocityAt(newPos(currPos, -8.0 / 27.0     * k1 + 2.0             * k2 - 3544.0 / 2565.0 * k3 + 1859.0 / 4104.0 * k4 - 11.0 / 40.0 * k5));
+
+		Eigen::Vector3d highOrder = 16.0 / 135.0 * k1 + 6656.0 / 12825.0 * k3 + 28561.0 / 56430.0 * k4 - 9.0 / 50.0 * k5 + 2.0 / 55.0 * k6;
+		Eigen::Vector3d lowOrder = 25.0 / 216.0 * k1 + 1408.0 / 2665.0  * k3 + 2197.0 / 4104.0   * k4 - 1.0 / 5.0  * k5;
+
+		double error = (highOrder - lowOrder).norm();
+		timeStep *= 0.9 * (tol / error);
+
+		// Return if error is low enough
+		if (error < tol) {
+			return newPos(currPos, highOrder);
+		}
+
+		// If time step is too small, terminate and indicate by setting timeStep to 0
+		else if (abs(timeStep) < 0.01) {
+
+			std::cout << "small step" << std::endl;
+			std::cout << velocityAt(currPos) << std::endl;
+			timeStep = 0.0;
+			return currPos;
+		}
+	}
 }
 
 
 // Returns the velocity at the given position
 //
 // pos - (lat, long, altitude) in rads and mbars
+// return - (north, east, vertical) in m/s and Pa/s
 Eigen::Vector3d SphericalVectorField::velocityAt(const Eigen::Vector3d& pos) {
 
 	size_t latIndex = (size_t)(720.0 - (pos.x() + M_PI_2) * 4.0 * (180.0 / M_PI));
 	size_t longIndex = fmod(pos.y(), 2.0 * M_PI) * 4.0 * (180.0 / M_PI);
 	size_t levelIndex = 0;
 
+	// Levels are non-uniform, use binary search to find appropriate index
 	size_t endIndex = NUM_LEVELS - 1;
 	while (pos.z() >= levels[levelIndex + 1]) {
 
@@ -297,15 +341,15 @@ Eigen::Vector3d SphericalVectorField::velocityAt(const Eigen::Vector3d& pos) {
 	if (levelPerc < 0.0) levelPerc = 0.0;
 
 	// 8 corners of hexahedron
-	Eigen::Vector3d _100 = (*this)(latIndex, longIndex, levelIndex);
-	Eigen::Vector3d _110 = (*this)(latIndex, (longIndex + 1) % NUM_LONGS, levelIndex);
-	Eigen::Vector3d _000 = (*this)(latIndex + 1, longIndex, levelIndex);
-	Eigen::Vector3d _010 = (*this)(latIndex + 1, (longIndex + 1) % NUM_LONGS, levelIndex);
-	Eigen::Vector3d _101 = (*this)(latIndex, longIndex, levelIndex + 1);
-	Eigen::Vector3d _111 = (*this)(latIndex, (longIndex + 1) % NUM_LONGS, levelIndex + 1); 
-	Eigen::Vector3d _001 = (*this)(latIndex + 1, longIndex, levelIndex + 1);
-	Eigen::Vector3d _011 = (*this)(latIndex + 1, (longIndex + 1) % NUM_LONGS, levelIndex + 1);
-
+	Eigen::Vector3d _000 = (*this)(latIndex, longIndex, levelIndex);
+	Eigen::Vector3d _001 = (*this)(latIndex, longIndex, levelIndex + 1);
+	Eigen::Vector3d _010 = (*this)(latIndex, (longIndex + 1) % NUM_LONGS, levelIndex);
+	Eigen::Vector3d _011 = (*this)(latIndex, (longIndex + 1) % NUM_LONGS, levelIndex + 1);
+	Eigen::Vector3d _100 = (*this)(latIndex + 1, longIndex, levelIndex);
+	Eigen::Vector3d _101 = (*this)(latIndex + 1, longIndex, levelIndex + 1);
+	Eigen::Vector3d _110 = (*this)(latIndex + 1, (longIndex + 1) % NUM_LONGS, levelIndex);
+	Eigen::Vector3d _111 = (*this)(latIndex + 1, (longIndex + 1) % NUM_LONGS, levelIndex + 1); 
+	
 	// Multiply each point by its total contribution
 	_000 *= (1.0 - latPerc) * (1.0 - longPerc) * (1.0 - levelPerc);
 	_001 *= (1.0 - latPerc) * (1.0 - longPerc) * levelPerc;
@@ -320,12 +364,17 @@ Eigen::Vector3d SphericalVectorField::velocityAt(const Eigen::Vector3d& pos) {
 }
 
 
+// Calculates new position from current position and velocity
+//
+// currPos - (lat, long, altitude) in rads and mbars
+// velocity - (north, east, vertical) in m/s and Pa/s
+// return - (lat, long, altitude) in rads and mbars
 Eigen::Vector3d SphericalVectorField::newPos(const Eigen::Vector3d& currPos, const Eigen::Vector3d& velocity) {
 
 	Eigen::Vector3d newPos;
 	double absRadius = RADIUS_EARTH_M + mbarsToMeters(currPos.z());
 
-	// TODO singularities at poles, how to account for this? Doing in physical space is not stable?
+	// TODO singularities at poles, how to account for this? Doing in physical space is not stable (trig on small angles)
 	newPos.x() = currPos.x() + velocity.x() / absRadius;
 	newPos.y() = currPos.y() + velocity.y() / (cos(currPos.x()) * absRadius);
 	newPos.z() = currPos.z() + velocity.z() * 0.01;

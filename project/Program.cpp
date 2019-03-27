@@ -61,10 +61,10 @@ void Program::start() {
 	testLine2.drawMode = GL_LINE_STRIP;
 
 	std::cout << "Integrating small h" << std::endl;
-	std::vector<Eigen::Vector3d> line = field.streamLine(Eigen::Vector3d(-0.9, 3.2, 990), 1000000.0, 1.0);
+	std::vector<Eigen::Vector3d> line = field.streamLine(Eigen::Vector3d(0.0, 3.2, 990), 1000000.0, 1.0);
 
 	std::cout << "Integrating large h" << std::endl;
-	std::vector<Eigen::Vector3d> line2 = field.streamLine(Eigen::Vector3d(-0.9, 3.2, 990.0), 1000000.0, 10.0);
+	std::vector<Eigen::Vector3d> line2 = field.streamLine(Eigen::Vector3d(0.0, 3.2, 990.0), 1000000.0, 10.0);
 
 	for (const Eigen::Vector3d& p : line) {
 		SphCoord sph(p(0), p(1));

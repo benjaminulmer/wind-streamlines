@@ -47,13 +47,15 @@ private:
 	std::vector<float> lats;
 	std::vector<float> longs;
 
-	int sign(const Eigen::Vector4d& v0, const Eigen::Vector4d& v1,
-	         const Eigen::Vector4d& v2, const Eigen::Vector4d& v3,
-	         size_t i0, size_t i1, size_t i2, size_t i3);
+	int signTet(const Eigen::Vector4d& v0, const Eigen::Vector4d& v1,
+	            const Eigen::Vector4d& v2, const Eigen::Vector4d& v3,
+	            size_t i0, size_t i1, size_t i2, size_t i3);
 
 	int criticalPointInTet(size_t i0, size_t i1, size_t i2, size_t i3);
 
 
 	Eigen::Vector3d newPos(const Eigen::Vector3d& currPos, const Eigen::Vector3d& velocity);
+
+	Eigen::Vector3d RKF45Adaptive(const Eigen::Vector3d& currPos, double& timeStep, double tol);
 };
 
