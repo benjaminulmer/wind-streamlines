@@ -34,19 +34,16 @@ private:
 	Camera* camera;
 
 	Renderable coastLines;
-	Renderable criticalPoints;
-	Renderable testLine;
-	Renderable testLine2;
+	std::vector<Renderable*> streamlines;
 	std::vector<const Renderable*> objects;
 
 	SphericalVectorField field;
-
-	double radius;
 
 	double scale;
 	double latRot;
 	double longRot;
 
 	void setupWindow();
+	void integrateStreamlines();
 	void mainLoop();
 };

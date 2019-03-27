@@ -45,94 +45,22 @@ void Program::start() {
 	renderEngine = new RenderEngine(window);
 	InputHandler::setUp(camera, renderEngine, this);
 
-	// Set starting radius
+	// Set starting scale
 	scale = 1.0;
-	radius = RADIUS_EARTH_M * 4.0 / 3.0;
 
 	// Load coastline vector data
 	rapidjson::Document cl = ContentReadWrite::readJSON("data/coastlines.json");
 	coastLines = Renderable(cl);
 
-	// Load vector field and find critical points
+	objects.push_back(&coastLines);
+	coastLines.doubleToFloats();
+	RenderEngine::assignBuffers(coastLines, false);
+	RenderEngine::setBufferData(coastLines, false);
+
+	// Load vector field and integrate streamlines
 	netCDF::NcFile file("data/2018-05-27T12.nc", netCDF::NcFile::read);
 	field = SphericalVectorField(file);
-
-	testLine.drawMode = GL_LINE_STRIP;
-	testLine2.drawMode = GL_LINE_STRIP;
-
-	std::cout << "Integrating small h" << std::endl;
-	std::vector<Eigen::Vector3d> line = field.streamLine(Eigen::Vector3d(0.0, 3.2, 990), 1000000.0, 1.0);
-
-	std::cout << "Integrating large h" << std::endl;
-	std::vector<Eigen::Vector3d> line2 = field.streamLine(Eigen::Vector3d(0.0, 3.2, 990.0), 1000000.0, 10.0);
-
-	for (const Eigen::Vector3d& p : line) {
-		SphCoord sph(p(0), p(1));
-			
-		double alt = altToAbs(SphericalVectorField::mbarsToMeters(p(2)));
-		testLine.verts.push_back(sph.toCartesian(alt));
-
-		float norm = (SphericalVectorField::mbarsToMeters(p(2)) / 66000.0) + 0.5f;
-
-		testLine.colours.push_back(glm::vec3(0.f, norm, 0.f));
-
-		//std::cout << p << std::endl;
-	}
-
-	for (const Eigen::Vector3d& p : line2) {
-		SphCoord sph(p(0), p(1));
-
-		double alt = altToAbs(SphericalVectorField::mbarsToMeters(p(2)));
-		testLine2.verts.push_back(sph.toCartesian(alt));
-
-		float norm = (SphericalVectorField::mbarsToMeters(p(2)) / 66000.0) + 0.5f;
-
-		testLine2.colours.push_back(glm::vec3(norm, 0.f, 0.f));
-
-		//std::cout << p << std::endl;
-	}
-
-	//std::vector<std::pair<Eigen::Vector3i, int>> criticalIndices = field.findCriticalPoints();
-
-	//for (const std::pair<Eigen::Vector3i, int>& i : criticalIndices) {
-	//	Eigen::Vector3d coords = field.sphCoords(i.first);
-	//	SphCoord sph(coords(0), coords(1));
-	//	
-	//	double alt = altToAbs(coords(2));
-	//	criticalPoints.verts.push_back(sph.toCartesian(alt));
-
-	//	float norm = (coords(2) / 66000.0) + 0.5f;
-	//	if (i.second == 1) {
-	//		criticalPoints.colours.push_back(glm::vec3(norm, 0.f, 0.f));
-	//	}
-	//	else {
-	//		criticalPoints.colours.push_back(glm::vec3(0.f, 0.f, norm));
-	//	}
-
-	//}
-	//std::cout << criticalIndices.size() << std::endl;
-
-
-	// Objects to draw initially
-	objects.push_back(&coastLines);
-	objects.push_back(&testLine);
-	objects.push_back(&testLine2);
-	objects.push_back(&criticalPoints);
-
-	coastLines.doubleToFloats();
-	testLine.doubleToFloats();
-	testLine2.doubleToFloats();
-	criticalPoints.doubleToFloats();
-
-	RenderEngine::assignBuffers(coastLines, false);
-	RenderEngine::assignBuffers(testLine, false);
-	RenderEngine::assignBuffers(testLine2, false);
-	RenderEngine::assignBuffers(criticalPoints, false);
-
-	RenderEngine::setBufferData(coastLines, false);
-	RenderEngine::setBufferData(testLine, false);
-	RenderEngine::setBufferData(testLine2, false);
-	RenderEngine::setBufferData(criticalPoints, false);
+	integrateStreamlines();
 
 	mainLoop();
 }
@@ -169,6 +97,89 @@ void Program::setupWindow() {
 	SDL_GL_SetSwapInterval(1); // Vsync on
 }
 
+// Seeds and integrates streamlines
+void Program::integrateStreamlines() {
+
+	for (size_t lat = 2; lat < field.NUM_LATS; lat += 20) {
+		for (size_t lng = 2; lng < field.NUM_LONGS; lng += 20) {
+			//for (size_t lvl = 0; lvl < field.NUM_LEVELS - 1; lvl += 2) {
+			size_t lvl = 30;
+
+				Renderable* r = new Renderable();
+				std::vector<Eigen::Vector3d> line = field.streamline(field.sphCoords(lat, lng, lvl), 100000.0, 25.0);
+
+				for (const Eigen::Vector3d& p : line) {
+
+					SphCoord sph(p.x(), p.y());
+					double rad = altToAbs(SphericalVectorField::mbarsToMeters(p.z()));
+
+					double speed = field.velocityAt(p).squaredNorm();
+					double norm = speed / (70.0 * 70.0);
+					if (norm > 1.0) norm = 1.0;
+
+					r->verts.push_back(sph.toCartesian(rad));
+					r->colours.push_back(glm::vec3(norm, 0.f, 0.f));
+				}
+				r->drawMode = GL_LINE_STRIP;
+				streamlines.push_back(r);
+				objects.push_back(r);
+				r->doubleToFloats();
+				RenderEngine::assignBuffers(*r, false);
+				RenderEngine::setBufferData(*r, false);
+
+				//std::cout << lat << ", " << lng << ", " << lvl << std::endl;
+			//}
+		}
+	}
+	std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> criticalIndices = field.findCriticalPoints();
+	for (const auto& p : criticalIndices) {
+
+		Renderable* r = new Renderable();
+
+		Eigen::Vector3d coords = field.sphCoords(p.first);
+		SphCoord sph(coords.x(), coords.y());
+
+		double rad = altToAbs(SphericalVectorField::mbarsToMeters(coords.z()));
+		r->verts.push_back(sph.toCartesian(rad));
+
+		if (p.second == 1) {
+			r->colours.push_back(glm::vec3(0.f, 1.f, 0.f));
+		}
+		else {
+			r->colours.push_back(glm::vec3(0.f, 0.f, 1.f));
+		}
+
+		streamlines.push_back(r);
+		objects.push_back(r);
+		r->doubleToFloats();
+		RenderEngine::assignBuffers(*r, false);
+		RenderEngine::setBufferData(*r, false);
+	}
+
+	//	Renderable* r = new Renderable();
+	//	std::vector<Eigen::Vector3d> line = field.streamline(field.sphCoords(p.first), 100000.0, 25.0);
+
+	//	for (const Eigen::Vector3d& p : line) {
+
+	//		SphCoord sph(p.x(), p.y());
+	//		double rad = altToAbs(SphericalVectorField::mbarsToMeters(p.z()));
+
+	//		double speed = field.velocityAt(p).squaredNorm();
+	//		double norm = speed / (70.0 * 70.0);
+	//		if (norm > 1.0) norm = 1.0;
+
+	//		r->verts.push_back(sph.toCartesian(rad));
+	//		r->colours.push_back(glm::vec3(norm, 0.f, 0.f));
+	//	}
+	//	r->drawMode = GL_LINE_STRIP;
+	//	streamlines.push_back(r);
+	//	objects.push_back(r);
+	//	r->doubleToFloats();
+	//	RenderEngine::assignBuffers(*r, false);
+	//	RenderEngine::setBufferData(*r, false);
+	//}
+
+}
 
 // Main loop
 void Program::mainLoop() {
@@ -183,8 +194,8 @@ void Program::mainLoop() {
 
 		// Find min and max distance from camera to cell renderable - used for fading effect
 		glm::vec3 cameraPos = camera->getPosition();
-		float max = glm::length(cameraPos) + RADIUS_EARTH_VIEW;
-		float min = glm::length(cameraPos) - RADIUS_EARTH_VIEW;
+		float max = glm::length(cameraPos) + (float)RADIUS_EARTH_VIEW;
+		float min = glm::length(cameraPos) - (float)RADIUS_EARTH_VIEW;
 
 		glm::dmat4 worldModel(1.f);
 		double s = scale * (1.0 / RADIUS_EARTH_M) * RADIUS_EARTH_VIEW;

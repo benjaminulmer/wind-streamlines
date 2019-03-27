@@ -73,45 +73,45 @@ SphericalVectorField::SphericalVectorField(const netCDF::NcFile& file) :
 // Finds all critical points in the vector field and their Poincare index
 //
 // return - list of indicies of cells that contain critical points and their Poincare index
-std::vector<std::pair<Eigen::Vector3i, int>> SphericalVectorField::findCriticalPoints() {
+std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> SphericalVectorField::findCriticalPoints() {
 
-	std::vector<std::pair<Eigen::Vector3i, int>> points;
+	std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> points;
 
 	for (size_t lvl = 0; lvl < NUM_LEVELS - 1; lvl++) {
 		for (size_t lat = 0; lat < NUM_LATS - 1; lat++) {
 			for (size_t lng = 0; lng < NUM_LONGS - 1; lng++) {
 
 				// 8 vertices of hexahedron
-				int i0 = indexToOffset(lat, lng, lvl);
-				int i1 = indexToOffset(lat, lng, lvl + 1);
-				int i2 = indexToOffset(lat + 1, lng, lvl + 1);
-				int i3 = indexToOffset(lat, (lng + 1) % NUM_LONGS, lvl + 1);
-				int i4 = indexToOffset(lat + 1, (lng + 1) % NUM_LONGS, lvl);
-				int i5 = indexToOffset(lat + 1, (lng + 1) % NUM_LONGS, lvl + 1);
-				int i6 = indexToOffset(lat, (lng + 1) % NUM_LONGS, lvl);
-				int i7 = indexToOffset(lat + 1, lng, lvl);
+				size_t i0 = indexToOffset(lat, lng, lvl);
+				size_t i1 = indexToOffset(lat, lng, lvl + 1);
+				size_t i2 = indexToOffset(lat + 1, lng, lvl + 1);
+				size_t i3 = indexToOffset(lat, (lng + 1) % NUM_LONGS, lvl + 1);
+				size_t i4 = indexToOffset(lat + 1, (lng + 1) % NUM_LONGS, lvl);
+				size_t i5 = indexToOffset(lat + 1, (lng + 1) % NUM_LONGS, lvl + 1);
+				size_t i6 = indexToOffset(lat, (lng + 1) % NUM_LONGS, lvl);
+				size_t i7 = indexToOffset(lat + 1, lng, lvl);
 				
 				// Construct 5 tets from hex and test each one to see if it has a critical point
 				int pi;
 				if ((pi = criticalPointInTet(i0, i1, i2, i3)) != 0) {
-					Eigen::Vector3i i(lat, lng, lvl);
-					points.push_back(std::pair<Eigen::Vector3i, int>(i, pi));
+					Eigen::Matrix<size_t, 3, 1> i(lat, lng, lvl);
+					points.push_back(std::pair<Eigen::Matrix<size_t, 3, 1>, int>(i, pi));
 				}
 				else if ((pi = criticalPointInTet(i4, i5, i3, i2)) != 0) {
-					Eigen::Vector3i i(lat, lng, lvl);
-					points.push_back(std::pair<Eigen::Vector3i, int>(i, pi));
+					Eigen::Matrix<size_t, 3, 1> i(lat, lng, lvl);
+					points.push_back(std::pair<Eigen::Matrix<size_t, 3, 1>, int>(i, pi));
 				}
 				else if ((pi = criticalPointInTet(i0, i7, i4, i2)) != 0) {
-					Eigen::Vector3i i(lat, lng, lvl);
-					points.push_back(std::pair<Eigen::Vector3i, int>(i, pi));
+					Eigen::Matrix<size_t, 3, 1> i(lat, lng, lvl);
+					points.push_back(std::pair<Eigen::Matrix<size_t, 3, 1>, int>(i, pi));
 				}
 				else if ((pi = criticalPointInTet(i0, i6, i4, i3)) != 0) {
-					Eigen::Vector3i i(lat, lng, lvl);
-					points.push_back(std::pair<Eigen::Vector3i, int>(i, pi));
+					Eigen::Matrix<size_t, 3, 1> i(lat, lng, lvl);
+					points.push_back(std::pair<Eigen::Matrix<size_t, 3, 1>, int>(i, pi));
 				}
 				else if ((pi = criticalPointInTet(i2, i3, i0, i4)) != 0) {
-					Eigen::Vector3i i(lat, lng, lvl);
-					points.push_back(std::pair<Eigen::Vector3i, int>(i, pi));
+					Eigen::Matrix<size_t, 3, 1> i(lat, lng, lvl);
+					points.push_back(std::pair<Eigen::Matrix<size_t, 3, 1>, int>(i, pi));
 				}
 			}
 		}
@@ -208,7 +208,7 @@ int SphericalVectorField::criticalPointInTet(size_t i0, size_t i1, size_t i2, si
 // totalTime - total amount of time to integrate forwards and backwards
 // tol - error tolerance
 // return - list of points in streamline in coordinates (lat, long, rad) in rads and mbars
-std::vector<Eigen::Vector3d> SphericalVectorField::streamLine(const Eigen::Vector3d& seed, double totalTime, double tol) {
+std::vector<Eigen::Vector3d> SphericalVectorField::streamline(const Eigen::Vector3d& seed, double totalTime, double tol) {
 
 	std::vector<Eigen::Vector3d> pointsF;
 	std::vector<Eigen::Vector3d> pointsB;
@@ -254,7 +254,7 @@ std::vector<Eigen::Vector3d> SphericalVectorField::streamLine(const Eigen::Vecto
 		points[pointsB.size() + i] = pointsF[i];
 	}
 
-	std::cout << std::endl << points.size() << std::endl;
+	//std::cout << std::endl << points.size() << std::endl;
 	return points;
 }
 
@@ -282,7 +282,8 @@ Eigen::Vector3d SphericalVectorField::RKF45Adaptive(const Eigen::Vector3d& currP
 		Eigen::Vector3d lowOrder = 25.0 / 216.0 * k1 + 1408.0 / 2665.0  * k3 + 2197.0 / 4104.0   * k4 - 1.0 / 5.0  * k5;
 
 		double error = (highOrder - lowOrder).norm();
-		timeStep *= 0.9 * (tol / error);
+
+		timeStep *= 0.9 * std::min(std::max((tol / error), 0.3), 2.0);
 
 		// Return if error is low enough
 		if (error < tol) {
@@ -308,7 +309,7 @@ Eigen::Vector3d SphericalVectorField::RKF45Adaptive(const Eigen::Vector3d& currP
 Eigen::Vector3d SphericalVectorField::velocityAt(const Eigen::Vector3d& pos) {
 
 	size_t latIndex = (size_t)(720.0 - (pos.x() + M_PI_2) * 4.0 * (180.0 / M_PI));
-	size_t longIndex = fmod(pos.y(), 2.0 * M_PI) * 4.0 * (180.0 / M_PI);
+	size_t longIndex = (size_t)(fmod(pos.y(), 2.0 * M_PI) * 4.0 * (180.0 / M_PI));
 	size_t levelIndex = 0;
 
 	// Levels are non-uniform, use binary search to find appropriate index
@@ -407,7 +408,7 @@ Eigen::Vector3d SphericalVectorField::sphCoords(size_t i) const {
 // lvl - level index
 // return - (lat, long, altitude) in rads and meters
 Eigen::Vector3d SphericalVectorField::sphCoords(size_t lat, size_t lng, size_t lvl) const {
-	return Eigen::Vector3d(lats[lat], longs[lng], mbarsToMeters(levels[lvl]));
+	return Eigen::Vector3d(lats[lat], longs[lng], levels[lvl]);
 }
 
 
@@ -415,7 +416,7 @@ Eigen::Vector3d SphericalVectorField::sphCoords(size_t lat, size_t lng, size_t l
 //
 // i - (lat, long, level) indices
 // return - (lat, long, altitude) in rads and meters
-Eigen::Vector3d SphericalVectorField::sphCoords(const Eigen::Vector3i& i) const {
+Eigen::Vector3d SphericalVectorField::sphCoords(const Eigen::Matrix<size_t, 3, 1>& i) const {
 	return sphCoords(i.x(), i.y(), i.z());
 }
 
@@ -424,9 +425,9 @@ Eigen::Vector3d SphericalVectorField::sphCoords(const Eigen::Vector3i& i) const 
 //
 // i - absolute 1D index
 // return - (lat, long, level) index
-Eigen::Vector3i SphericalVectorField::offsetToIndex(size_t i) const {
+Eigen::Matrix<size_t, 3, 1> SphericalVectorField::offsetToIndex(size_t i) const {
 
-	Eigen::Vector3i v;
+	Eigen::Matrix<size_t, 3, 1> v;
 	v.x() = (i / NUM_LONGS) % NUM_LATS;
 	v.y() = i % NUM_LONGS;
 	v.z() = (i / NUM_LONGS) / NUM_LATS;
@@ -450,7 +451,7 @@ size_t SphericalVectorField::indexToOffset(size_t lat, size_t lng, size_t lvl) c
 //
 // i - (lat, long, level) indices
 // return - absolute 1D index
-size_t SphericalVectorField::indexToOffset(const Eigen::Vector3i& i) const {
+size_t SphericalVectorField::indexToOffset(const Eigen::Matrix<size_t, 3, 1>& i) const {
 	return indexToOffset(i.x(), i.y(), i.z());
 }
 
@@ -499,7 +500,7 @@ const Eigen::Vector3d& SphericalVectorField::operator()(size_t lat, size_t lng, 
 //
 // i - (lat, long, level) indices
 // return - vector at index
-Eigen::Vector3d& SphericalVectorField::operator()(const Eigen::Vector3i& i) {
+Eigen::Vector3d& SphericalVectorField::operator()(const Eigen::Matrix<size_t, 3, 1>& i) {
 	return operator()(i.x(), i.y(), i.z());
 }
 
@@ -508,6 +509,6 @@ Eigen::Vector3d& SphericalVectorField::operator()(const Eigen::Vector3i& i) {
 //
 // i - (lat, long, level) indices
 // return - vector at index
-const Eigen::Vector3d& SphericalVectorField::operator()(const Eigen::Vector3i& i) const {
+const Eigen::Vector3d& SphericalVectorField::operator()(const Eigen::Matrix<size_t, 3, 1>& i) const {
 	return operator()(i.x(), i.y(), i.z());
 }
