@@ -16,6 +16,7 @@ public:
 	static double mbarsToMeters(double mb) { return 0.3048 * 145366.45 * (1.0 - pow(mb / 1013.25, 0.190284)); }
 
 	SphericalVectorField() = default;
+	SphericalVectorField(int test);
 	SphericalVectorField(const netCDF::NcFile& file);
 
 	std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> findCriticalPoints();

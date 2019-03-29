@@ -6,6 +6,31 @@
 #include <algorithm>
 #include <cmath>
 
+SphericalVectorField::SphericalVectorField(int test) :
+	data(NUM_LONGS * NUM_LATS * NUM_LEVELS),
+	levels(NUM_LEVELS),
+	lats(NUM_LATS),
+	longs(NUM_LONGS) {
+
+	for (size_t lat = 0; lat < NUM_LATS; lat++) {
+		lats[lat] = (90.0 - 0.25 * lat) * (M_PI / 180.0);
+	}
+	for (size_t lng = 0; lng < NUM_LONGS; lng++) {
+		longs[lng] = 0.25 * lng * (M_PI / 180.0);
+	}
+	for (size_t lvl = 0; lvl < NUM_LEVELS; lvl++) {
+		levels[lvl] = lvl;
+	}
+
+	for (size_t lvl = 0; lvl < NUM_LEVELS; lvl++) {
+		for (size_t lat = 0; lat < NUM_LATS; lat++) {
+			for (size_t lng = 0; lng < NUM_LONGS; lng++) {
+				data[indexToOffset(lat, lng, lvl)] = Eigen::Vector3d(lats[lat], longs[lng], levels[lvl]);
+			}
+		}
+	}
+}
+
 
 // Construct vector field from data provided in NetCDF file
 // Assumes data is of a certain format, does not work for general files
@@ -284,6 +309,8 @@ Eigen::Vector3d SphericalVectorField::RKF45Adaptive(const Eigen::Vector3d& currP
 		double error = (highOrder - lowOrder).norm();
 
 		timeStep *= 0.9 * std::min(std::max((tol / error), 0.3), 2.0);
+		if (timeStep > 100.0) timeStep = 100.0;
+		if (timeStep < -100.0) timeStep = -100.0;
 
 		// Return if error is low enough
 		if (error < tol) {
@@ -330,26 +357,47 @@ Eigen::Vector3d SphericalVectorField::velocityAt(const Eigen::Vector3d& pos) {
 			break;
 		}
 	}
-	double latPerc = (pos.x() - lats[latIndex]) / (lats[latIndex + 1] - lats[latIndex]);
-	double longPerc = (pos.y() - longs[longIndex]) / (longs[(longIndex + 1) % NUM_LONGS] - longs[longIndex]);
-	double levelPerc = (pos.z() - levels[levelIndex]) / (levels[levelIndex + 1] - levels[levelIndex]);
 
-	if (latPerc > 1.0) latPerc = 1.0;
-	if (latPerc < 0.0) latPerc = 0.0;
-	if (longPerc > 1.0) longPerc = 1.0;
-	if (longPerc < 0.0) longPerc = 0.0;
-	if (levelPerc > 1.0) levelPerc = 1.0;
-	if (levelPerc < 0.0) levelPerc = 0.0;
+	double latPerc, longPerc, levelPerc;
+	int latInc, levelInc;
+
+	// Handle lat beyond end of grid
+	if (latIndex == NUM_LATS - 1) {
+		latPerc = 0.0;
+		latInc = 0;
+	}
+	else {
+		latPerc = (pos.x() - lats[latIndex]) / (lats[latIndex + 1] - lats[latIndex]);
+		latInc = 1;
+	}
+
+	// Handle long wrap around
+	if (longIndex == NUM_LONGS - 1) {
+		longPerc = (pos.y() - longs[longIndex]) / (2.0 * M_PI - longs[longIndex]);
+	}
+	else {
+		longPerc = (pos.y() - longs[longIndex]) / (longs[longIndex + 1] - longs[longIndex]);
+	}
+
+	// Handle level at end of grid
+	if (levelIndex == NUM_LEVELS - 1) {
+		levelPerc = 0.0;
+		levelInc = 0;
+	}
+	else {
+		levelPerc = (pos.z() - levels[levelIndex]) / (levels[levelIndex + 1] - levels[levelIndex]);
+		levelInc = 1;
+	}
 
 	// 8 corners of hexahedron
 	Eigen::Vector3d _000 = (*this)(latIndex, longIndex, levelIndex);
-	Eigen::Vector3d _001 = (*this)(latIndex, longIndex, levelIndex + 1);
+	Eigen::Vector3d _001 = (*this)(latIndex, longIndex, levelIndex + levelInc);
 	Eigen::Vector3d _010 = (*this)(latIndex, (longIndex + 1) % NUM_LONGS, levelIndex);
-	Eigen::Vector3d _011 = (*this)(latIndex, (longIndex + 1) % NUM_LONGS, levelIndex + 1);
-	Eigen::Vector3d _100 = (*this)(latIndex + 1, longIndex, levelIndex);
-	Eigen::Vector3d _101 = (*this)(latIndex + 1, longIndex, levelIndex + 1);
-	Eigen::Vector3d _110 = (*this)(latIndex + 1, (longIndex + 1) % NUM_LONGS, levelIndex);
-	Eigen::Vector3d _111 = (*this)(latIndex + 1, (longIndex + 1) % NUM_LONGS, levelIndex + 1); 
+	Eigen::Vector3d _011 = (*this)(latIndex, (longIndex + 1) % NUM_LONGS, levelIndex + levelInc);
+	Eigen::Vector3d _100 = (*this)(latIndex + latInc, longIndex, levelIndex);
+	Eigen::Vector3d _101 = (*this)(latIndex + latInc, longIndex, levelIndex + levelInc);
+	Eigen::Vector3d _110 = (*this)(latIndex + latInc, (longIndex + 1) % NUM_LONGS, levelIndex);
+	Eigen::Vector3d _111 = (*this)(latIndex + latInc, (longIndex + 1) % NUM_LONGS, levelIndex + levelInc);
 	
 	// Multiply each point by its total contribution
 	_000 *= (1.0 - latPerc) * (1.0 - longPerc) * (1.0 - levelPerc);
@@ -375,17 +423,19 @@ Eigen::Vector3d SphericalVectorField::newPos(const Eigen::Vector3d& currPos, con
 	Eigen::Vector3d newPos;
 	double absRadius = RADIUS_EARTH_M + mbarsToMeters(currPos.z());
 
+	double cosLat = cos(currPos.x());
+
 	// TODO singularities at poles, how to account for this? Doing in physical space is not stable (trig on small angles)
 	newPos.x() = currPos.x() + velocity.x() / absRadius;
-	newPos.y() = currPos.y() + velocity.y() / (cos(currPos.x()) * absRadius);
+	newPos.y() = (cosLat > 0.0001) ? currPos.y() + velocity.y() / (cos(currPos.x()) * absRadius) : currPos.y();
 	newPos.z() = currPos.z() + velocity.z() * 0.01;
 
 	// TODO properly account for edge cases as opposed to this hacky method
 	if (newPos.x() > M_PI_2) newPos.x() = M_PI_2;
-	if (newPos.x() < -M_PI_2) newPos.x() = -M_PI_2 + 0.00000000001;
+	if (newPos.x() < -M_PI_2) newPos.x() = -M_PI_2;
 	if (newPos.y() < 0.0) newPos.y() += 2.0 * M_PI;
 	if (newPos.y() > 2.0 * M_PI) newPos.y() -= 2.0 * M_PI;
-	if (newPos.z() > levels[NUM_LEVELS - 1]) newPos.z() = levels[NUM_LEVELS - 1] - 0.00000000001;
+	if (newPos.z() > levels[NUM_LEVELS - 1]) newPos.z() = levels[NUM_LEVELS - 1];
 	if (newPos.z() < levels[0]) newPos.z() = levels[0];
 
 	return newPos;

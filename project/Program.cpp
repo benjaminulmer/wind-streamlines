@@ -29,7 +29,7 @@ Program::Program() {
 	width = height = 800;
 }
 
-
+#include <random>
 // Called to start the program. Conducts set up then enters the main loop
 void Program::start() {	
 
@@ -100,61 +100,65 @@ void Program::setupWindow() {
 // Seeds and integrates streamlines
 void Program::integrateStreamlines() {
 
-	for (size_t lat = 2; lat < field.NUM_LATS; lat += 20) {
-		for (size_t lng = 2; lng < field.NUM_LONGS; lng += 20) {
-			//for (size_t lvl = 0; lvl < field.NUM_LEVELS - 1; lvl += 2) {
-			size_t lvl = 30;
+	std::random_device dev;
+	std::default_random_engine rng(dev());
+	std::uniform_real_distribution<double> latDist(-M_PI_2, M_PI_2);
+	std::uniform_real_distribution<double> lngDist(0.0, 2.0 * M_PI);
+	std::uniform_real_distribution<double> lvlDist(0.0, 1000.0);
 
-				Renderable* r = new Renderable();
-				std::vector<Eigen::Vector3d> line = field.streamline(field.sphCoords(lat, lng, lvl), 100000.0, 25.0);
 
-				for (const Eigen::Vector3d& p : line) {
-
-					SphCoord sph(p.x(), p.y());
-					double rad = altToAbs(SphericalVectorField::mbarsToMeters(p.z()));
-
-					double speed = field.velocityAt(p).squaredNorm();
-					double norm = speed / (70.0 * 70.0);
-					if (norm > 1.0) norm = 1.0;
-
-					r->verts.push_back(sph.toCartesian(rad));
-					r->colours.push_back(glm::vec3(norm, 0.f, 0.f));
-				}
-				r->drawMode = GL_LINE_STRIP;
-				streamlines.push_back(r);
-				objects.push_back(r);
-				r->doubleToFloats();
-				RenderEngine::assignBuffers(*r, false);
-				RenderEngine::setBufferData(*r, false);
-
-				//std::cout << lat << ", " << lng << ", " << lvl << std::endl;
-			//}
-		}
-	}
-	std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> criticalIndices = field.findCriticalPoints();
-	for (const auto& p : criticalIndices) {
+	for (int i = 0; i < 3000; i++) {
 
 		Renderable* r = new Renderable();
+		Eigen::Vector3d pos(latDist(rng), lngDist(rng), lvlDist(rng));
+		std::vector<Eigen::Vector3d> line = field.streamline(pos, 100000.0, 25.0);
 
-		Eigen::Vector3d coords = field.sphCoords(p.first);
-		SphCoord sph(coords.x(), coords.y());
+		for (const Eigen::Vector3d& p : line) {
 
-		double rad = altToAbs(SphericalVectorField::mbarsToMeters(coords.z()));
-		r->verts.push_back(sph.toCartesian(rad));
+			SphCoord sph(p.x(), p.y());
+			double rad = altToAbs(SphericalVectorField::mbarsToMeters(p.z()));
 
-		if (p.second == 1) {
-			r->colours.push_back(glm::vec3(0.f, 1.f, 0.f));
+			double speed = field.velocityAt(p).squaredNorm();
+			double norm = speed / (25.0 * 25.0);
+			if (norm > 1.0) norm = 1.0;
+
+			r->verts.push_back(sph.toCartesian(rad));
+			r->colours.push_back(glm::vec3(norm, 0.f, 0.f));
 		}
-		else {
-			r->colours.push_back(glm::vec3(0.f, 0.f, 1.f));
-		}
-
+		r->drawMode = GL_LINE_STRIP;
 		streamlines.push_back(r);
 		objects.push_back(r);
 		r->doubleToFloats();
 		RenderEngine::assignBuffers(*r, false);
 		RenderEngine::setBufferData(*r, false);
+
+		//std::cout << lat << ", " << lng << ", " << lvl << std::endl;
 	}
+
+	//std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> criticalIndices = field.findCriticalPoints();
+	//for (const auto& p : criticalIndices) {
+
+	//	Renderable* r = new Renderable();
+
+	//	Eigen::Vector3d coords = field.sphCoords(p.first);
+	//	SphCoord sph(coords.x(), coords.y());
+
+	//	double rad = altToAbs(SphericalVectorField::mbarsToMeters(coords.z()));
+	//	r->verts.push_back(sph.toCartesian(rad));
+
+	//	if (p.second == 1) {
+	//		r->colours.push_back(glm::vec3(0.f, 1.f, 0.f));
+	//	}
+	//	else {
+	//		r->colours.push_back(glm::vec3(0.f, 0.f, 1.f));
+	//	}
+
+	//	streamlines.push_back(r);
+	//	objects.push_back(r);
+	//	r->doubleToFloats();
+	//	RenderEngine::assignBuffers(*r, false);
+	//	RenderEngine::setBufferData(*r, false);
+	//}
 
 	//	Renderable* r = new Renderable();
 	//	std::vector<Eigen::Vector3d> line = field.streamline(field.sphCoords(p.first), 100000.0, 25.0);
