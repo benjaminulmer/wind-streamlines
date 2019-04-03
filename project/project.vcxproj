@@ -126,7 +126,6 @@
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="ContentReadWrite.cpp" />
-    <ClCompile Include="Geometry.cpp" />
     <ClCompile Include="InputHandler.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Program.cpp" />
@@ -140,7 +139,6 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Constants.h" />
     <ClInclude Include="ContentReadWrite.h" />
-    <ClInclude Include="Geometry.h" />
     <ClInclude Include="InputHandler.h" />
     <ClInclude Include="Program.h" />
     <ClInclude Include="Renderable.h" />

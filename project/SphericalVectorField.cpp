@@ -6,31 +6,6 @@
 #include <algorithm>
 #include <cmath>
 
-SphericalVectorField::SphericalVectorField(int test) :
-	data(NUM_LONGS * NUM_LATS * NUM_LEVELS),
-	levels(NUM_LEVELS),
-	lats(NUM_LATS),
-	longs(NUM_LONGS) {
-
-	for (size_t lat = 0; lat < NUM_LATS; lat++) {
-		lats[lat] = (90.0 - 0.25 * lat) * (M_PI / 180.0);
-	}
-	for (size_t lng = 0; lng < NUM_LONGS; lng++) {
-		longs[lng] = 0.25 * lng * (M_PI / 180.0);
-	}
-	for (size_t lvl = 0; lvl < NUM_LEVELS; lvl++) {
-		levels[lvl] = lvl;
-	}
-
-	for (size_t lvl = 0; lvl < NUM_LEVELS; lvl++) {
-		for (size_t lat = 0; lat < NUM_LATS; lat++) {
-			for (size_t lng = 0; lng < NUM_LONGS; lng++) {
-				data[indexToOffset(lat, lng, lvl)] = Eigen::Vector3d(lats[lat], longs[lng], levels[lvl]);
-			}
-		}
-	}
-}
-
 
 // Construct vector field from data provided in NetCDF file
 // Assumes data is of a certain format, does not work for general files
@@ -104,7 +79,7 @@ std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> SphericalVectorField::f
 
 	for (size_t lvl = 0; lvl < NUM_LEVELS - 1; lvl++) {
 		for (size_t lat = 0; lat < NUM_LATS - 1; lat++) {
-			for (size_t lng = 0; lng < NUM_LONGS - 1; lng++) {
+			for (size_t lng = 0; lng < NUM_LONGS; lng++) {
 
 				// 8 vertices of hexahedron
 				size_t i0 = indexToOffset(lat, lng, lvl);

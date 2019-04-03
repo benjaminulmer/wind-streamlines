@@ -1,7 +1,5 @@
 #pragma once
 
-#include <iostream>
-
 #include <SDL2/SDL.h>
 #undef main
 
@@ -9,12 +7,6 @@
 #include "RenderEngine.h"
 #include "SphericalVectorField.h"
 
-
-enum class RadialBound {
-	MAX,
-	MIN,
-	BOTH
-};
 
 class Program {
 

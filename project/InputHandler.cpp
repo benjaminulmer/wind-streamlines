@@ -48,6 +48,12 @@ void InputHandler::key(SDL_KeyboardEvent& e) {
 		if (key == SDLK_f) {
 			renderEngine->toggleFade();
 		}
+		else if (key == SDLK_i) {
+			renderEngine->updateScaleFactor(1);
+		}
+		else if (key == SDLK_k) {
+			renderEngine->updateScaleFactor(-1);
+		}
 		else if (key == SDLK_ESCAPE) {
 			SDL_Quit();
 			exit(0);

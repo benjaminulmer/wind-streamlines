@@ -6,8 +6,8 @@
 
 #include <vector>
 
-#include "Renderable.h"
 #include "Camera.h"
+#include "Renderable.h"
 
 class RenderEngine {
 
@@ -22,6 +22,7 @@ public:
 
 	void setWindowSize(int newWidth, int newHeight);
 	void toggleFade() { fade = !fade; }
+	void updateScaleFactor(int dir);
 
 	double getFovY() { return fovYRad; }
 	double getAspectRatio() { return (float)width/height; }
@@ -32,12 +33,14 @@ public:
 private:
 	SDL_Window* window;
 	int width, height;
-	const double fovYRad = 60.f * ((float)3.14159265358979323846 / 180.f);
-	const double near = 1.f;
-	const double far = 1000.f;
+
+	double fovYRad;
+	double near;
+	double far;
 
 	GLuint mainProgram;
 	bool fade;
+	float scaleFactor;
 
 	glm::dmat4 projection;
 };

@@ -2,7 +2,6 @@
 #include "Renderable.h"
 
 #include "Constants.h"
-#include "Geometry.h"
 
 #include <algorithm>
 #include <cmath>

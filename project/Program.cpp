@@ -8,13 +8,12 @@
 
 #include <algorithm>
 #include <cmath>
-#include <limits>
 #include <iostream>
+#include <limits>
 
 #include "Constants.h"
 #include "ContentReadWrite.h"
 #include "InputHandler.h"
-#include "Geometry.h"
 #include "SphCoord.h"
 
 Program::Program() {
@@ -97,12 +96,44 @@ void Program::setupWindow() {
 	SDL_GL_SetSwapInterval(1); // Vsync on
 }
 
+std::vector<Eigen::Vector3d> reverseChaikin(const std::vector<Eigen::Vector3d>& fine) {
+
+	std::vector<Eigen::Vector3d> coarse;
+
+	coarse.push_back(fine[0]);
+	coarse.push_back(-0.5 * fine[0] + fine[1] + 0.75 * fine[2] - 0.25 * fine[3]);
+	
+	for (size_t i = 2; i < fine.size() - 5; i += 2) {
+		coarse.push_back(-0.25 * fine[i] + 0.75 * fine[i + 1] + 0.75 * fine[i + 2] - 0.25 * fine[i + 3]);
+	}
+	size_t m = fine.size() - 1;
+
+	coarse.push_back(-0.25 * fine[m - 3] + 0.75 * fine[m - 2] + fine[m - 1] - 0.5 * fine[m]);
+	coarse.push_back(fine[m]);
+
+	return coarse;
+}
+
+void toCartesian(std::vector<Eigen::Vector3d>& points) {
+
+	for (Eigen::Vector3d& p : points) {
+		SphCoord sph(p.x(), p.y());
+		double rad = RADIUS_EARTH_M + SphericalVectorField::mbarsToMeters(p.z());
+		glm::dvec3 cart = sph.toCartesian(rad);
+
+		p = Eigen::Vector3d(cart.x, cart.y, cart.z);
+	}
+}
+
+
+
 // Seeds and integrates streamlines
 void Program::integrateStreamlines() {
 
 	std::random_device dev;
 	std::default_random_engine rng(dev());
-	std::uniform_real_distribution<double> latDist(-M_PI_2, M_PI_2);
+	rng.seed(1);
+	std::uniform_real_distribution<double> latDist(-1.0, 1.0);
 	std::uniform_real_distribution<double> lngDist(0.0, 2.0 * M_PI);
 	std::uniform_real_distribution<double> lvlDist(0.0, 1000.0);
 
@@ -110,20 +141,28 @@ void Program::integrateStreamlines() {
 	for (int i = 0; i < 3000; i++) {
 
 		Renderable* r = new Renderable();
-		Eigen::Vector3d pos(latDist(rng), lngDist(rng), lvlDist(rng));
+		Eigen::Vector3d pos(asin(latDist(rng)), lngDist(rng), lvlDist(rng));
 		std::vector<Eigen::Vector3d> line = field.streamline(pos, 100000.0, 25.0);
+		toCartesian(line);
+
+		for (int i = 0; i < 5; i++) {
+			line = reverseChaikin(line);
+		}
+		if (line.size() < 50) std::cout << line.size() << std::endl;
 
 		for (const Eigen::Vector3d& p : line) {
 
-			SphCoord sph(p.x(), p.y());
-			double rad = altToAbs(SphericalVectorField::mbarsToMeters(p.z()));
+			//SphCoord sph(p.x(), p.y());
+			//double rad = altToAbs(SphericalVectorField::mbarsToMeters(p.z()));
 
-			double speed = field.velocityAt(p).squaredNorm();
-			double norm = speed / (25.0 * 25.0);
-			if (norm > 1.0) norm = 1.0;
+			//double speed = field.velocityAt(p).squaredNorm();
+			//double norm = speed / (60.0 * 60.0);
+			//if (norm > 1.0) norm = 1.0;
+			//norm /= 2.0;
+			//norm += 0.5;
 
-			r->verts.push_back(sph.toCartesian(rad));
-			r->colours.push_back(glm::vec3(norm, 0.f, 0.f));
+			r->verts.push_back(glm::dvec3(p.x(), p.y(), p.z()));
+			r->colours.push_back(glm::vec3(0.f, 0.f, 0.8f));
 		}
 		r->drawMode = GL_LINE_STRIP;
 		streamlines.push_back(r);
@@ -150,7 +189,7 @@ void Program::integrateStreamlines() {
 	//		r->colours.push_back(glm::vec3(0.f, 1.f, 0.f));
 	//	}
 	//	else {
-	//		r->colours.push_back(glm::vec3(0.f, 0.f, 1.f));
+	//		r->colours.push_back(glm::vec3(1.f, 0.f, 0.f));
 	//	}
 
 	//	streamlines.push_back(r);
@@ -212,7 +251,6 @@ void Program::mainLoop() {
 	}
 }
 
-
 // Updates camera rotation
 // Locations are in pixel coordinates
 void Program::updateRotation(int oldX, int newX, int oldY, int newY, bool skew) {
@@ -263,7 +301,6 @@ void Program::updateRotation(int oldX, int newX, int oldY, int newY, bool skew) 
 		}
 	}
 }
-
 
 // Changes scale of model
 void Program::updateScale(int inc) {

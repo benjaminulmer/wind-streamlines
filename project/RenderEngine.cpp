@@ -1,13 +1,22 @@
+#define _USE_MATH_DEFINES
 #include "RenderEngine.h"
 
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <cmath>
 #include <iostream>
 
+#include "Constants.h"
 #include "ShaderTools.h"
 
-RenderEngine::RenderEngine(SDL_Window* window) : window(window), fade(true) {
+RenderEngine::RenderEngine(SDL_Window* window) :
+	window(window),
+	fovYRad(60.f * ((float)M_PI / 180.f)),
+	near(1.f),
+	far(1000.f),
+	fade(true),
+	scaleFactor(30.f) {
 
 	SDL_GetWindowSize(window, &width, &height);
 
@@ -25,7 +34,7 @@ RenderEngine::RenderEngine(SDL_Window* window) : window(window), fade(true) {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glPointSize(5.f);
+	glPointSize(2.f);
 	glLineWidth(1.f);
 	glClearColor(0.4f, 0.4f, 0.4f, 1.f);
 }
@@ -57,6 +66,9 @@ void RenderEngine::render(const std::vector<const Renderable*>& objects, const g
 		glUniform3fv(glGetUniformLocation(mainProgram, "eyeHigh"), 1, glm::value_ptr(eyeHigh));
 		glUniform3fv(glGetUniformLocation(mainProgram, "eyeLow"), 1, glm::value_ptr(eyeLow));
 
+		glUniform1f(glGetUniformLocation(mainProgram, "altScale"), scaleFactor);
+		glUniform1f(glGetUniformLocation(mainProgram, "radiusEarthM"), (float)RADIUS_EARTH_M);
+
 		glUniform1i(glGetUniformLocation(mainProgram, "fade"), fade && r->fade);
 		glUniform1f(glGetUniformLocation(mainProgram, "maxDist"), max);
 		glUniform1f(glGetUniformLocation(mainProgram, "minDist"), min);
@@ -74,13 +86,13 @@ void RenderEngine::assignBuffers(Renderable& renderable, bool texture) {
 	glGenVertexArrays(1, &renderable.vao);
 	glBindVertexArray(renderable.vao);
 
-	// Vertex buffer
+	// Vertex high buffer
 	glGenBuffers(1, &renderable.vertexHighBuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, renderable.vertexHighBuffer);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 	glEnableVertexAttribArray(0);
 
-	// Vertex buffer
+	// Vertex low buffer
 	glGenBuffers(1, &renderable.vertexLowBuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, renderable.vertexLowBuffer);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
@@ -142,4 +154,19 @@ void RenderEngine::setWindowSize(int newWidth, int newHeight) {
 	height = newHeight;
 	projection = glm::perspective(fovYRad, (double)width / height, near, far);
 	glViewport(0, 0, width, height);
+}
+
+
+void RenderEngine::updateScaleFactor(int dir) {
+
+	if (dir > 0) {
+		scaleFactor += 1.f;
+	}
+	else {
+		scaleFactor -= 1.f;
+	}
+
+	if (scaleFactor < 1.f) {
+		scaleFactor = 1.f;
+	}
 }
