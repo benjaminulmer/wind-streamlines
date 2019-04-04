@@ -5,7 +5,7 @@
 
 #include <cmath>
 
-#include "Constants.h"
+#include "Conversions.h"
 
 Camera::Camera() : zoomScale(1.3), rotScale(0.008) {
 	reset();

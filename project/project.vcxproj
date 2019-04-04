@@ -132,19 +132,17 @@
     <ClCompile Include="Renderable.cpp" />
     <ClCompile Include="RenderEngine.cpp" />
     <ClCompile Include="ShaderTools.cpp" />
-    <ClCompile Include="SphCoord.cpp" />
     <ClCompile Include="SphericalVectorField.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
-    <ClInclude Include="Constants.h" />
+    <ClInclude Include="Conversions.h" />
     <ClInclude Include="ContentReadWrite.h" />
     <ClInclude Include="InputHandler.h" />
     <ClInclude Include="Program.h" />
     <ClInclude Include="Renderable.h" />
     <ClInclude Include="RenderEngine.h" />
     <ClInclude Include="ShaderTools.h" />
-    <ClInclude Include="SphCoord.h" />
     <ClInclude Include="SphericalVectorField.h" />
   </ItemGroup>
   <ItemGroup>

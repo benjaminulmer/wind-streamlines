@@ -42,18 +42,12 @@
     <ClCompile Include="ShaderTools.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SphCoord.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SphericalVectorField.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Camera.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ContentReadWrite.h">
@@ -74,7 +68,7 @@
     <ClInclude Include="ShaderTools.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SphCoord.h">
+    <ClInclude Include="Conversions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

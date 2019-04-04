@@ -1,7 +1,7 @@
 #define _USE_MATH_DEFINES
 #include "SphericalVectorField.h"
 
-#include "Constants.h"
+#include "Conversions.h"
 
 #include <algorithm>
 #include <cmath>
@@ -208,38 +208,38 @@ int SphericalVectorField::criticalPointInTet(size_t i0, size_t i1, size_t i2, si
 // totalTime - total amount of time to integrate forwards and backwards
 // tol - error tolerance
 // return - list of points in streamline in coordinates (lat, long, rad) in rads and mbars
-std::vector<Eigen::Vector3d> SphericalVectorField::streamline(const Eigen::Vector3d& seed, double totalTime, double tol) {
+std::vector<Eigen::Vector3d> SphericalVectorField::streamline(const Eigen::Vector3d& seed, double totalTime, double tol, double maxStep) {
 
 	std::vector<Eigen::Vector3d> pointsF;
 	std::vector<Eigen::Vector3d> pointsB;
 
 	Eigen::Vector3d currPos = seed;
-	double timeStep = 100.0;
+	double timeStep = maxStep;
 	double accTime = 0.0;
 
 	// Forward integrate in time
 	while (accTime < totalTime) {
 
 		pointsF.push_back(currPos);
-		currPos = RKF45Adaptive(currPos, timeStep, tol);
+		currPos = RKF45Adaptive(currPos, timeStep, tol, maxStep);
 
 		accTime += timeStep;
-		if (accTime == 0.0) {
+		if (timeStep == 0.0) {
 			break;
 		}
 	}
 	currPos = seed;
-	timeStep = -100.0;
+	timeStep = -maxStep;
 	accTime = 0.0;
 
 	// Backward integrate in time
 	while (accTime > -totalTime) {
 
 		pointsB.push_back(currPos);
-		currPos = RKF45Adaptive(currPos, timeStep, tol);
+		currPos = RKF45Adaptive(currPos, timeStep, tol, maxStep);
 
 		accTime += timeStep;
-		if (accTime == 0.0) {
+		if (timeStep == 0.0) {
 			break;
 		}
 	}
@@ -266,17 +266,18 @@ std::vector<Eigen::Vector3d> SphericalVectorField::streamline(const Eigen::Vecto
 // timeStep - current step size in and updated step size out. Gets set to 0 if it becomes prohibitively small
 // tol - error tolerance 
 // return - next position (lat, long, rad) in rads and mbars
-Eigen::Vector3d SphericalVectorField::RKF45Adaptive(const Eigen::Vector3d& currPos, double& timeStep, double tol) {
+Eigen::Vector3d SphericalVectorField::RKF45Adaptive(const Eigen::Vector3d& currPos, double& timeStep, double tol, double maxStep) {
 
 	// Loop until error is low enough, almost always <= 2 itterations
 	while (true) {
+		double scaledStep = (param) ? timeStep * cos(0.5 * currPos.x()) : timeStep;
 
-		Eigen::Vector3d k1 = timeStep * velocityAt(currPos);
-		Eigen::Vector3d k2 = timeStep * velocityAt(newPos(currPos, 1.0 / 4.0       * k1));
-		Eigen::Vector3d k3 = timeStep * velocityAt(newPos(currPos, 3.0 / 32.0      * k1 + 9.0 / 32.0      * k2));
-		Eigen::Vector3d k4 = timeStep * velocityAt(newPos(currPos, 1932.0 / 2197.0 * k1 - 7200.0 / 2197.0 * k2 + 7296.0 / 2197.0 * k3));
-		Eigen::Vector3d k5 = timeStep * velocityAt(newPos(currPos, 439.0 / 216.0   * k1 - 8.0             * k2 + 3680.0 / 513.0  * k3 - 845.0 / 4104.0  * k4));
-		Eigen::Vector3d k6 = timeStep * velocityAt(newPos(currPos, -8.0 / 27.0     * k1 + 2.0             * k2 - 3544.0 / 2565.0 * k3 + 1859.0 / 4104.0 * k4 - 11.0 / 40.0 * k5));
+		Eigen::Vector3d k1 = scaledStep * velocityAt(currPos);
+		Eigen::Vector3d k2 = scaledStep * velocityAt(newPos(currPos, 1.0 / 4.0       * k1));
+		Eigen::Vector3d k3 = scaledStep * velocityAt(newPos(currPos, 3.0 / 32.0      * k1 + 9.0 / 32.0      * k2));
+		Eigen::Vector3d k4 = scaledStep * velocityAt(newPos(currPos, 1932.0 / 2197.0 * k1 - 7200.0 / 2197.0 * k2 + 7296.0 / 2197.0 * k3));
+		Eigen::Vector3d k5 = scaledStep * velocityAt(newPos(currPos, 439.0 / 216.0   * k1 - 8.0             * k2 + 3680.0 / 513.0  * k3 - 845.0 / 4104.0  * k4));
+		Eigen::Vector3d k6 = scaledStep * velocityAt(newPos(currPos, -8.0 / 27.0     * k1 + 2.0             * k2 - 3544.0 / 2565.0 * k3 + 1859.0 / 4104.0 * k4 - 11.0 / 40.0 * k5));
 
 		Eigen::Vector3d highOrder = 16.0 / 135.0 * k1 + 6656.0 / 12825.0 * k3 + 28561.0 / 56430.0 * k4 - 9.0 / 50.0 * k5 + 2.0 / 55.0 * k6;
 		Eigen::Vector3d lowOrder = 25.0 / 216.0 * k1 + 1408.0 / 2665.0  * k3 + 2197.0 / 4104.0   * k4 - 1.0 / 5.0  * k5;
@@ -284,8 +285,8 @@ Eigen::Vector3d SphericalVectorField::RKF45Adaptive(const Eigen::Vector3d& currP
 		double error = (highOrder - lowOrder).norm();
 
 		timeStep *= 0.9 * std::min(std::max((tol / error), 0.3), 2.0);
-		if (timeStep > 100.0) timeStep = 100.0;
-		if (timeStep < -100.0) timeStep = -100.0;
+		if (timeStep > maxStep) timeStep = maxStep;
+		if (timeStep < -maxStep) timeStep = -maxStep;
 
 		// Return if error is low enough
 		if (error < tol) {
@@ -396,7 +397,7 @@ Eigen::Vector3d SphericalVectorField::velocityAt(const Eigen::Vector3d& pos) {
 Eigen::Vector3d SphericalVectorField::newPos(const Eigen::Vector3d& currPos, const Eigen::Vector3d& velocity) {
 
 	Eigen::Vector3d newPos;
-	double absRadius = RADIUS_EARTH_M + mbarsToMeters(currPos.z());
+	double absRadius = mbarsToAbs(currPos.z());
 
 	double cosLat = cos(currPos.x());
 
@@ -412,7 +413,6 @@ Eigen::Vector3d SphericalVectorField::newPos(const Eigen::Vector3d& currPos, con
 	if (newPos.y() > 2.0 * M_PI) newPos.y() -= 2.0 * M_PI;
 	if (newPos.z() > levels[NUM_LEVELS - 1]) newPos.z() = levels[NUM_LEVELS - 1];
 	if (newPos.z() < levels[0]) newPos.z() = levels[0];
-
 	return newPos;
 }
 
