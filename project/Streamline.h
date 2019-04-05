@@ -32,7 +32,7 @@ private:
 	mutable double totalLength;
 	mutable double totalAngle;
 
-	double calculateLength() const;
-	double calculateAngle() const;
+	void calculateLength() const;
+	void calculateAngle() const;
 };
 

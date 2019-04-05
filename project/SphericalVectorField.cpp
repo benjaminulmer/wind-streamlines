@@ -68,11 +68,11 @@ SphericalVectorField::SphericalVectorField(const netCDF::NcFile& file) :
 		Eigen::Matrix<size_t, 3, 1> index = offsetToIndex(i);
 
 		// Convert vertical to m/s to find max magnitude
-		double r1 = mbarsToAlt(levels[index.z()]);
-		double r2 = mbarsToAlt(levels[index.z()] + 0.01 * w);
+		double r0 = mbarsToAlt(levels[index.z()]);
+		double r1 = mbarsToAlt(levels[index.z()] + 0.01 * w);
 
 		Eigen::Vector3d vel = data[i];
-		vel.z() = r2 - r1;
+		vel.z() = r1 - r0;
 		double magSq = vel.squaredNorm();
 
 		maxMagSq = std::max(maxMagSq, magSq);
@@ -415,10 +415,10 @@ Eigen::Vector3d SphericalVectorField::velocityAtM(const Eigen::Vector3d& pos) co
 
 	Eigen::Vector3d vel = velocityAt(pos);
 
-	double r1 = mbarsToAlt(pos.z());
-	double r2 = mbarsToAlt(pos.z() + 0.01 * vel.z());
+	double r0 = mbarsToAlt(pos.z());
+	double r1 = mbarsToAlt(pos.z() + 0.01 * vel.z());
 
-	vel.x() = r2 - r1;
+	vel.x() = r1 - r0;
 
 	return vel;
 }

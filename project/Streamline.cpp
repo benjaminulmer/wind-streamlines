@@ -19,22 +19,55 @@ void Streamline::addPoint(const Eigen::Vector3d& p) {
 
 
 double Streamline::getTotalLength() const {
-	return (totalLength >= 0.0) ? totalLength : calculateLength();
+	if (totalLength < 0.0) {
+		calculateLength();
+	}
+	return totalLength;
 }
 
 
-double Streamline::calculateLength() const {
+void Streamline::calculateLength() const {
+	
+	totalLength = 0.0;
 
+	if (_size < 2) {
+		return;
+	}
+
+	for (size_t i = 0; i < _size - 1; i++) {
+
+		totalLength += (sphToCart(points[i + 1]) - sphToCart(points[i])).norm();
+	}
 }
 
 
 double Streamline::getTotalAngle() const {
-	return (totalAngle >= 0.0) ? totalAngle : calculateAngle();
+	if (totalAngle < 0.0) {
+		calculateAngle();
+	}
+	return totalAngle;
 }
 
 
-double Streamline::calculateAngle() const {
+void Streamline::calculateAngle() const {
 
+	totalAngle = 0.0;
+
+	if (_size < 3) {
+		return;
+	}
+
+	for (size_t i = 0; i < _size - 2; i++) {
+
+		Eigen::Vector3d p0 = sphToCart(points[i]);
+		Eigen::Vector3d p1 = sphToCart(points[i + 1]);
+		Eigen::Vector3d p2 = sphToCart(points[i + 2]);
+
+		Eigen::Vector3d v0 = (p1 - p0).normalized();
+		Eigen::Vector3d v1 = (p2 - p1).normalized();
+
+		totalAngle += acos(v0.transpose() * v1);
+	}
 }
 
 

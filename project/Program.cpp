@@ -171,6 +171,7 @@ void Program::integrateStreamlines() {
 			if (pos.z() < field.levels[0]) pos.z() = field.levels[0];
 
 			Streamline line = field.streamline(pos, 50000.0, 1000.0, 5000.0);
+			std::cout << line.getTotalLength() << " : " << line.getTotalAngle() << std::endl;
 			line.addToRenderable(*lines, field);
 		}
 	}
