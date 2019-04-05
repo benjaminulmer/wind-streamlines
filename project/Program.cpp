@@ -15,6 +15,7 @@
 #include "Conversions.h"
 #include "ContentReadWrite.h"
 #include "InputHandler.h"
+#include "Streamline.h"
 
 Program::Program() {
 
@@ -133,119 +134,58 @@ void Program::integrateStreamlines() {
 	std::uniform_real_distribution<double> latDist(-1.0, 1.0);
 	std::uniform_real_distribution<double> lngDist(0.0, 2.0 * M_PI);
 	std::uniform_real_distribution<double> lvlDist(1.0, 1000.0);
+	std::uniform_real_distribution<double> unif(-2.0, 2.0);
 
-
-	for (int i = 0; i < 300; i++) {
-
-		Renderable* r1 = new Renderable();
-		Renderable* r2 = new Renderable();
-		Eigen::Vector3d pos(asin(latDist(rng)), lngDist(rng), lvlDist(rng));
-		std::vector<Eigen::Vector3d> line1 = field.streamline(pos, 1000000.0, 1000.0, 5000.0);
-		field.param = false;
-		std::vector<Eigen::Vector3d> line2 = field.streamline(pos, 1000000.0, 25.0, 100.0);
-		toCartesian(line1);
-		toCartesian(line2);
-
-		//std::cout << line1.size();
-		for (int i = 0; i < 5; i++) {
-			line2 = reverseChaikin(line2);
-		}
-		std::cout << line1.size() << " : " << line2.size() << std::endl;
-		//if (line.size() < 50) std::cout << line.size() << std::endl;
-
-		for (const Eigen::Vector3d& p : line1) {
-
-			//SphCoord sph(p.x(), p.y());
-			//double rad = altToAbs(SphericalVectorField::mbarsToMeters(p.z()));
-
-			//double speed = field.velocityAt(p).squaredNorm();
-			//double norm = speed / (60.0 * 60.0);
-			//if (norm > 1.0) norm = 1.0;
-			//norm /= 2.0;
-			//norm += 0.5;
-
-			r1->verts.push_back(glm::dvec3(p.x(), p.y(), p.z()));
-			r1->colours.push_back(glm::vec3(0.f, 0.f, 0.8f));
-		}
-		r1->drawMode = GL_LINE_STRIP;
-		streamlines.push_back(r1);
-		objects.push_back(r1);
-		r1->doubleToFloats();
-		RenderEngine::assignBuffers(*r1, false);
-		RenderEngine::setBufferData(*r1, false);
-
-		for (const Eigen::Vector3d& p : line2) {
-
-			//SphCoord sph(p.x(), p.y());
-			//double rad = altToAbs(SphericalVectorField::mbarsToMeters(p.z()));
-
-			//double speed = field.velocityAt(p).squaredNorm();
-			//double norm = speed / (60.0 * 60.0);
-			//if (norm > 1.0) norm = 1.0;
-			//norm /= 2.0;
-			//norm += 0.5;
-
-			r2->verts.push_back(glm::dvec3(p.x(), p.y(), p.z()));
-			r2->colours.push_back(glm::vec3(0.f, 0.8f, 0.f));
-		}
-		r2->drawMode = GL_LINE_STRIP;
-		streamlines.push_back(r2);
-		objects.push_back(r2);
-		r2->doubleToFloats();
-		RenderEngine::assignBuffers(*r2, false);
-		RenderEngine::setBufferData(*r2, false);
-
-		//std::cout << lat << ", " << lng << ", " << lvl << std::endl;
-	}
 	std::cout << "starting critical points" << std::endl;
 	std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> criticalIndices = field.findCriticalPoints();
 	std::cout << criticalIndices.size() << std::endl;
+
+	Renderable* points = new Renderable();
+	Renderable* lines = new Renderable();
+
 	for (const auto& p : criticalIndices) {
 
-		Renderable* r = new Renderable();
+		// Convert index to sph to cartesian
+		Eigen::Vector3d sph = field.sphCoords(p.first);
+		Eigen::Vector3d cart = sphToCart(sph);
 
-		Eigen::Vector3d coords = field.sphCoords(p.first);
-		coords = sphToCart(coords);
-
-		r->verts.push_back(glm::dvec3(coords.x(), coords.y(), coords.z()));
-
+		// Add to renderable
+		points->verts.push_back(glm::dvec3(cart.x(), cart.y(), cart.z()));
 		if (p.second == 1) {
-			r->colours.push_back(glm::vec3(0.f, 1.f, 0.f));
+			points->colours.push_back(glm::vec3(0.f, 1.f, 0.f));
 		}
 		else {
-			r->colours.push_back(glm::vec3(1.f, 0.f, 0.f));
+			points->colours.push_back(glm::vec3(1.f, 0.f, 0.f));
 		}
 
-		streamlines.push_back(r);
-		objects.push_back(r);
-		r->doubleToFloats();
-		RenderEngine::assignBuffers(*r, false);
-		RenderEngine::setBufferData(*r, false);
+		// Seed streamlines around point
+		for (int i = 0; i < 5; i++) {
+
+			Eigen::Vector3d pos(sph.x() + (M_PI / 180.0) * unif(rng), sph.y() + (M_PI / 180.0) * unif(rng), sph.z() + unif(rng) * 50);
+
+			if (pos.x() > M_PI_2) pos.x() = M_PI_2;
+			if (pos.x() < -M_PI_2) pos.x() = -M_PI_2;
+			if (pos.y() < 0.0) pos.y() += 2.0 * M_PI;
+			if (pos.y() > 2.0 * M_PI) pos.y() -= 2.0 * M_PI;
+			if (pos.z() > field.levels[37 - 1]) pos.z() = field.levels[37 - 1];
+			if (pos.z() < field.levels[0]) pos.z() = field.levels[0];
+
+			Streamline line = field.streamline(pos, 50000.0, 1000.0, 5000.0);
+			line.addToRenderable(*lines, field);
+		}
 	}
+	lines->drawMode = GL_LINES;
+	streamlines.push_back(lines);
+	objects.push_back(lines);
+	lines->doubleToFloats();
+	RenderEngine::assignBuffers(*lines, false);
+	RenderEngine::setBufferData(*lines, false);
 
-	//	Renderable* r = new Renderable();
-	//	std::vector<Eigen::Vector3d> line = field.streamline(field.sphCoords(p.first), 100000.0, 25.0);
-
-	//	for (const Eigen::Vector3d& p : line) {
-
-	//		SphCoord sph(p.x(), p.y());
-	//		double rad = altToAbs(SphericalVectorField::mbarsToMeters(p.z()));
-
-	//		double speed = field.velocityAt(p).squaredNorm();
-	//		double norm = speed / (70.0 * 70.0);
-	//		if (norm > 1.0) norm = 1.0;
-
-	//		r->verts.push_back(sph.toCartesian(rad));
-	//		r->colours.push_back(glm::vec3(norm, 0.f, 0.f));
-	//	}
-	//	r->drawMode = GL_LINE_STRIP;
-	//	streamlines.push_back(r);
-	//	objects.push_back(r);
-	//	r->doubleToFloats();
-	//	RenderEngine::assignBuffers(*r, false);
-	//	RenderEngine::setBufferData(*r, false);
-	//}
-
+	streamlines.push_back(points);
+	objects.push_back(points);
+	points->doubleToFloats();
+	RenderEngine::assignBuffers(*points, false);
+	RenderEngine::setBufferData(*points, false);
 }
 
 // Main loop

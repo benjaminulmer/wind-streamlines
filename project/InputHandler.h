@@ -7,7 +7,6 @@
 #include "RenderEngine.h"
 #include "Program.h"
 
-class Program;
 
 class InputHandler {
 

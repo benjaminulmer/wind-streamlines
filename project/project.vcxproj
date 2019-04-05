@@ -133,6 +133,7 @@
     <ClCompile Include="RenderEngine.cpp" />
     <ClCompile Include="ShaderTools.cpp" />
     <ClCompile Include="SphericalVectorField.cpp" />
+    <ClCompile Include="Streamline.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
@@ -144,6 +145,7 @@
     <ClInclude Include="RenderEngine.h" />
     <ClInclude Include="ShaderTools.h" />
     <ClInclude Include="SphericalVectorField.h" />
+    <ClInclude Include="Streamline.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\main.frag" />

@@ -55,6 +55,8 @@ SphericalVectorField::SphericalVectorField(const netCDF::NcFile& file) :
 	vVar.getVar(vArry);
 	wVar.getVar(wArry);
 
+	maxMagSq = 0.0;
+
 	// Apply scale and offset and add to data vector
 	for (size_t i = 0; i < size; i++) {
 		double u = uArry[i] * uScale + uOffset;
@@ -62,7 +64,20 @@ SphericalVectorField::SphericalVectorField(const netCDF::NcFile& file) :
 		double w = wArry[i] * wScale + wOffset;
 
 		data[i] = (Eigen::Vector3d(v, u, w));
+
+		Eigen::Matrix<size_t, 3, 1> index = offsetToIndex(i);
+
+		// Convert vertical to m/s to find max magnitude
+		double r1 = mbarsToAlt(levels[index.z()]);
+		double r2 = mbarsToAlt(levels[index.z()] + 0.01 * w);
+
+		Eigen::Vector3d vel = data[i];
+		vel.z() = r2 - r1;
+		double magSq = vel.squaredNorm();
+
+		maxMagSq = std::max(maxMagSq, magSq);
 	}
+	std::cout << maxMagSq << std::endl;
 
 	delete[] uArry;
 	delete[] vArry;
@@ -73,7 +88,7 @@ SphericalVectorField::SphericalVectorField(const netCDF::NcFile& file) :
 // Finds all critical points in the vector field and their Poincare index
 //
 // return - list of indicies of cells that contain critical points and their Poincare index
-std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> SphericalVectorField::findCriticalPoints() {
+std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> SphericalVectorField::findCriticalPoints() const {
 
 	std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> points;
 
@@ -134,7 +149,7 @@ std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> SphericalVectorField::f
 // return - sign which is +1 or -1
 int SphericalVectorField::signTet(const Eigen::Vector4d& v0, const Eigen::Vector4d& v1,
                                   const Eigen::Vector4d& v2, const Eigen::Vector4d& v3,
-                                  size_t i0, size_t i1, size_t i2, size_t i3) {
+                                  size_t i0, size_t i1, size_t i2, size_t i3) const {
 	
 	// Inversion count tells us orientation of tet. Loop unwrapped
 	int invCount = 0;
@@ -163,7 +178,7 @@ int SphericalVectorField::signTet(const Eigen::Vector4d& v0, const Eigen::Vector
 // i2 - index 2
 // i3 - index 3
 // return - 0 for no critical point, otherwise Poincare index which is +1 or -1
-int SphericalVectorField::criticalPointInTet(size_t i0, size_t i1, size_t i2, size_t i3) {
+int SphericalVectorField::criticalPointInTet(size_t i0, size_t i1, size_t i2, size_t i3) const {
 
 	// Get vector field values
 	Eigen::Vector4d v0, v1, v2, v3;
@@ -208,7 +223,7 @@ int SphericalVectorField::criticalPointInTet(size_t i0, size_t i1, size_t i2, si
 // totalTime - total amount of time to integrate forwards and backwards
 // tol - error tolerance
 // return - list of points in streamline in coordinates (lat, long, rad) in rads and mbars
-std::vector<Eigen::Vector3d> SphericalVectorField::streamline(const Eigen::Vector3d& seed, double totalTime, double tol, double maxStep) {
+Streamline SphericalVectorField::streamline(const Eigen::Vector3d& seed, double totalTime, double tol, double maxStep) const {
 
 	std::vector<Eigen::Vector3d> pointsF;
 	std::vector<Eigen::Vector3d> pointsB;
@@ -216,6 +231,7 @@ std::vector<Eigen::Vector3d> SphericalVectorField::streamline(const Eigen::Vecto
 	Eigen::Vector3d currPos = seed;
 	double timeStep = maxStep;
 	double accTime = 0.0;
+	double fullAccTime = 0.0;
 
 	// Forward integrate in time
 	while (accTime < totalTime) {
@@ -230,6 +246,7 @@ std::vector<Eigen::Vector3d> SphericalVectorField::streamline(const Eigen::Vecto
 	}
 	currPos = seed;
 	timeStep = -maxStep;
+	fullAccTime += accTime;
 	accTime = 0.0;
 
 	// Backward integrate in time
@@ -243,19 +260,20 @@ std::vector<Eigen::Vector3d> SphericalVectorField::streamline(const Eigen::Vecto
 			break;
 		}
 	}
+	fullAccTime += -accTime;
 
 	// Combine forward and backward paths into one chronological path
-	std::vector<Eigen::Vector3d> points(pointsB.size() + pointsF.size());
+	Streamline streamline(fullAccTime, pointsB.size() + pointsF.size());
+
 	for (size_t i = 0; i < pointsB.size(); i++) {
-		points[i] = pointsB[pointsB.size() - 1 - i];
+		streamline.addPoint(pointsB[pointsB.size() - 1 - i]);
 	}
 
 	for (size_t i = 0; i < pointsF.size(); i++) {
-		points[pointsB.size() + i] = pointsF[i];
+		streamline.addPoint(pointsF[i]);
 	}
 
-	//std::cout << std::endl << points.size() << std::endl;
-	return points;
+	return streamline;
 }
 
 
@@ -266,11 +284,11 @@ std::vector<Eigen::Vector3d> SphericalVectorField::streamline(const Eigen::Vecto
 // timeStep - current step size in and updated step size out. Gets set to 0 if it becomes prohibitively small
 // tol - error tolerance 
 // return - next position (lat, long, rad) in rads and mbars
-Eigen::Vector3d SphericalVectorField::RKF45Adaptive(const Eigen::Vector3d& currPos, double& timeStep, double tol, double maxStep) {
+Eigen::Vector3d SphericalVectorField::RKF45Adaptive(const Eigen::Vector3d& currPos, double& timeStep, double tol, double maxStep) const {
 
 	// Loop until error is low enough, almost always <= 2 itterations
 	while (true) {
-		double scaledStep = (param) ? timeStep * cos(0.5 * currPos.x()) : timeStep;
+		double scaledStep = (param) ? timeStep * cos(currPos.x()) : timeStep;
 
 		Eigen::Vector3d k1 = scaledStep * velocityAt(currPos);
 		Eigen::Vector3d k2 = scaledStep * velocityAt(newPos(currPos, 1.0 / 4.0       * k1));
@@ -309,7 +327,7 @@ Eigen::Vector3d SphericalVectorField::RKF45Adaptive(const Eigen::Vector3d& currP
 //
 // pos - (lat, long, altitude) in rads and mbars
 // return - (north, east, vertical) in m/s and Pa/s
-Eigen::Vector3d SphericalVectorField::velocityAt(const Eigen::Vector3d& pos) {
+Eigen::Vector3d SphericalVectorField::velocityAt(const Eigen::Vector3d& pos) const {
 
 	size_t latIndex = (size_t)(720.0 - (pos.x() + M_PI_2) * 4.0 * (180.0 / M_PI));
 	size_t longIndex = (size_t)(fmod(pos.y(), 2.0 * M_PI) * 4.0 * (180.0 / M_PI));
@@ -389,12 +407,29 @@ Eigen::Vector3d SphericalVectorField::velocityAt(const Eigen::Vector3d& pos) {
 }
 
 
+// Returns the velocity at the given position with vertical converted to m/s
+//
+// pos - (lat, long, altitude) in rads and mbars
+// return - (north, east, vertical) in m/s
+Eigen::Vector3d SphericalVectorField::velocityAtM(const Eigen::Vector3d& pos) const {
+
+	Eigen::Vector3d vel = velocityAt(pos);
+
+	double r1 = mbarsToAlt(pos.z());
+	double r2 = mbarsToAlt(pos.z() + 0.01 * vel.z());
+
+	vel.x() = r2 - r1;
+
+	return vel;
+}
+
+
 // Calculates new position from current position and velocity
 //
 // currPos - (lat, long, altitude) in rads and mbars
 // velocity - (north, east, vertical) in m/s and Pa/s
 // return - (lat, long, altitude) in rads and mbars
-Eigen::Vector3d SphericalVectorField::newPos(const Eigen::Vector3d& currPos, const Eigen::Vector3d& velocity) {
+Eigen::Vector3d SphericalVectorField::newPos(const Eigen::Vector3d& currPos, const Eigen::Vector3d& velocity) const {
 
 	Eigen::Vector3d newPos;
 	double absRadius = mbarsToAbs(currPos.z());
@@ -404,7 +439,7 @@ Eigen::Vector3d SphericalVectorField::newPos(const Eigen::Vector3d& currPos, con
 	// TODO singularities at poles, how to account for this? Doing in physical space is not stable (trig on small angles)
 	newPos.x() = currPos.x() + velocity.x() / absRadius;
 	newPos.y() = (cosLat > 0.0001) ? currPos.y() + velocity.y() / (cos(currPos.x()) * absRadius) : currPos.y();
-	newPos.z() = currPos.z() + velocity.z() * 0.01;
+	newPos.z() = currPos.z() + 0.01 * velocity.z();
 
 	// TODO properly account for edge cases as opposed to this hacky method
 	if (newPos.x() > M_PI_2) newPos.x() = M_PI_2;
