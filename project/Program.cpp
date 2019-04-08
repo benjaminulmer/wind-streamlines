@@ -124,16 +124,65 @@ void toCartesian(std::vector<Eigen::Vector3d>& points) {
 }
 
 
+// Seeds and integrates streamlines
+void Program::integrateStreamlines2() {
+
+	std::random_device dev;
+	std::default_random_engine rng(dev());
+	std::uniform_real_distribution<double> latDist(-1.0, 1.0);
+	std::uniform_real_distribution<double> lngDist(0.0, 2.0 * M_PI);
+	std::uniform_real_distribution<double> lvlDist(1.0, 1000.0);
+
+	Renderable* points = new Renderable();
+	Renderable* lines = new Renderable();
+
+	std::cout << "starting critical points" << std::endl;
+	std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> criticalIndices;// = field.findCriticalPoints();
+	std::cout << criticalIndices.size() << std::endl;
+
+	for (int i = 0; i < 3000; i++) {
+
+		Eigen::Vector3d pos(asin(latDist(rng)), lngDist(rng), lvlDist(rng));
+		Streamline line = field.streamline(pos, 100000.0, 1000.0, 5000.0);
+
+
+		line.addToRenderable(*lines, field);
+	}
+
+	for (const auto& p : criticalIndices) {
+
+		Renderable* r = new Renderable();
+
+		Eigen::Vector3d coords = field.sphCoords(p.first);
+		coords = sphToCart(coords);
+
+		r->verts.push_back(glm::dvec3(coords.x(), coords.y(), coords.z()));
+
+		if (p.second == 1) {
+			r->colours.push_back(glm::vec3(0.f, 1.f, 0.f));
+		}
+		else {
+			r->colours.push_back(glm::vec3(1.f, 0.f, 0.f));
+		}
+	}
+	lines->drawMode = GL_LINES;
+	objects.push_back(lines);
+	lines->doubleToFloats();
+	RenderEngine::assignBuffers(*lines, false);
+	RenderEngine::setBufferData(*lines, false);
+
+	objects.push_back(points);
+	points->doubleToFloats();
+	RenderEngine::assignBuffers(*points, false);
+	RenderEngine::setBufferData(*points, false);
+}
+
 
 // Seeds and integrates streamlines
 void Program::integrateStreamlines() {
 
 	std::random_device dev;
 	std::default_random_engine rng(dev());
-	//rng.seed(1);
-	std::uniform_real_distribution<double> latDist(-1.0, 1.0);
-	std::uniform_real_distribution<double> lngDist(0.0, 2.0 * M_PI);
-	std::uniform_real_distribution<double> lvlDist(1.0, 1000.0);
 	std::uniform_real_distribution<double> unif(-2.0, 2.0);
 
 	std::cout << "starting critical points" << std::endl;
@@ -170,19 +219,17 @@ void Program::integrateStreamlines() {
 			if (pos.z() > field.levels[37 - 1]) pos.z() = field.levels[37 - 1];
 			if (pos.z() < field.levels[0]) pos.z() = field.levels[0];
 
-			Streamline line = field.streamline(pos, 50000.0, 1000.0, 5000.0);
-			std::cout << line.getTotalLength() << " : " << line.getTotalAngle() << std::endl;
+			Streamline line = field.streamline(pos, 10000.0, 1000.0, 5000.0);
+			//std::cout << line.getTotalLength() << " : " << line.getTotalAngle() << std::endl;
 			line.addToRenderable(*lines, field);
 		}
 	}
 	lines->drawMode = GL_LINES;
-	streamlines.push_back(lines);
 	objects.push_back(lines);
 	lines->doubleToFloats();
 	RenderEngine::assignBuffers(*lines, false);
 	RenderEngine::setBufferData(*lines, false);
 
-	streamlines.push_back(points);
 	objects.push_back(points);
 	points->doubleToFloats();
 	RenderEngine::assignBuffers(*points, false);

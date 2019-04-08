@@ -26,7 +26,6 @@ private:
 	Camera* camera;
 
 	Renderable coastLines;
-	std::vector<Renderable*> streamlines;
 	std::vector<const Renderable*> objects;
 
 	SphericalVectorField field;
@@ -36,6 +35,7 @@ private:
 	double longRot;
 
 	void setupWindow();
+	void integrateStreamlines2();
 	void integrateStreamlines();
 	void mainLoop();
 };

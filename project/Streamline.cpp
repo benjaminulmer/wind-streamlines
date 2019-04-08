@@ -71,6 +71,10 @@ void Streamline::calculateAngle() const {
 }
 
 
+float col(double a, double b) {
+	return 0.5 * (a / b) + 0.5;
+}
+
 void Streamline::addToRenderable(Renderable& r, const SphericalVectorField& field) const {
 
 	double maxMagSq = field.getMaxMagSq();
@@ -79,7 +83,7 @@ void Streamline::addToRenderable(Renderable& r, const SphericalVectorField& fiel
 	double mag0Sq = field.velocityAtM(points[0]).squaredNorm();
 
 	r.verts.push_back(glm::dvec3(cart0.x(), cart0.y(), cart0.z()));
-	r.colours.push_back(glm::vec3(0.f, 0.f, mag0Sq / maxMagSq));
+	r.colours.push_back(glm::vec3(0.f, 0.f, col(mag0Sq, maxMagSq)));
 
 	for (size_t i = 1; i < points.size() - 2; i++) {
 
@@ -87,14 +91,14 @@ void Streamline::addToRenderable(Renderable& r, const SphericalVectorField& fiel
 		double magSq = field.velocityAtM(points[i]).squaredNorm();
 
 		r.verts.push_back(glm::dvec3(cart.x(), cart.y(), cart.z()));
-		r.colours.push_back(glm::vec3(0.f, 0.f, magSq / maxMagSq));
+		r.colours.push_back(glm::vec3(0.f, 0.f, col(magSq, maxMagSq)));
 		r.verts.push_back(glm::dvec3(cart.x(), cart.y(), cart.z()));
-		r.colours.push_back(glm::vec3(0.f, 0.f, magSq / maxMagSq));
+		r.colours.push_back(glm::vec3(0.f, 0.f, col(magSq, maxMagSq)));
 	}
 
 	Eigen::Vector3d cartE = sphToCart(points[_size - 1]);
 	double magESq = field.velocityAtM(points[_size - 1]).squaredNorm();
 
 	r.verts.push_back(glm::dvec3(cartE.x(), cartE.y(), cartE.z()));
-	r.colours.push_back(glm::vec3(0.f, 0.f, magESq / maxMagSq));
+	r.colours.push_back(glm::vec3(0.f, 0.f, col(magESq, maxMagSq)));
 }
