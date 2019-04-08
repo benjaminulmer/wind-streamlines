@@ -263,7 +263,7 @@ Streamline SphericalVectorField::streamline(const Eigen::Vector3d& seed, double 
 	fullAccTime += -accTime;
 
 	// Combine forward and backward paths into one chronological path
-	Streamline streamline(fullAccTime, pointsB.size() + pointsF.size());
+	Streamline streamline(fullAccTime, pointsB.size() + pointsF.size(), *this);
 
 	for (size_t i = 0; i < pointsB.size(); i++) {
 		streamline.addPoint(pointsB[pointsB.size() - 1 - i]);

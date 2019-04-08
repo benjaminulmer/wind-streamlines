@@ -6,6 +6,7 @@
 #include "Camera.h"
 #include "RenderEngine.h"
 #include "SphericalVectorField.h"
+#include "Streamline.h"
 
 
 class Program {
@@ -29,6 +30,7 @@ private:
 	std::vector<const Renderable*> objects;
 
 	SphericalVectorField field;
+	std::vector<Streamline> streamlines;
 
 	double scale;
 	double latRot;

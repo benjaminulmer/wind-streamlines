@@ -15,7 +15,7 @@
 #include "Conversions.h"
 #include "ContentReadWrite.h"
 #include "InputHandler.h"
-#include "Streamline.h"
+
 
 Program::Program() {
 
@@ -59,7 +59,7 @@ void Program::start() {
 	// Load vector field and integrate streamlines
 	netCDF::NcFile file("data/2018-05-27T12.nc", netCDF::NcFile::read);
 	field = SphericalVectorField(file);
-	integrateStreamlines();
+	integrateStreamlines2();
 
 	mainLoop();
 }
@@ -140,13 +140,20 @@ void Program::integrateStreamlines2() {
 	std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> criticalIndices;// = field.findCriticalPoints();
 	std::cout << criticalIndices.size() << std::endl;
 
+	double maxA = -1.0;
+
 	for (int i = 0; i < 3000; i++) {
 
 		Eigen::Vector3d pos(asin(latDist(rng)), lngDist(rng), lvlDist(rng));
-		Streamline line = field.streamline(pos, 100000.0, 1000.0, 5000.0);
+		streamlines.push_back(field.streamline(pos, 100000.0, 1000.0, 5000.0));
+		//std::cout << streamlines.back().getTotalLength() << " : " << streamlines.back().getTotalAngle() << std::endl;
 
-
-		line.addToRenderable(*lines, field);
+		double ratio = streamlines.back().getTotalAngle() / streamlines.back().getTotalLength();
+		//std::cout << ratio << std::endl;
+		maxA = std::max(ratio, maxA);
+	}
+	for (const Streamline& s : streamlines) {
+		s.addToRenderable(*lines, maxA);
 	}
 
 	for (const auto& p : criticalIndices) {
@@ -216,12 +223,13 @@ void Program::integrateStreamlines() {
 			if (pos.x() < -M_PI_2) pos.x() = -M_PI_2;
 			if (pos.y() < 0.0) pos.y() += 2.0 * M_PI;
 			if (pos.y() > 2.0 * M_PI) pos.y() -= 2.0 * M_PI;
-			if (pos.z() > field.levels[37 - 1]) pos.z() = field.levels[37 - 1];
-			if (pos.z() < field.levels[0]) pos.z() = field.levels[0];
+			if (pos.z() > field.getMaxLevel()) pos.z() = field.getMaxLevel();
+			if (pos.z() < field.getMinLevel()) pos.z() = field.getMinLevel();
 
-			Streamline line = field.streamline(pos, 10000.0, 1000.0, 5000.0);
-			//std::cout << line.getTotalLength() << " : " << line.getTotalAngle() << std::endl;
-			line.addToRenderable(*lines, field);
+			streamlines.push_back(field.streamline(pos, 100000.0, 1000.0, 5000.0));
+			std::cout << streamlines.back().getTotalLength() << " : " << streamlines.back().getTotalAngle() << std::endl;
+
+			streamlines.back().addToRenderable(*lines, 1.0);
 		}
 	}
 	lines->drawMode = GL_LINES;
