@@ -24,11 +24,11 @@ ColourRenderable::ColourRenderable(const rapidjson::Document& d) {
 			double lat = coordArray[j][1].GetDouble() * M_PI / 180.0;
 
 			addVert(glm::dvec3(sin(lng)*cos(lat), sin(lat), cos(lng)*cos(lat)) * RADIUS_EARTH_M);
-			colours.push_back(glm::vec3(0.f));
+			colours.push_back(glm::vec4(0.f, 0.f, 0.f, 1.f));
 
 			if (j != 0 && j != coordArray.Size() - 1) {
 				addVert(glm::dvec3(sin(lng)*cos(lat), sin(lat), cos(lng)*cos(lat)) * RADIUS_EARTH_M);
-				colours.push_back(glm::vec3(0.f));
+				colours.push_back(glm::vec4(0.f, 0.f, 0.f, 1.f));
 			}
 		}
 	}
@@ -101,7 +101,7 @@ void ColourRenderable::assignBuffers() {
 	// Colour buffer
 	glGenBuffers(1, &colourBuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, colourBuffer);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
 	glEnableVertexAttribArray(2);
 }
 
@@ -112,7 +112,7 @@ void ColourRenderable::setBufferData() {
 
 	// Colour buffer
 	glBindBuffer(GL_ARRAY_BUFFER, colourBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*colours.size(), colours.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec4)*colours.size(), colours.data(), GL_STATIC_DRAW);
 }
 
 

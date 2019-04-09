@@ -12,25 +12,23 @@ class SphericalVectorField;
 class Streamline {
 
 public:
-	Streamline(double totalTime, size_t numPoints, const SphericalVectorField& field);
+	Streamline(const SphericalVectorField& field);
+	Streamline(const Streamline& back, const Streamline& forw, const SphericalVectorField& field);
 
 	void addPoint(const Eigen::Vector3d& p);
 	const std::vector<Eigen::Vector3d>& getPoints() const { return points; }
-	size_t size() const { return _size; }
+	size_t size() const { return points.size(); }
 
-	double getTotalTime() const { return totalTime; }
 	double getTotalLength() const { return totalLength; }
 	double getTotalAngle() const { return totalAngle; }
 
-	void addToRenderable(StreamlineRenderable& r, double d) const;
+	void addToRenderable(StreamlineRenderable& r) const;
 
 	const Eigen::Vector3d& operator[](size_t i) const { return points[i]; }
 
 private:
 	std::vector<Eigen::Vector3d> points;
-	size_t _size;
 
-	double totalTime;
 	double totalLength;
 	double totalAngle;
 

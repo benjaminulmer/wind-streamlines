@@ -11,9 +11,9 @@ uniform float radiusEarthM;
 
 layout (location = 0) in vec3 vertexHigh;
 layout (location = 1) in vec3 vertexLow;
-layout (location = 2) in vec3 colour;
+layout (location = 2) in vec4 colour;
 
-out vec3 C;
+out vec4 C;
 
 out float dist;
 

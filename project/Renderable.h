@@ -54,7 +54,7 @@ public:
 	ColourRenderable() = default;
 	ColourRenderable(const rapidjson::Document& d);
 
-	virtual void addColour(const glm::vec3& c) { colours.push_back(c); }
+	virtual void addColour(const glm::vec4& c) { colours.push_back(c); }
 
 	virtual void assignBuffers();
 	virtual void setBufferData();
@@ -68,7 +68,7 @@ public:
 protected:
 	GLuint drawMode;
 
-	std::vector<glm::vec3> colours;
+	std::vector<glm::vec4> colours;
 
 	GLuint colourBuffer;
 };

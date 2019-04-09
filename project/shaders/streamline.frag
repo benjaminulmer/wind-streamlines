@@ -6,8 +6,7 @@ uniform bool fade;
 uniform float maxDist;
 uniform float minDist;
 
-
-in vec3 C;
+in vec4 C;
 in vec3 L;
 in vec3 V;
 in vec3 T;
@@ -30,8 +29,8 @@ void main(void) {
 
 	// Phong reflection model
 	float n = 32.f;
-	vec3 ka = 0.2f * C;
-	vec3 kd = 0.8f * diffuse * C;
+	vec3 ka = 0.2f * C.xyz;
+	vec3 kd = 0.8f * diffuse * C.xyz;
 	vec3 ks = 0.6f * pow(spec, n) * vec3(1.f, 1.f, 1.f);
 
 	// Calculate alpha if fading is needed
@@ -44,10 +43,10 @@ void main(void) {
 		if (norm < 0.f) norm = 0.f;
 		if (norm > 1.f) norm = 1.f;
 
-		colour = vec4(ka + kd + ks, norm);
+		colour = vec4(ka + kd + ks, C.w * norm);
 	}
 	else {
-		colour = vec4(ka + kd + ks, 1.f);
+		colour = vec4(ka + kd + ks, C.w);
 	}
 
 

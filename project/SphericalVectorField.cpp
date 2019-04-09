@@ -223,56 +223,53 @@ int SphericalVectorField::criticalPointInTet(size_t i0, size_t i1, size_t i2, si
 // totalTime - total amount of time to integrate forwards and backwards
 // tol - error tolerance
 // return - list of points in streamline in coordinates (lat, long, rad) in rads and mbars
-Streamline SphericalVectorField::streamline(const Eigen::Vector3d& seed, double totalTime, double tol, double maxStep) const {
+Streamline SphericalVectorField::streamline(const Eigen::Vector3d& seed, double maxDist, double tol, double maxStep) const {
 
-	std::vector<Eigen::Vector3d> pointsF;
-	std::vector<Eigen::Vector3d> pointsB;
+	Streamline forw(*this);
+	Streamline back(*this);
 
 	Eigen::Vector3d currPos = seed;
 	double timeStep = maxStep;
-	double accTime = 0.0;
-	double fullAccTime = 0.0;
+	double length = 0.0;
 
 	// Forward integrate in time
-	while (accTime < totalTime) {
+	forw.addPoint(currPos);
+	while (length < maxDist) {
 
-		pointsF.push_back(currPos);
 		currPos = RKF45Adaptive(currPos, timeStep, tol, maxStep);
+		forw.addPoint(currPos);
 
-		accTime += timeStep;
+		if (forw.getTotalLength() - length < 0.1) {
+			std::cout << forw.getTotalLength() - length << std::endl;
+			break;
+		}
 		if (timeStep == 0.0) {
 			break;
 		}
+		length = forw.getTotalLength();
 	}
 	currPos = seed;
 	timeStep = -maxStep;
-	fullAccTime += accTime;
-	accTime = 0.0;
+	length = 0.0;
 
 	// Backward integrate in time
-	while (accTime > -totalTime) {
+	back.addPoint(currPos);
+	while (back.getTotalLength() < maxDist) {
 
-		pointsB.push_back(currPos);
 		currPos = RKF45Adaptive(currPos, timeStep, tol, maxStep);
+		back.addPoint(currPos);
 
-		accTime += timeStep;
+		if (back.getTotalLength() - length < 0.1) {
+			break;
+		}
 		if (timeStep == 0.0) {
 			break;
 		}
+		length = back.getTotalLength();
 	}
-	fullAccTime += -accTime;
 
 	// Combine forward and backward paths into one chronological path
-	Streamline streamline(fullAccTime, pointsB.size() + pointsF.size(), *this);
-
-	for (size_t i = 0; i < pointsB.size(); i++) {
-		streamline.addPoint(pointsB[pointsB.size() - 1 - i]);
-	}
-
-	for (size_t i = 0; i < pointsF.size(); i++) {
-		streamline.addPoint(pointsF[i]);
-	}
-
+	Streamline streamline(back, forw, *this);
 	return streamline;
 }
 
