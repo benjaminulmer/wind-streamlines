@@ -26,7 +26,7 @@ private:
 	RenderEngine* renderEngine;
 	Camera* camera;
 
-	Renderable coastLines;
+	ColourRenderable coastLines;
 	std::vector<const Renderable*> objects;
 
 	SphericalVectorField field;

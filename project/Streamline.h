@@ -22,7 +22,7 @@ public:
 	double getTotalLength() const { return totalLength; }
 	double getTotalAngle() const { return totalAngle; }
 
-	void addToRenderable(Renderable& r, double d) const;
+	void addToRenderable(StreamlineRenderable& r, double d) const;
 
 	const Eigen::Vector3d& operator[](size_t i) const { return points[i]; }
 

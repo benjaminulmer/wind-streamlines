@@ -49,12 +49,11 @@ void Program::start() {
 
 	// Load coastline vector data
 	rapidjson::Document cl = ContentReadWrite::readJSON("data/coastlines.json");
-	coastLines = Renderable(cl);
+	coastLines = ColourRenderable(cl);
 
 	objects.push_back(&coastLines);
-	coastLines.doubleToFloats();
-	RenderEngine::assignBuffers(coastLines, false);
-	RenderEngine::setBufferData(coastLines, false);
+	coastLines.assignBuffers();
+	coastLines.setBufferData();
 
 	// Load vector field and integrate streamlines
 	netCDF::NcFile file("data/2018-05-27T12.nc", netCDF::NcFile::read);
@@ -133,8 +132,8 @@ void Program::integrateStreamlines2() {
 	std::uniform_real_distribution<double> lngDist(0.0, 2.0 * M_PI);
 	std::uniform_real_distribution<double> lvlDist(1.0, 1000.0);
 
-	Renderable* points = new Renderable();
-	Renderable* lines = new Renderable();
+	ColourRenderable* points = new ColourRenderable();
+	StreamlineRenderable* lines = new StreamlineRenderable();
 
 	std::cout << "starting critical points" << std::endl;
 	std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> criticalIndices;// = field.findCriticalPoints();
@@ -158,90 +157,87 @@ void Program::integrateStreamlines2() {
 
 	for (const auto& p : criticalIndices) {
 
-		Renderable* r = new Renderable();
-
 		Eigen::Vector3d coords = field.sphCoords(p.first);
 		coords = sphToCart(coords);
 
-		r->verts.push_back(glm::dvec3(coords.x(), coords.y(), coords.z()));
+		points->addVert(glm::dvec3(coords.x(), coords.y(), coords.z()));
 
 		if (p.second == 1) {
-			r->colours.push_back(glm::vec3(0.f, 1.f, 0.f));
+			points->addColour(glm::vec3(0.f, 1.f, 0.f));
 		}
 		else {
-			r->colours.push_back(glm::vec3(1.f, 0.f, 0.f));
+			points->addColour(glm::vec3(1.f, 0.f, 0.f));
 		}
 	}
-	lines->drawMode = GL_LINES;
 	objects.push_back(lines);
-	lines->doubleToFloats();
-	RenderEngine::assignBuffers(*lines, false);
-	RenderEngine::setBufferData(*lines, false);
+	lines->assignBuffers();
+	lines->setBufferData();
+	lines->setDrawMode(GL_LINES);
 
 	objects.push_back(points);
-	points->doubleToFloats();
-	RenderEngine::assignBuffers(*points, false);
-	RenderEngine::setBufferData(*points, false);
+	points->assignBuffers();
+	points->setBufferData();
+	points->setDrawMode(GL_POINTS);
 }
 
 
 // Seeds and integrates streamlines
 void Program::integrateStreamlines() {
 
-	std::random_device dev;
-	std::default_random_engine rng(dev());
-	std::uniform_real_distribution<double> unif(-2.0, 2.0);
+	//std::random_device dev;
+	//std::default_random_engine rng(dev());
+	//std::uniform_real_distribution<double> unif(-2.0, 2.0);
 
-	std::cout << "starting critical points" << std::endl;
-	std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> criticalIndices = field.findCriticalPoints();
-	std::cout << criticalIndices.size() << std::endl;
+	//std::cout << "starting critical points" << std::endl;
+	//std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> criticalIndices = field.findCriticalPoints();
+	//std::cout << criticalIndices.size() << std::endl;
 
-	Renderable* points = new Renderable();
-	Renderable* lines = new Renderable();
+	//Renderable* points = new Renderable();
+	//Renderable* lines = new Renderable();
 
-	for (const auto& p : criticalIndices) {
+	//for (const auto& p : criticalIndices) {
 
-		// Convert index to sph to cartesian
-		Eigen::Vector3d sph = field.sphCoords(p.first);
-		Eigen::Vector3d cart = sphToCart(sph);
+	//	// Convert index to sph to cartesian
+	//	Eigen::Vector3d sph = field.sphCoords(p.first);
+	//	Eigen::Vector3d cart = sphToCart(sph);
 
-		// Add to renderable
-		points->verts.push_back(glm::dvec3(cart.x(), cart.y(), cart.z()));
-		if (p.second == 1) {
-			points->colours.push_back(glm::vec3(0.f, 1.f, 0.f));
-		}
-		else {
-			points->colours.push_back(glm::vec3(1.f, 0.f, 0.f));
-		}
+	//	// Add to renderable
+	//	points->verts.push_back(glm::dvec3(cart.x(), cart.y(), cart.z()));
+	//	if (p.second == 1) {
+	//		points->colours.push_back(glm::vec3(0.f, 1.f, 0.f));
+	//	}
+	//	else {
+	//		points->colours.push_back(glm::vec3(1.f, 0.f, 0.f));
+	//	}
 
-		// Seed streamlines around point
-		for (int i = 0; i < 5; i++) {
+	//	// Seed streamlines around point
+	//	for (int i = 0; i < 5; i++) {
 
-			Eigen::Vector3d pos(sph.x() + (M_PI / 180.0) * unif(rng), sph.y() + (M_PI / 180.0) * unif(rng), sph.z() + unif(rng) * 50);
+	//		Eigen::Vector3d pos(sph.x() + (M_PI / 180.0) * unif(rng), sph.y() + (M_PI / 180.0) * unif(rng), sph.z() + unif(rng) * 50);
 
-			if (pos.x() > M_PI_2) pos.x() = M_PI_2;
-			if (pos.x() < -M_PI_2) pos.x() = -M_PI_2;
-			if (pos.y() < 0.0) pos.y() += 2.0 * M_PI;
-			if (pos.y() > 2.0 * M_PI) pos.y() -= 2.0 * M_PI;
-			if (pos.z() > field.getMaxLevel()) pos.z() = field.getMaxLevel();
-			if (pos.z() < field.getMinLevel()) pos.z() = field.getMinLevel();
+	//		if (pos.x() > M_PI_2) pos.x() = M_PI_2;
+	//		if (pos.x() < -M_PI_2) pos.x() = -M_PI_2;
+	//		if (pos.y() < 0.0) pos.y() += 2.0 * M_PI;
+	//		if (pos.y() > 2.0 * M_PI) pos.y() -= 2.0 * M_PI;
+	//		if (pos.z() > field.getMaxLevel()) pos.z() = field.getMaxLevel();
+	//		if (pos.z() < field.getMinLevel()) pos.z() = field.getMinLevel();
 
-			streamlines.push_back(field.streamline(pos, 100000.0, 1000.0, 5000.0));
-			std::cout << streamlines.back().getTotalLength() << " : " << streamlines.back().getTotalAngle() << std::endl;
+	//		streamlines.push_back(field.streamline(pos, 100000.0, 1000.0, 5000.0));
+	//		std::cout << streamlines.back().getTotalLength() << " : " << streamlines.back().getTotalAngle() << std::endl;
 
-			streamlines.back().addToRenderable(*lines, 1.0);
-		}
-	}
-	lines->drawMode = GL_LINES;
-	objects.push_back(lines);
-	lines->doubleToFloats();
-	RenderEngine::assignBuffers(*lines, false);
-	RenderEngine::setBufferData(*lines, false);
+	//		streamlines.back().addToRenderable(*lines, 1.0);
+	//	}
+	//}
+	//lines->drawMode = GL_LINES;
+	//objects.push_back(lines);
+	//lines->doubleToFloats();
+	//RenderEngine::assignBuffers(*lines, false);
+	//RenderEngine::setBufferData(*lines, false);
 
-	objects.push_back(points);
-	points->doubleToFloats();
-	RenderEngine::assignBuffers(*points, false);
-	RenderEngine::setBufferData(*points, false);
+	//objects.push_back(points);
+	//points->doubleToFloats();
+	//RenderEngine::assignBuffers(*points, false);
+	//RenderEngine::setBufferData(*points, false);
 }
 
 // Main loop

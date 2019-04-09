@@ -1,6 +1,8 @@
 #define _USE_MATH_DEFINES
 #include "Renderable.h"
 
+#include <glm/gtc/type_ptr.hpp>
+
 #include "Conversions.h"
 
 #include <algorithm>
@@ -8,9 +10,9 @@
 #include <limits>
 
 // Creates a renderable of the geometry specified in json document
-Renderable::Renderable(const rapidjson::Document& d) : Renderable() {
-	drawMode = GL_LINES;
+ColourRenderable::ColourRenderable(const rapidjson::Document& d) {
 
+	drawMode = GL_LINES;
 	const rapidjson::Value& featuresArray = d["features"];
 
 	// Loop over lines in data file
@@ -21,24 +23,136 @@ Renderable::Renderable(const rapidjson::Document& d) : Renderable() {
 			double lng = coordArray[j][0].GetDouble() * M_PI / 180.0;
 			double lat = coordArray[j][1].GetDouble() * M_PI / 180.0;
 
-			verts.push_back(glm::dvec3(sin(lng)*cos(lat), sin(lat), cos(lng)*cos(lat)) * RADIUS_EARTH_M);
+			addVert(glm::dvec3(sin(lng)*cos(lat), sin(lat), cos(lng)*cos(lat)) * RADIUS_EARTH_M);
 			colours.push_back(glm::vec3(0.f));
 
 			if (j != 0 && j != coordArray.Size() - 1) {
-				verts.push_back(glm::dvec3(sin(lng)*cos(lat), sin(lat), cos(lng)*cos(lat)) * RADIUS_EARTH_M);
+				addVert(glm::dvec3(sin(lng)*cos(lat), sin(lat), cos(lng)*cos(lat)) * RADIUS_EARTH_M);
 				colours.push_back(glm::vec3(0.f));
 			}
 		}
 	}
 }
+//void Renderable::doubleToFloats() {
+//
+//	for (const glm::dvec3& v : verts) {
+//
+//		glm::vec3 high = v;
+//
+//		vertsHigh.push_back(high);
+//		vertsLow.push_back(v - (glm::dvec3)high);
+//	}
+//}
 
-void Renderable::doubleToFloats() {
 
-	for (const glm::dvec3& v : verts) {
+void DoublePrecisionRenderable::addVert(const glm::dvec3 & v) {
 
-		glm::vec3 high = v;
+	glm::vec3 high = v;
 
-		vertsHigh.push_back(high);
-		vertsLow.push_back(v - (glm::dvec3)high);
-	}
+	vertsHigh.push_back(high);
+	vertsLow.push_back(v - (glm::dvec3)high);
+}
+
+
+void DoublePrecisionRenderable::assignBuffers() {
+
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	// Vertex high buffer
+	glGenBuffers(1, &vertexHighBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexHighBuffer);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glEnableVertexAttribArray(0);
+
+	// Vertex low buffer
+	glGenBuffers(1, &vertexLowBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexLowBuffer);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glEnableVertexAttribArray(1);
+}
+
+
+void DoublePrecisionRenderable::setBufferData() {
+
+	// Vertex high buffer
+	glBindBuffer(GL_ARRAY_BUFFER, vertexHighBuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*vertsHigh.size(), vertsHigh.data(), GL_STATIC_DRAW);
+
+	// Vertex low buffer
+	glBindBuffer(GL_ARRAY_BUFFER, vertexLowBuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*vertsLow.size(), vertsLow.data(), GL_STATIC_DRAW);
+}
+
+
+void DoublePrecisionRenderable::deleteBufferData() {
+
+	glDeleteBuffers(1, &vertexHighBuffer);
+	glDeleteBuffers(1, &vertexLowBuffer);
+
+	glDeleteVertexArrays(1, &vao);
+}
+
+
+void ColourRenderable::assignBuffers() {
+
+	DoublePrecisionRenderable::assignBuffers();
+
+	// Colour buffer
+	glGenBuffers(1, &colourBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, colourBuffer);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glEnableVertexAttribArray(2);
+}
+
+
+void ColourRenderable::setBufferData() {
+
+	DoublePrecisionRenderable::setBufferData();
+
+	// Colour buffer
+	glBindBuffer(GL_ARRAY_BUFFER, colourBuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*colours.size(), colours.data(), GL_STATIC_DRAW);
+}
+
+
+void ColourRenderable::deleteBufferData() {
+
+	glDeleteBuffers(1, &colourBuffer);
+	DoublePrecisionRenderable::deleteBufferData();
+
+}
+
+
+void ColourRenderable::render() const {
+	glDrawArrays(drawMode, 0, (GLsizei)vertsHigh.size());
+}
+
+
+void StreamlineRenderable::assignBuffers() {
+
+	ColourRenderable::assignBuffers();
+
+	// Tangent buffer
+	glGenBuffers(1, &tangentBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, tangentBuffer);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glEnableVertexAttribArray(3);
+}
+
+
+void StreamlineRenderable::setBufferData() {
+
+	ColourRenderable::setBufferData();
+
+	// Tangent buffer
+	glBindBuffer(GL_ARRAY_BUFFER, tangentBuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*tangents.size(), tangents.data(), GL_STATIC_DRAW);
+}
+
+
+void StreamlineRenderable::deleteBufferData() {
+
+	glDeleteBuffers(1, &tangentBuffer);
+	ColourRenderable::deleteBufferData();
 }

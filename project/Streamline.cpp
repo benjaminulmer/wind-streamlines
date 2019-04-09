@@ -51,33 +51,42 @@ float col(double a, double b) {
 // Adds the steamline to a renderable object
 //
 // r - renderable to add steamline geometry to
-void Streamline::addToRenderable(Renderable& r, double d) const {
+void Streamline::addToRenderable(StreamlineRenderable& r, double d) const {
 
 	double maxMagSq = field.getMaxMagSq();
 	double ratio = totalAngle / totalLength;
 
-	std::cout << ratio / d << std::endl;
-
 	Eigen::Vector3d cart0 = sphToCart(points[0]);
 	double mag0Sq = field.velocityAtM(points[0]).squaredNorm();
+	Eigen::Vector3d tangent0 = (sphToCart(points[1]) - cart0).normalized();
 
-	r.verts.push_back(glm::dvec3(cart0.x(), cart0.y(), cart0.z()));
-	r.colours.push_back(glm::vec3(0.f, 0.f, 3.0 * ratio / d));
+	r.addVert(glm::dvec3(cart0.x(), cart0.y(), cart0.z()));
+	r.addColour(glm::vec3(0.f, 0.f, 1.f));
+	r.addTangent(glm::vec3(tangent0.x(), tangent0.y(), tangent0.z()));
 
 	for (size_t i = 1; i < points.size() - 2; i++) {
 
 		Eigen::Vector3d cart = sphToCart(points[i]);
 		double magSq = field.velocityAtM(points[i]).squaredNorm();
+		Eigen::Vector3d tangent = (sphToCart(points[i + 1]) - sphToCart(points[i - 1])).normalized();
 
-		r.verts.push_back(glm::dvec3(cart.x(), cart.y(), cart.z()));
-		r.colours.push_back(glm::vec3(0.f, 0.f, 3.0 * ratio / d));
-		r.verts.push_back(glm::dvec3(cart.x(), cart.y(), cart.z()));
-		r.colours.push_back(glm::vec3(0.f, 0.f, 3.0 * ratio / d));
+		r.addVert(glm::dvec3(cart.x(), cart.y(), cart.z()));
+		r.addColour(glm::vec3(0.f, 0.f, 1.f));
+		r.addTangent(glm::vec3(tangent.x(), tangent.y(), tangent.z()));
+		r.addVert(glm::dvec3(cart.x(), cart.y(), cart.z()));
+		r.addColour(glm::vec3(0.f, 0.f, 1.f));
+		r.addTangent(glm::vec3(tangent.x(), tangent.y(), tangent.z()));
+
+		if (tangent.squaredNorm() < 0.5) {
+			std::cout << tangent << std::endl;
+		}
 	}
 
 	Eigen::Vector3d cartE = sphToCart(points[_size - 1]);
 	double magESq = field.velocityAtM(points[_size - 1]).squaredNorm();
+	Eigen::Vector3d tangentE = (sphToCart(points[_size - 1]) - sphToCart(points[_size - 2])).normalized();
 
-	r.verts.push_back(glm::dvec3(cartE.x(), cartE.y(), cartE.z()));
-	r.colours.push_back(glm::vec3(0.f, 0.f, 3.0 * ratio / d));
+	r.addVert(glm::dvec3(cartE.x(), cartE.y(), cartE.z()));
+	r.addColour(glm::vec3(0.f, 0.f, 1.f));
+	r.addTangent(glm::vec3(tangentE.x(), tangentE.y(), tangentE.z()));
 }

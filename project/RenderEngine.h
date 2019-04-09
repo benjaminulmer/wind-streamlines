@@ -16,10 +16,6 @@ public:
 
 	void render(const std::vector<const Renderable*>& objects, const glm::dmat4& view, float max, float min);
 
-	static void assignBuffers(Renderable& renderable, bool texture);
-	static void setBufferData(Renderable& renderable, bool texture);
-	static void deleteBufferData(Renderable& renderable, bool texture);
-
 	void setWindowSize(int newWidth, int newHeight);
 	void toggleFade() { fade = !fade; }
 	void updateScaleFactor(int dir);
@@ -39,6 +35,7 @@ private:
 	double far;
 
 	GLuint mainProgram;
+	GLuint streamlineProgram;
 	bool fade;
 	float scaleFactor;
 

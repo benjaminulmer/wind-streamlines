@@ -6,21 +6,15 @@ uniform bool fade;
 uniform float maxDist;
 uniform float minDist;
 
-uniform bool hasTexture;
-uniform sampler2D imTexture;
 
 in vec3 C;
 in vec3 L;
 in vec3 V;
-in vec2 UV;
 
 void main(void) {    	
 
-	if (hasTexture) {
-		colour = texture(imTexture, UV);
-	}
 	// Calculate alpha if fading is needed
-	else if (fade) {
+	if (fade) {
 		float dist = length(V);
 
 		// Fall off function
@@ -33,6 +27,6 @@ void main(void) {
 		colour = vec4(C, norm);
 	}
 	else {
-		colour = vec4(C, 1.0);
+		colour = vec4(C, 1.f);
 	}
 }

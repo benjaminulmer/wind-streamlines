@@ -8,44 +8,117 @@
 
 #include <vector>
 
-struct IndexedLists {
-	std::vector<GLushort> vertIndices;
-	std::vector<GLushort> normalIndices;
-	std::vector<GLushort> uvIndices;
 
-	std::vector<glm::vec3> verts;
-	std::vector<glm::vec3> normals;
-	std::vector<glm::vec2> uvs;
+enum class Shader {
+	DEFAULT,
+	STREAMLINE
 };
 
 class Renderable {
 
 public:
-	Renderable() : lineColour(glm::vec3(1.f, 1.f, 1.f)), vao(0), vertexHighBuffer(0), vertexLowBuffer(0), colourBuffer(0), uvBuffer(0), textureID(0), fade(true), drawMode(0) {}
-	Renderable(const rapidjson::Document& d);
+	virtual void assignBuffers() = 0;
+	virtual void setBufferData() = 0;
+	virtual void deleteBufferData() = 0;
 
-	void doubleToFloats();
+	GLuint getVAO() const { return vao; }
+	virtual Shader getShaderType() const = 0;
+	virtual void render() const = 0;
 
-	std::vector<glm::dvec3> verts;
+protected:
+	GLuint vao;
+};
 
+
+class DoublePrecisionRenderable : public Renderable {
+
+public: 
+	virtual void addVert(const glm::dvec3& v);
+
+	virtual void assignBuffers();
+	virtual void setBufferData();
+	virtual void deleteBufferData();
+
+protected:
 	std::vector<glm::vec3> vertsHigh;
 	std::vector<glm::vec3> vertsLow;
-	std::vector<glm::vec3> colours;
-	std::vector<glm::vec2> uvs;
 
-	//glm::mat4 model;
-
-	glm::vec3 lineColour;
-
-	GLuint vao;
 	GLuint vertexHighBuffer;
 	GLuint vertexLowBuffer;
-	GLuint colourBuffer;
-	GLuint uvBuffer;
-	GLuint textureID;
-
-	bool fade;
-
-	GLuint drawMode;
 };
+
+
+class ColourRenderable : public DoublePrecisionRenderable {
+
+public:
+	ColourRenderable() = default;
+	ColourRenderable(const rapidjson::Document& d);
+
+	virtual void addColour(const glm::vec3& c) { colours.push_back(c); }
+
+	virtual void assignBuffers();
+	virtual void setBufferData();
+	virtual void deleteBufferData();
+
+	virtual Shader getShaderType() const { return Shader::DEFAULT; }
+	virtual void render() const;
+
+	void setDrawMode(GLuint mode) { drawMode = mode; }
+
+protected:
+	GLuint drawMode;
+
+	std::vector<glm::vec3> colours;
+
+	GLuint colourBuffer;
+};
+
+
+class StreamlineRenderable : public ColourRenderable {
+
+public:
+	virtual void addTangent(const glm::vec3& t) { tangents.push_back(t); }
+
+	virtual void assignBuffers();
+	virtual void setBufferData();
+	virtual void deleteBufferData();
+
+	virtual Shader getShaderType() const { return Shader::STREAMLINE; }
+
+private:
+	std::vector<glm::vec3> tangents;
+
+	GLuint tangentBuffer;
+};
+
+//class Renderable2 {
+//
+//public:
+//	Renderable() : lineColour(glm::vec3(1.f, 1.f, 1.f)), vao(0), vertexHighBuffer(0), vertexLowBuffer(0), colourBuffer(0), uvBuffer(0), textureID(0), fade(true), drawMode(0) {}
+//	Renderable(const rapidjson::Document& d);
+//
+//	void doubleToFloats();
+//
+//	std::vector<glm::dvec3> verts;
+//
+//	std::vector<glm::vec3> vertsHigh;
+//	std::vector<glm::vec3> vertsLow;
+//	std::vector<glm::vec3> colours;
+//	std::vector<glm::vec2> uvs;
+//
+//	//glm::mat4 model;
+//
+//	glm::vec3 lineColour;
+//
+//	GLuint vao;
+//	GLuint vertexHighBuffer;
+//	GLuint vertexLowBuffer;
+//	GLuint colourBuffer;
+//	GLuint uvBuffer;
+//	GLuint textureID;
+//
+//	bool fade;
+//
+//	GLuint drawMode;
+//};
 
