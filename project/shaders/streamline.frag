@@ -16,16 +16,20 @@ in float dist;
 
 void main(void) {    	
 
+	// Illuminated streamlines
+	// "Interactive Visualization Of 3D-Vector Fields Using Illuminated Stream Lines" Zockler et al. 1996
 	float lDt = dot(L, T);
 	float vDt = dot(V, T);
 
+	// N dot V
 	float diffuse = sqrt(1.f - (lDt * lDt));
 	diffuse *= diffuse;
 
+	// R dot V
 	float spec = max(diffuse * sqrt(1.f - (vDt * vDt)) - lDt * vDt, 0.f);
 
+	// Phong reflection model
 	float n = 32.f;
-
 	vec3 ka = 0.2f * C;
 	vec3 kd = 0.8f * diffuse * C;
 	vec3 ks = 0.6f * pow(spec, n) * vec3(1.f, 1.f, 1.f);

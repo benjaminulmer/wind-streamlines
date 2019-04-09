@@ -6,16 +6,14 @@ uniform bool fade;
 uniform float maxDist;
 uniform float minDist;
 
-
 in vec3 C;
-in vec3 L;
-in vec3 V;
+
+in float dist;
 
 void main(void) {    	
 
 	// Calculate alpha if fading is needed
 	if (fade) {
-		float dist = length(V);
 
 		// Fall off function
 		float norm = (dist - minDist) / (maxDist - minDist);

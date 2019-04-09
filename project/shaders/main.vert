@@ -14,15 +14,15 @@ layout (location = 1) in vec3 vertexLow;
 layout (location = 2) in vec3 colour;
 
 out vec3 C;
-out vec3 L;
-out vec3 V;
+
+out float dist;
 
 void main(void) {	
 
-	float length = length(vertexHigh);
+	float len = length(vertexHigh);
 	vec3 vertexHighS = normalize(vertexHigh);
 
-	float newLength = (length - radiusEarthM) * altScale + radiusEarthM;
+	float newLength = (len - radiusEarthM) * altScale + radiusEarthM;
 	vertexHighS *= newLength;
 
 	vec3 t1 = vertexLow - eyeLow;
@@ -35,18 +35,8 @@ void main(void) {
 
 	C = colour;
 
-	vec3 lightPos = eyeHigh;
+	vec4 pCamera = modelView * vec4(vertex, 1.f);
+	dist = length(pCamera.xyz);
 
-	// Put light in camera space
-	vec4 lightCameraSpace = modelView * vec4(lightPos, 1.f);
-
-	// Transform model and put in camera space
-    vec4 pCameraSpace = modelView * vec4(vertex, 1.f); 
-	vec3 P = pCameraSpace.xyz;
-	
-	// Calculate L and V vectors
-	L = normalize(lightCameraSpace.xyz - P);
-	V = -P;
-
-    gl_Position = projection * pCameraSpace;   
+    gl_Position = projection * pCamera;   
 }
