@@ -223,7 +223,8 @@ int SphericalVectorField::criticalPointInTet(size_t i0, size_t i1, size_t i2, si
 // totalTime - total amount of time to integrate forwards and backwards
 // tol - error tolerance
 // return - list of points in streamline in coordinates (lat, long, rad) in rads and mbars
-Streamline SphericalVectorField::streamline(const Eigen::Vector3d& seed, double maxDist, double tol, double maxStep) const {
+Streamline SphericalVectorField::streamline(const Eigen::Vector3d& seed, double maxDist, double tol, double maxStep,
+                                            const std::vector<Streamline>& streamlines, double sepDist) const {
 
 	Streamline forw(*this);
 	Streamline back(*this);
@@ -237,13 +238,12 @@ Streamline SphericalVectorField::streamline(const Eigen::Vector3d& seed, double 
 	while (length < maxDist) {
 
 		currPos = RKF45Adaptive(currPos, timeStep, tol, maxStep);
-		forw.addPoint(currPos);
-
-		if (forw.getTotalLength() - length < 0.1) {
-			std::cout << forw.getTotalLength() - length << std::endl;
+		if (!pointValid(currPos, streamlines, sepDist)) {
 			break;
 		}
-		if (timeStep == 0.0) {
+		forw.addPoint(currPos);
+
+		if (forw.getTotalLength() - length < 0.1 || timeStep == 0.0) {
 			break;
 		}
 		length = forw.getTotalLength();
@@ -257,12 +257,12 @@ Streamline SphericalVectorField::streamline(const Eigen::Vector3d& seed, double 
 	while (back.getTotalLength() < maxDist) {
 
 		currPos = RKF45Adaptive(currPos, timeStep, tol, maxStep);
-		back.addPoint(currPos);
-
-		if (back.getTotalLength() - length < 0.1) {
+		if (!pointValid(currPos, streamlines, sepDist)) {
 			break;
 		}
-		if (timeStep == 0.0) {
+		back.addPoint(currPos);
+
+		if (back.getTotalLength() - length < 0.1 || timeStep == 0.0) {
 			break;
 		}
 		length = back.getTotalLength();

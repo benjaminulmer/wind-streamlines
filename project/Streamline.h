@@ -22,6 +22,8 @@ public:
 	double getTotalLength() const { return totalLength; }
 	double getTotalAngle() const { return totalAngle; }
 
+	std::vector<Eigen::Vector3d> getSeeds(double sepDist);
+
 	void addToRenderable(StreamlineRenderable& r) const;
 
 	const Eigen::Vector3d& operator[](size_t i) const { return points[i]; }

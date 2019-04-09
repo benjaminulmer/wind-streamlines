@@ -35,3 +35,23 @@ inline Eigen::Vector3d cartToSph(const Eigen::Vector3d& v) {
 	if (lng < 0.0) lng += 2.0 * M_PI;
 	return Eigen::Vector3d(asin(v.y() / rad), lng, absToMBars(rad));
 }
+
+
+#include <vector>
+#include "Streamline.h"
+
+inline bool pointValid(Eigen::Vector3d point, const std::vector<Streamline>& streamlines, double sepDist) {
+
+	for (const Streamline& s : streamlines) {
+		for (const Eigen::Vector3d p : s.getPoints()) {
+
+			Eigen::Vector3d pointC = sphToCart(point);
+			Eigen::Vector3d pC = sphToCart(p);
+
+			if ((pointC - pC).squaredNorm() < sepDist * sepDist) {
+				return false;
+			}
+		}
+	}
+	return true;
+}

@@ -11,6 +11,7 @@
 #include <iostream>
 #include <limits>
 #include <random>
+#include <queue>
 
 #include "Conversions.h"
 #include "ContentReadWrite.h"
@@ -29,6 +30,7 @@ Program::Program() {
 	width = height = 800;
 }
 
+#include <thread>
 
 // Called to start the program. Conducts set up then enters the main loop
 void Program::start() {	
@@ -66,7 +68,11 @@ void Program::start() {
 	streamlineRender.setDrawMode(GL_LINES);
 
 	reIntegrate = true;
+
+	std::thread t1(&Program::integrateStreamlines, this);
 	mainLoop();
+
+	t1.join();
 }
 
 
@@ -107,10 +113,13 @@ void Program::mainLoop() {
 
 	while (true) {
 
-		if (reIntegrate) {
-			integrateStreamlines();
-			reIntegrate = false;
+		mtx.lock();
+		streamlineRender.clear();
+		for (const Streamline& s : streamlines) {
+			s.addToRenderable(streamlineRender);
 		}
+		streamlineRender.setBufferData();
+		mtx.unlock();
 
 		// Process all SDL events
 		SDL_Event e;
@@ -138,89 +147,74 @@ void Program::mainLoop() {
 // Seeds and integrates streamlines
 void Program::integrateStreamlines() {
 
-	//streamlineRender.clear();
-	//streamlines.clear();
+	double minLength = 1000000.0;
+	double sepDist = 250000.0;
 
-	//glm::dmat4 worldModel(1.f);
-	//worldModel = glm::rotate(worldModel, latRot, glm::dvec3(-1.0, 0.0, 0.0));
-	//worldModel = glm::rotate(worldModel, longRot, glm::dvec3(0.0, 1.0, 0.0));
-	//worldModel = glm::inverse(worldModel);
+	std::queue<Streamline> seedLines;
 
-	//glm::dmat4 projView = renderEngine->getProjection() * camera->getLookAt();
-	//glm::dmat4 invProjView = glm::inverse(projView);
+	// Need a starting streamline to seed off of
+	Streamline first = field.streamline(Eigen::Vector3d(0.0, 0.0, 500.0), 5000000.0, 1000.0, 5000.0, streamlines, sepDist);
+	seedLines.push(first);
+	mtx.lock();
+	streamlines.push_back(first);
+	mtx.unlock();
+
+	while (!seedLines.empty()) {
+
+		std::cout << seedLines.size() << std::endl;
+
+		Streamline seedLine = seedLines.front();
+		seedLines.pop();
+
+		std::vector<Eigen::Vector3d> seeds = seedLine.getSeeds(sepDist);
+
+		for (const Eigen::Vector3d& seed : seeds) {
+
+			// Do not use seed if it is too close to other lines
+			if (!pointValid(seed, streamlines, sepDist)) {
+				continue;
+			}
+
+			// Integrate streamline and add it if it was long enough
+			Streamline newLine = field.streamline(seed, 5000000.0, 500.0, 1000.0, streamlines, sepDist);
+			if (newLine.getTotalLength() > minLength) {
+
+				seedLines.push(newLine);
+				mtx.lock();
+				streamlines.push_back(newLine);
+				mtx.unlock();
+			}
+		}
+	}
 
 
-	//int num = 30;
-	//for (int x = 0; x < num; x++) {
-	//	for (int y = 0; y < num; y++) {
 
-	//		double step = 2.0 / num;
-	//		double xScreen = -1.0 + x * step;
-	//		double yScreen = -1.0 + y * step;
+	//std::random_device dev;
+	//std::default_random_engine rng(dev());
+	//std::uniform_real_distribution<double> latDist(-1.0, 1.0);
+	//std::uniform_real_distribution<double> lngDist(0.0, 2.0 * M_PI);
+	//std::uniform_real_distribution<double> lvlDist(1.0, 1000.0);
 
-	//		glm::dvec4 world(xScreen, yScreen, -1.0, 1.0);
+	//std::cout << "starting critical points" << std::endl;
+	//std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> criticalIndices;// = field.findCriticalPoints();
+	//std::cout << criticalIndices.size() << std::endl;
 
-	//		world = invProjView * world;
-	//		world /= world.w;
+	//double maxA = -1.0;
 
-	//		glm::dvec3 rayO = camera->getPosition();
-	//		glm::dvec3 rayD = glm::normalize(glm::dvec3(world) - rayO);
-	//		double sphereRad = RADIUS_EARTH_VIEW * scale;
-	//		glm::dvec3 sphereO = glm::dvec3(0.0);
+	//for (int i = 0; i < 3000; i++) {
 
-	//		glm::dvec3 iPos, iNorm;
+	//	Eigen::Vector3d pos(asin(latDist(rng)), lngDist(rng), lvlDist(rng));
+	//	streamlines.push_back(field.streamline(pos, 1000000.0, 1000.0, 5000.0));
+	//	//std::cout << streamlines.back().getTotalLength() << " : " << streamlines.back().getTotalAngle() << std::endl;
 
-	//		if (glm::intersectRaySphere(rayO, rayD, sphereO, sphereRad, iPos, iNorm)) {
-
-	//			iPos = worldModel * glm::dvec4(iPos, 1.0);
-
-	//			double lng = atan2(iPos.x, iPos.z);
-	//			if (lng < 0.0) lng += 2.0 * M_PI;
-	//			double lat = M_PI_2 - acos(iPos.y / sphereRad);
-
-	//			for (int i = 0; i < 37; i++) {
-
-	//				Eigen::Vector3d pos(lat, lng, field.level(i));
-
-	//				Streamline s = field.streamline(pos, 1000000.0, 1000.0, 5000.0);
-	//				streamlines.push_back(s);
-	//				s.addToRenderable(streamlineRender, 0.0);
-	//			}
-	//		}
-	//	}
+	//	double ratio = streamlines.back().getTotalAngle() / streamlines.back().getTotalLength();
+	//	//std::cout << ratio << std::endl;
+	//	maxA = std::max(ratio, maxA);
 	//}
-
-	//size_t count = 0;
 	//for (const Streamline& s : streamlines) {
-	//	count += s.size();
+	//	s.addToRenderable(streamlineRender);
 	//}
-	//std::cout << count << std::endl;
-	std::random_device dev;
-	std::default_random_engine rng(dev());
-	std::uniform_real_distribution<double> latDist(-1.0, 1.0);
-	std::uniform_real_distribution<double> lngDist(0.0, 2.0 * M_PI);
-	std::uniform_real_distribution<double> lvlDist(1.0, 1000.0);
-
-	std::cout << "starting critical points" << std::endl;
-	std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> criticalIndices;// = field.findCriticalPoints();
-	std::cout << criticalIndices.size() << std::endl;
-
-	double maxA = -1.0;
-
-	for (int i = 0; i < 3000; i++) {
-
-		Eigen::Vector3d pos(asin(latDist(rng)), lngDist(rng), lvlDist(rng));
-		streamlines.push_back(field.streamline(pos, 1000000.0, 1000.0, 5000.0));
-		//std::cout << streamlines.back().getTotalLength() << " : " << streamlines.back().getTotalAngle() << std::endl;
-
-		double ratio = streamlines.back().getTotalAngle() / streamlines.back().getTotalLength();
-		//std::cout << ratio << std::endl;
-		maxA = std::max(ratio, maxA);
-	}
-	for (const Streamline& s : streamlines) {
-		s.addToRenderable(streamlineRender);
-	}
-	streamlineRender.setBufferData();
+	//streamlineRender.setBufferData();
 }
 
 

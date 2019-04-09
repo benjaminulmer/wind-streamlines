@@ -8,6 +8,7 @@
 #include "SphericalVectorField.h"
 #include "Streamline.h"
 
+#include <mutex>
 
 class Program {
 
@@ -34,6 +35,8 @@ private:
 	std::vector<Streamline> streamlines;
 
 	bool reIntegrate;
+
+	std::mutex mtx;
 
 	double scale;
 	double latRot;
