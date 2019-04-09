@@ -29,6 +29,7 @@ Program::Program() {
 	width = height = 800;
 }
 
+
 // Called to start the program. Conducts set up then enters the main loop
 void Program::start() {	
 
@@ -49,17 +50,22 @@ void Program::start() {
 
 	// Load coastline vector data
 	rapidjson::Document cl = ContentReadWrite::readJSON("data/coastlines.json");
-	coastLines = ColourRenderable(cl);
+	coastRender = ColourRenderable(cl);
 
-	objects.push_back(&coastLines);
-	coastLines.assignBuffers();
-	coastLines.setBufferData();
+	objects.push_back(&coastRender);
+	coastRender.assignBuffers();
+	coastRender.setBufferData();
 
-	// Load vector field and integrate streamlines
+	// Load vector field
 	netCDF::NcFile file("data/2018-05-27T12.nc", netCDF::NcFile::read);
 	field = SphericalVectorField(file);
-	integrateStreamlines2();
 
+	// Set up renderable for streamlines
+	objects.push_back(&streamlineRender);
+	streamlineRender.assignBuffers();
+	streamlineRender.setDrawMode(GL_LINES);
+
+	reIntegrate = true;
 	mainLoop();
 }
 
@@ -96,154 +102,15 @@ void Program::setupWindow() {
 }
 
 
-
-std::vector<Eigen::Vector3d> reverseChaikin(const std::vector<Eigen::Vector3d>& fine) {
-
-	std::vector<Eigen::Vector3d> coarse;
-
-	coarse.push_back(fine[0]);
-	coarse.push_back(-0.5 * fine[0] + fine[1] + 0.75 * fine[2] - 0.25 * fine[3]);
-	
-	for (size_t i = 2; i < fine.size() - 5; i += 2) {
-		coarse.push_back(-0.25 * fine[i] + 0.75 * fine[i + 1] + 0.75 * fine[i + 2] - 0.25 * fine[i + 3]);
-	}
-	size_t m = fine.size() - 1;
-
-	coarse.push_back(-0.25 * fine[m - 3] + 0.75 * fine[m - 2] + fine[m - 1] - 0.5 * fine[m]);
-	coarse.push_back(fine[m]);
-
-	return coarse;
-}
-
-void toCartesian(std::vector<Eigen::Vector3d>& points) {
-
-	for (Eigen::Vector3d& p : points) {
-		p = sphToCart(p); 
-	}
-}
-
-
-// Seeds and integrates streamlines
-void Program::integrateStreamlines2() {
-
-	std::random_device dev;
-	std::default_random_engine rng(dev());
-	std::uniform_real_distribution<double> latDist(-1.0, 1.0);
-	std::uniform_real_distribution<double> lngDist(0.0, 2.0 * M_PI);
-	std::uniform_real_distribution<double> lvlDist(1.0, 1000.0);
-
-	ColourRenderable* points = new ColourRenderable();
-	StreamlineRenderable* lines = new StreamlineRenderable();
-
-	std::cout << "starting critical points" << std::endl;
-	std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> criticalIndices;// = field.findCriticalPoints();
-	std::cout << criticalIndices.size() << std::endl;
-
-	double maxA = -1.0;
-
-	for (int i = 0; i < 3000; i++) {
-
-		Eigen::Vector3d pos(asin(latDist(rng)), lngDist(rng), lvlDist(rng));
-		streamlines.push_back(field.streamline(pos, 100000.0, 1000.0, 5000.0));
-		//std::cout << streamlines.back().getTotalLength() << " : " << streamlines.back().getTotalAngle() << std::endl;
-
-		double ratio = streamlines.back().getTotalAngle() / streamlines.back().getTotalLength();
-		//std::cout << ratio << std::endl;
-		maxA = std::max(ratio, maxA);
-	}
-	for (const Streamline& s : streamlines) {
-		s.addToRenderable(*lines, maxA);
-	}
-
-	for (const auto& p : criticalIndices) {
-
-		Eigen::Vector3d coords = field.sphCoords(p.first);
-		coords = sphToCart(coords);
-
-		points->addVert(glm::dvec3(coords.x(), coords.y(), coords.z()));
-
-		if (p.second == 1) {
-			points->addColour(glm::vec3(0.f, 1.f, 0.f));
-		}
-		else {
-			points->addColour(glm::vec3(1.f, 0.f, 0.f));
-		}
-	}
-	objects.push_back(lines);
-	lines->assignBuffers();
-	lines->setBufferData();
-	lines->setDrawMode(GL_LINES);
-
-	objects.push_back(points);
-	points->assignBuffers();
-	points->setBufferData();
-	points->setDrawMode(GL_POINTS);
-}
-
-
-// Seeds and integrates streamlines
-void Program::integrateStreamlines() {
-
-	//std::random_device dev;
-	//std::default_random_engine rng(dev());
-	//std::uniform_real_distribution<double> unif(-2.0, 2.0);
-
-	//std::cout << "starting critical points" << std::endl;
-	//std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> criticalIndices = field.findCriticalPoints();
-	//std::cout << criticalIndices.size() << std::endl;
-
-	//Renderable* points = new Renderable();
-	//Renderable* lines = new Renderable();
-
-	//for (const auto& p : criticalIndices) {
-
-	//	// Convert index to sph to cartesian
-	//	Eigen::Vector3d sph = field.sphCoords(p.first);
-	//	Eigen::Vector3d cart = sphToCart(sph);
-
-	//	// Add to renderable
-	//	points->verts.push_back(glm::dvec3(cart.x(), cart.y(), cart.z()));
-	//	if (p.second == 1) {
-	//		points->colours.push_back(glm::vec3(0.f, 1.f, 0.f));
-	//	}
-	//	else {
-	//		points->colours.push_back(glm::vec3(1.f, 0.f, 0.f));
-	//	}
-
-	//	// Seed streamlines around point
-	//	for (int i = 0; i < 5; i++) {
-
-	//		Eigen::Vector3d pos(sph.x() + (M_PI / 180.0) * unif(rng), sph.y() + (M_PI / 180.0) * unif(rng), sph.z() + unif(rng) * 50);
-
-	//		if (pos.x() > M_PI_2) pos.x() = M_PI_2;
-	//		if (pos.x() < -M_PI_2) pos.x() = -M_PI_2;
-	//		if (pos.y() < 0.0) pos.y() += 2.0 * M_PI;
-	//		if (pos.y() > 2.0 * M_PI) pos.y() -= 2.0 * M_PI;
-	//		if (pos.z() > field.getMaxLevel()) pos.z() = field.getMaxLevel();
-	//		if (pos.z() < field.getMinLevel()) pos.z() = field.getMinLevel();
-
-	//		streamlines.push_back(field.streamline(pos, 100000.0, 1000.0, 5000.0));
-	//		std::cout << streamlines.back().getTotalLength() << " : " << streamlines.back().getTotalAngle() << std::endl;
-
-	//		streamlines.back().addToRenderable(*lines, 1.0);
-	//	}
-	//}
-	//lines->drawMode = GL_LINES;
-	//objects.push_back(lines);
-	//lines->doubleToFloats();
-	//RenderEngine::assignBuffers(*lines, false);
-	//RenderEngine::setBufferData(*lines, false);
-
-	//objects.push_back(points);
-	//points->doubleToFloats();
-	//RenderEngine::assignBuffers(*points, false);
-	//RenderEngine::setBufferData(*points, false);
-}
-
 // Main loop
 void Program::mainLoop() {
 
 	while (true) {
+
+		if (reIntegrate) {
+			integrateStreamlines();
+			reIntegrate = false;
+		}
 
 		// Process all SDL events
 		SDL_Event e;
@@ -266,6 +133,119 @@ void Program::mainLoop() {
 		SDL_GL_SwapWindow(window);
 	}
 }
+
+
+// Seeds and integrates streamlines
+void Program::integrateStreamlines() {
+
+	streamlineRender.clear();
+	streamlines.clear();
+
+	glm::dmat4 worldModel(1.f);
+	worldModel = glm::rotate(worldModel, latRot, glm::dvec3(-1.0, 0.0, 0.0));
+	worldModel = glm::rotate(worldModel, longRot, glm::dvec3(0.0, 1.0, 0.0));
+	worldModel = glm::inverse(worldModel);
+
+	glm::dmat4 projView = renderEngine->getProjection() * camera->getLookAt();
+	glm::dmat4 invProjView = glm::inverse(projView);
+
+
+	int num = 30;
+	for (int x = 0; x < num; x++) {
+		for (int y = 0; y < num; y++) {
+
+			double step = 2.0 / num;
+			double xScreen = -1.0 + x * step;
+			double yScreen = -1.0 + y * step;
+
+			glm::dvec4 world(xScreen, yScreen, -1.0, 1.0);
+
+			world = invProjView * world;
+			world /= world.w;
+
+			glm::dvec3 rayO = camera->getPosition();
+			glm::dvec3 rayD = glm::normalize(glm::dvec3(world) - rayO);
+			double sphereRad = RADIUS_EARTH_VIEW * scale;
+			glm::dvec3 sphereO = glm::dvec3(0.0);
+
+			glm::dvec3 iPos, iNorm;
+
+			if (glm::intersectRaySphere(rayO, rayD, sphereO, sphereRad, iPos, iNorm)) {
+
+				iPos = worldModel * glm::dvec4(iPos, 1.0);
+
+				double lng = atan2(iPos.x, iPos.z);
+				if (lng < 0.0) lng += 2.0 * M_PI;
+				double lat = M_PI_2 - acos(iPos.y / sphereRad);
+
+				for (int i = 0; i < 37; i++) {
+
+					Eigen::Vector3d pos(lat, lng, field.level(i));
+
+					Streamline s = field.streamline(pos, 100000.0, 1000.0, 5000.0);
+					streamlines.push_back(s);
+					s.addToRenderable(streamlineRender, 0.0);
+				}
+			}
+		}
+	}
+	streamlineRender.setBufferData();
+	size_t count = 0;
+	for (const Streamline& s : streamlines) {
+		count += s.size();
+	}
+	std::cout << count << std::endl;
+
+
+
+
+
+
+	//ColourRenderable* points = new ColourRenderable();
+	//StreamlineRenderable* lines = new StreamlineRenderable();
+
+	//std::cout << "starting critical points" << std::endl;
+	//std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> criticalIndices;// = field.findCriticalPoints();
+	//std::cout << criticalIndices.size() << std::endl;
+
+	//double maxA = -1.0;
+
+	//for (int i = 0; i < 3000; i++) {
+
+	//	Eigen::Vector3d pos(asin(latDist(rng)), lngDist(rng), lvlDist(rng));
+	//	streamlines.push_back(field.streamline(pos, 100000.0, 1000.0, 5000.0));
+	//	//std::cout << streamlines.back().getTotalLength() << " : " << streamlines.back().getTotalAngle() << std::endl;
+
+	//	double ratio = streamlines.back().getTotalAngle() / streamlines.back().getTotalLength();
+	//	//std::cout << ratio << std::endl;
+	//	maxA = std::max(ratio, maxA);
+	//}
+	//for (const Streamline& s : streamlines) {
+	//	s.addToRenderable(*lines, maxA);
+	//}
+
+	//for (const auto& p : criticalIndices) {
+
+	//	Eigen::Vector3d coords = field.sphCoords(p.first);
+	//	coords = sphToCart(coords);
+
+	//	points->addVert(glm::dvec3(coords.x(), coords.y(), coords.z()));
+
+	//	if (p.second == 1) {
+	//		points->addColour(glm::vec3(0.f, 1.f, 0.f));
+	//	}
+	//	else {
+	//		points->addColour(glm::vec3(1.f, 0.f, 0.f));
+	//	}
+	//}
+
+
+	//objects.push_back(points);
+	//points->assignBuffers();
+	//points->setBufferData();
+	//points->setDrawMode(GL_POINTS);
+}
+
 
 // Updates camera rotation
 // Locations are in pixel coordinates
@@ -315,8 +295,10 @@ void Program::updateRotation(int oldX, int newX, int oldY, int newY, bool skew) 
 			latRot += latNew - latOld;
 			longRot += longNew - longOld;
 		}
+		//reIntegrate = true;
 	}
 }
+
 
 // Changes scale of model
 void Program::updateScale(int inc) {

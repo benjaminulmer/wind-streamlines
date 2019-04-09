@@ -85,6 +85,13 @@ public:
 
 	virtual Shader getShaderType() const { return Shader::STREAMLINE; }
 
+	void clear() {
+		tangents.clear();
+		colours.clear();
+		vertsHigh.clear();
+		vertsLow.clear();
+	}
+
 private:
 	std::vector<glm::vec3> tangents;
 

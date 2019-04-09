@@ -26,18 +26,21 @@ private:
 	RenderEngine* renderEngine;
 	Camera* camera;
 
-	ColourRenderable coastLines;
+	ColourRenderable coastRender;
+	StreamlineRenderable streamlineRender;
 	std::vector<const Renderable*> objects;
 
 	SphericalVectorField field;
 	std::vector<Streamline> streamlines;
+
+	bool reIntegrate;
 
 	double scale;
 	double latRot;
 	double longRot;
 
 	void setupWindow();
-	void integrateStreamlines2();
-	void integrateStreamlines();
 	void mainLoop();
+
+	void integrateStreamlines();
 };
