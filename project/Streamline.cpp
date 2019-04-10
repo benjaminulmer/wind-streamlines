@@ -62,6 +62,8 @@ void Streamline::addPoint(const Eigen::Vector3d& p) {
 
 std::vector<Eigen::Vector3d> Streamline::getSeeds(double sepDist) {
 
+	sepDist *= 1.001;
+
 	std::vector<Eigen::Vector3d> seeds;
 
 	// First point
@@ -69,8 +71,8 @@ std::vector<Eigen::Vector3d> Streamline::getSeeds(double sepDist) {
 	Eigen::Vector3d tangent0 = (sphToCart(points[1]) - cart0).normalized();
 	Eigen::Vector3d norm0 = cart0.cross(tangent0).normalized();
 
-	seeds.push_back(cartToSph(cart0 + cart0.normalized() * (sepDist / 1000.0)));
-	seeds.push_back(cartToSph(cart0 - cart0.normalized() * (sepDist / 1000.0)));
+	//seeds.push_back(cartToSph(cart0 + cart0.normalized() * (sepDist / 100.0)));
+	//seeds.push_back(cartToSph(cart0 - cart0.normalized() * (sepDist / 100.0)));
 	seeds.push_back(cartToSph(cart0 + norm0 * sepDist));
 	seeds.push_back(cartToSph(cart0 - norm0 * sepDist));
 
@@ -81,8 +83,8 @@ std::vector<Eigen::Vector3d> Streamline::getSeeds(double sepDist) {
 		Eigen::Vector3d tangent = (sphToCart(points[i + 1]) - sphToCart(points[i - 1])).normalized();
 		Eigen::Vector3d norm = cart.cross(tangent).normalized();
 
-		seeds.push_back(cartToSph(cart + cart.normalized() * (sepDist / 1000.0)));
-		seeds.push_back(cartToSph(cart - cart.normalized() * (sepDist / 1000.0)));
+		//seeds.push_back(cartToSph(cart + cart.normalized() * (sepDist / 100.0)));
+		//seeds.push_back(cartToSph(cart - cart.normalized() * (sepDist / 100.0)));
 		seeds.push_back(cartToSph(cart + norm * sepDist));
 		seeds.push_back(cartToSph(cart - norm * sepDist));
 	}
@@ -92,10 +94,11 @@ std::vector<Eigen::Vector3d> Streamline::getSeeds(double sepDist) {
 	Eigen::Vector3d tangentE = (cartE - sphToCart(points[size() - 2])).normalized();
 	Eigen::Vector3d normE = cartE.cross(tangentE).normalized();
 
-	seeds.push_back(cartToSph(cartE + cartE.normalized() * (sepDist / 1000.0)));
-	seeds.push_back(cartToSph(cartE - cartE.normalized() * (sepDist / 1000.0)));
+
 	seeds.push_back(cartToSph(cartE + normE * sepDist));
 	seeds.push_back(cartToSph(cartE - normE * sepDist));
+	//seeds.push_back(cartToSph(cartE + cartE.normalized() * (sepDist / 100.0)));
+	//seeds.push_back(cartToSph(cartE - cartE.normalized() * (sepDist / 100.0)));
 
 	return seeds;
 }

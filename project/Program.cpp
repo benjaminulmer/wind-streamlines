@@ -16,6 +16,7 @@
 #include "Conversions.h"
 #include "ContentReadWrite.h"
 #include "InputHandler.h"
+#include "VoxelGrid.h"
 
 
 Program::Program() {
@@ -29,8 +30,6 @@ Program::Program() {
 
 	width = height = 800;
 }
-
-#include <thread>
 
 // Called to start the program. Conducts set up then enters the main loop
 void Program::start() {	
@@ -150,10 +149,15 @@ void Program::integrateStreamlines() {
 	double minLength = 1000000.0;
 	double sepDist = 250000.0;
 
+	VoxelGrid vg(mbarsToAbs(1.0) + 100.0, sepDist);
+
 	std::queue<Streamline> seedLines;
 
 	// Need a starting streamline to seed off of
-	Streamline first = field.streamline(Eigen::Vector3d(0.0, 0.0, 500.0), 5000000.0, 1000.0, 5000.0, streamlines, sepDist);
+	Streamline first = field.streamline(Eigen::Vector3d(0.0, 0.0, 1000.0), 5000000.0, 1000.0, 5000.0, vg);
+	for (const Eigen::Vector3d& p : first.getPoints()) {
+		vg.addPoint(sphToCart(p));
+	}
 	seedLines.push(first);
 	mtx.lock();
 	streamlines.push_back(first);
@@ -171,21 +175,25 @@ void Program::integrateStreamlines() {
 		for (const Eigen::Vector3d& seed : seeds) {
 
 			// Do not use seed if it is too close to other lines
-			if (!pointValid(seed, streamlines, sepDist)) {
+			if (!vg.testPoint(sphToCart(seed))) {
 				continue;
 			}
 
 			// Integrate streamline and add it if it was long enough
-			Streamline newLine = field.streamline(seed, 5000000.0, 500.0, 1000.0, streamlines, sepDist);
+			Streamline newLine = field.streamline(seed, 5000000.0, 500.0, 1000.0, vg);
 			if (newLine.getTotalLength() > minLength) {
 
 				seedLines.push(newLine);
+				for (const Eigen::Vector3d& p : newLine.getPoints()) {
+					vg.addPoint(sphToCart(p));
+				}
 				mtx.lock();
 				streamlines.push_back(newLine);
 				mtx.unlock();
 			}
 		}
 	}
+	std::cout << "end" << std::endl;
 
 
 

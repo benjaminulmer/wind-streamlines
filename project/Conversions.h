@@ -48,7 +48,15 @@ inline bool pointValid(Eigen::Vector3d point, const std::vector<Streamline>& str
 			Eigen::Vector3d pointC = sphToCart(point);
 			Eigen::Vector3d pC = sphToCart(p);
 
-			if ((pointC - pC).squaredNorm() < sepDist * sepDist) {
+			double pointLen = pointC.norm();
+			double pLen = pC.norm();
+
+			double height = std::min(pointLen, pLen);
+
+			double vert = pointLen - pLen;
+			double geod = height * acos((pointC / pointLen).dot(pC / pLen));
+
+			if (geod * geod + (10000.0) * vert * vert < sepDist * sepDist) {
 				return false;
 			}
 		}

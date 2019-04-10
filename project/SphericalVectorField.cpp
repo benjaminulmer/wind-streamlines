@@ -224,7 +224,7 @@ int SphericalVectorField::criticalPointInTet(size_t i0, size_t i1, size_t i2, si
 // tol - error tolerance
 // return - list of points in streamline in coordinates (lat, long, rad) in rads and mbars
 Streamline SphericalVectorField::streamline(const Eigen::Vector3d& seed, double maxDist, double tol, double maxStep,
-                                            const std::vector<Streamline>& streamlines, double sepDist) const {
+                                            const VoxelGrid& vg) const {
 
 	Streamline forw(*this);
 	Streamline back(*this);
@@ -238,12 +238,12 @@ Streamline SphericalVectorField::streamline(const Eigen::Vector3d& seed, double 
 	while (length < maxDist) {
 
 		currPos = RKF45Adaptive(currPos, timeStep, tol, maxStep);
-		if (!pointValid(currPos, streamlines, sepDist)) {
+		if (!vg.testPoint(sphToCart(currPos))) {
 			break;
 		}
 		forw.addPoint(currPos);
 
-		if (forw.getTotalLength() - length < 0.1 || timeStep == 0.0) {
+		if (forw.getTotalLength() - length < 10.0 || timeStep == 0.0) {
 			break;
 		}
 		length = forw.getTotalLength();
@@ -257,12 +257,12 @@ Streamline SphericalVectorField::streamline(const Eigen::Vector3d& seed, double 
 	while (back.getTotalLength() < maxDist) {
 
 		currPos = RKF45Adaptive(currPos, timeStep, tol, maxStep);
-		if (!pointValid(currPos, streamlines, sepDist)) {
+		if (!vg.testPoint(sphToCart(currPos))) {
 			break;
 		}
 		back.addPoint(currPos);
 
-		if (back.getTotalLength() - length < 0.1 || timeStep == 0.0) {
+		if (back.getTotalLength() - length < 10.0 || timeStep == 0.0) {
 			break;
 		}
 		length = back.getTotalLength();
@@ -436,7 +436,7 @@ Eigen::Vector3d SphericalVectorField::newPos(const Eigen::Vector3d& currPos, con
 	// TODO singularities at poles, how to account for this? Doing in physical space is not stable (trig on small angles)
 	newPos.x() = currPos.x() + velocity.x() / absRadius;
 	newPos.y() = (cosLat > 0.0001) ? currPos.y() + velocity.y() / (cos(currPos.x()) * absRadius) : currPos.y();
-	newPos.z() = currPos.z() + 0.01 * velocity.z();
+	newPos.z() = currPos.z();// +0.01 * velocity.z();
 
 	// TODO properly account for edge cases as opposed to this hacky method
 	if (newPos.x() > M_PI_2) newPos.x() = M_PI_2;

@@ -5,6 +5,7 @@
 #include <Eigen/Dense>
 #include <netcdf>
 
+#include "VoxelGrid.h"
 
 // Class for managing spherical vector field on Earth
 // TODO currently hard-coded for specific grid format
@@ -26,7 +27,7 @@ public:
 	std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> findCriticalPoints() const;
 
 	Streamline streamline(const Eigen::Vector3d& seed, double maxDist, double tol, double maxStep,
-	                      const std::vector<Streamline>& streamlines, double sepDist) const;
+	                      const VoxelGrid& streamlines) const;
 	Eigen::Vector3d velocityAt(const Eigen::Vector3d& pos) const;
 	Eigen::Vector3d velocityAtM(const Eigen::Vector3d& pos) const;
 
