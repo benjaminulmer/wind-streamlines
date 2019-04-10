@@ -298,8 +298,8 @@ Eigen::Vector3d SphericalVectorField::RKF45Adaptive(const Eigen::Vector3d& currP
 		Eigen::Vector3d lowOrder = 25.0 / 216.0 * k1 + 1408.0 / 2665.0  * k3 + 2197.0 / 4104.0   * k4 - 1.0 / 5.0  * k5;
 
 		double error = (highOrder - lowOrder).norm();
-
 		timeStep *= 0.9 * std::min(std::max((tol / error), 0.3), 2.0);
+
 		if (timeStep > maxStep) timeStep = maxStep;
 		if (timeStep < -maxStep) timeStep = -maxStep;
 

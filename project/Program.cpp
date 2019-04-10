@@ -146,7 +146,7 @@ void Program::mainLoop() {
 // Seeds and integrates streamlines
 void Program::integrateStreamlines() {
 
-	double minLength = 1000000.0;
+	double minLength = 500000.0;
 	double sepDist = 250000.0;
 
 	VoxelGrid vg(mbarsToAbs(1.0) + 100.0, sepDist);
@@ -180,7 +180,7 @@ void Program::integrateStreamlines() {
 			}
 
 			// Integrate streamline and add it if it was long enough
-			Streamline newLine = field.streamline(seed, 5000000.0, 500.0, 1000.0, vg);
+			Streamline newLine = field.streamline(seed, 5000000.0, 1000.0, 5000.0, vg);
 			if (newLine.getTotalLength() > minLength) {
 
 				seedLines.push(newLine);

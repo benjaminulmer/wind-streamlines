@@ -64,6 +64,8 @@ std::vector<Eigen::Vector3d> Streamline::getSeeds(double sepDist) {
 
 	sepDist *= 1.001;
 
+	double fac = 1.0;
+
 	std::vector<Eigen::Vector3d> seeds;
 
 	// First point
@@ -71,10 +73,13 @@ std::vector<Eigen::Vector3d> Streamline::getSeeds(double sepDist) {
 	Eigen::Vector3d tangent0 = (sphToCart(points[1]) - cart0).normalized();
 	Eigen::Vector3d norm0 = cart0.cross(tangent0).normalized();
 
-	//seeds.push_back(cartToSph(cart0 + cart0.normalized() * (sepDist / 100.0)));
-	//seeds.push_back(cartToSph(cart0 - cart0.normalized() * (sepDist / 100.0)));
-	seeds.push_back(cartToSph(cart0 + norm0 * sepDist));
-	seeds.push_back(cartToSph(cart0 - norm0 * sepDist));
+	Eigen::Affine3d t10(Eigen::AngleAxis<double>(sepDist / cart0.norm(), tangent0));
+	Eigen::Affine3d t20(Eigen::AngleAxis<double>(-sepDist / cart0.norm(), tangent0));
+
+	//seeds.push_back(cartToSph(cart0 + cart0.normalized() * (sepDist / fac)));
+	//seeds.push_back(cartToSph(cart0 - cart0.normalized() * (sepDist / fac)));
+	seeds.push_back(cartToSph(t10 * cart0));
+	seeds.push_back(cartToSph(t20 * cart0));
 
 	// Non-end point geometry is duplicated for drawing lines
 	for (size_t i = 1; i < size() - 2; i++) {
@@ -83,10 +88,13 @@ std::vector<Eigen::Vector3d> Streamline::getSeeds(double sepDist) {
 		Eigen::Vector3d tangent = (sphToCart(points[i + 1]) - sphToCart(points[i - 1])).normalized();
 		Eigen::Vector3d norm = cart.cross(tangent).normalized();
 
-		//seeds.push_back(cartToSph(cart + cart.normalized() * (sepDist / 100.0)));
-		//seeds.push_back(cartToSph(cart - cart.normalized() * (sepDist / 100.0)));
-		seeds.push_back(cartToSph(cart + norm * sepDist));
-		seeds.push_back(cartToSph(cart - norm * sepDist));
+		Eigen::Affine3d t1(Eigen::AngleAxis<double>(sepDist / cart.norm(), tangent));
+		Eigen::Affine3d t2(Eigen::AngleAxis<double>(-sepDist / cart.norm(), tangent));
+
+		//seeds.push_back(cartToSph(cart + cart.normalized() * (sepDist / fac)));
+		//seeds.push_back(cartToSph(cart - cart.normalized() * (sepDist / fac)));
+		seeds.push_back(cartToSph(t1 * cart));
+		seeds.push_back(cartToSph(t2 * cart));
 	}
 
 	// Last point
@@ -94,11 +102,13 @@ std::vector<Eigen::Vector3d> Streamline::getSeeds(double sepDist) {
 	Eigen::Vector3d tangentE = (cartE - sphToCart(points[size() - 2])).normalized();
 	Eigen::Vector3d normE = cartE.cross(tangentE).normalized();
 
+	Eigen::Affine3d t1E(Eigen::AngleAxis<double>(sepDist / cartE.norm(), tangentE));
+	Eigen::Affine3d t2E(Eigen::AngleAxis<double>(-sepDist / cartE.norm(), tangentE));
 
-	seeds.push_back(cartToSph(cartE + normE * sepDist));
-	seeds.push_back(cartToSph(cartE - normE * sepDist));
-	//seeds.push_back(cartToSph(cartE + cartE.normalized() * (sepDist / 100.0)));
-	//seeds.push_back(cartToSph(cartE - cartE.normalized() * (sepDist / 100.0)));
+	//seeds.push_back(cartToSph(cartE + cartE.normalized() * (sepDist / fac)));
+	//seeds.push_back(cartToSph(cartE - cartE.normalized() * (sepDist / fac)));
+	seeds.push_back(cartToSph(t1E * cartE));
+	seeds.push_back(cartToSph(t2E * cartE));
 
 	return seeds;
 }
