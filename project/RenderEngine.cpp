@@ -19,6 +19,7 @@ RenderEngine::RenderEngine(SDL_Window* window) :
 	scaleFactor(30.f) {
 
 	SDL_GetWindowSize(window, &width, &height);
+	totalTime = 0.f;
 
 	mainProgram = ShaderTools::compileShaders("./shaders/main.vert", "./shaders/main.frag");
 	streamlineProgram = ShaderTools::compileShaders("./shaders/streamline.vert", "./shaders/streamline.frag");
@@ -44,6 +45,9 @@ RenderEngine::RenderEngine(SDL_Window* window) :
 void RenderEngine::render(const std::vector<const Renderable*>& objects, const glm::dmat4& view, float max, float min) {
 
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	totalTime += 500.f;
+	totalTime = fmod(totalTime, 100000.f);
+
 
 	for (const Renderable* r : objects) {	
 		
@@ -83,6 +87,7 @@ void RenderEngine::render(const std::vector<const Renderable*>& objects, const g
 		glUniform1i(glGetUniformLocation(program, "fade"), fade);
 		glUniform1f(glGetUniformLocation(program, "maxDist"), max);
 		glUniform1f(glGetUniformLocation(program, "minDist"), min);
+		glUniform1f(glGetUniformLocation(program, "totalTime"), totalTime);
 
 		r->render();
 		glBindVertexArray(0);

@@ -9,6 +9,7 @@
 //
 // field - Spherical vector field the streamline belongs to
 Streamline::Streamline(const SphericalVectorField& field) :
+	totalTime(0.f),
 	totalLength(0.0),
 	totalAngle(0.0),
 	field(field) {}
@@ -21,16 +22,20 @@ Streamline::Streamline(const SphericalVectorField& field) :
 // field - Spherical vector field the streamline belongs to
 Streamline::Streamline(const Streamline& back, const Streamline& forw, const SphericalVectorField& field) :
 	points(back.size() + forw.size()),
+	localTimes(back.size() + forw.size()),
+	totalTime(back.totalTime + forw.totalTime),
 	totalLength(back.totalLength + forw.totalLength),
 	totalAngle(back.totalAngle + forw.totalAngle),
 	field(field) {
 
 	for (size_t i = 0; i < back.size(); i++) {
 		points[i] = back[back.size() - 1 - i];
+		localTimes[i] = back.totalTime - back.localTimes[back.size() - 1 - i];
 	}
 
 	for (size_t i = 0; i < forw.size(); i++) {
 		points[back.size() + i] = forw[i];
+		localTimes[back.size() + i] = forw.localTimes[i] + back.totalTime;;
 	}
 }
 
@@ -38,7 +43,7 @@ Streamline::Streamline(const Streamline& back, const Streamline& forw, const Sph
 // Adds a point to the steamline and updates total length and angle
 //
 // p - point to add (lat, long, rad) in rads and mbars
-void Streamline::addPoint(const Eigen::Vector3d& p) {
+void Streamline::addPoint(const Eigen::Vector3d& p, float time) {
 
 	// Need two points for first distance
 	if (size() > 0) {
@@ -57,6 +62,8 @@ void Streamline::addPoint(const Eigen::Vector3d& p) {
 		}
 	}
 	points.push_back(p);
+	localTimes.push_back(time);
+	totalTime += time;
 }
 
 
@@ -126,6 +133,7 @@ void Streamline::addToRenderable(StreamlineRenderable& r) const {
 	r.addVert(glm::dvec3(cart0.x(), cart0.y(), cart0.z()));
 	r.addColour(glm::vec4(0.f, 0.f, 1.f, 1.f));
 	r.addTangent(glm::vec3(tangent0.x(), tangent0.y(), tangent0.z()));
+	r.addLocalTime(localTimes[0]);
 
 	// Non-end point geometry is duplicated for drawing lines
 	for (size_t i = 1; i < size() - 2; i++) {
@@ -139,6 +147,8 @@ void Streamline::addToRenderable(StreamlineRenderable& r) const {
 		r.addColour(glm::vec4(0.f, 0.f, 1.f, 1.f));
 		r.addTangent(glm::vec3(tangent.x(), tangent.y(), tangent.z()));
 		r.addTangent(glm::vec3(tangent.x(), tangent.y(), tangent.z()));
+		r.addLocalTime(localTimes[i]);
+		r.addLocalTime(localTimes[i]);
 	}
 
 	// Last point
@@ -148,4 +158,5 @@ void Streamline::addToRenderable(StreamlineRenderable& r) const {
 	r.addVert(glm::dvec3(cartE.x(), cartE.y(), cartE.z()));
 	r.addColour(glm::vec4(0.f, 0.f, 1.f, 1.f));
 	r.addTangent(glm::vec3(tangentE.x(), tangentE.y(), tangentE.z()));
+	r.addLocalTime(localTimes.back());
 }

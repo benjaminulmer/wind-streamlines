@@ -15,7 +15,7 @@ public:
 	Streamline(const SphericalVectorField& field);
 	Streamline(const Streamline& back, const Streamline& forw, const SphericalVectorField& field);
 
-	void addPoint(const Eigen::Vector3d& p);
+	void addPoint(const Eigen::Vector3d& p, float time);
 	const std::vector<Eigen::Vector3d>& getPoints() const { return points; }
 	size_t size() const { return points.size(); }
 
@@ -30,7 +30,9 @@ public:
 
 private:
 	std::vector<Eigen::Vector3d> points;
+	std::vector<float> localTimes;
 
+	float totalTime;
 	double totalLength;
 	double totalAngle;
 

@@ -5,6 +5,7 @@ out vec4 colour;
 uniform bool fade;
 uniform float maxDist;
 uniform float minDist;
+uniform float totalTime;
 
 in vec4 C;
 in vec3 L;
@@ -12,6 +13,7 @@ in vec3 V;
 in vec3 T;
 
 in float dist;
+in float lt;
 
 void main(void) {    	
 
@@ -43,7 +45,17 @@ void main(void) {
 		if (norm < 0.f) norm = 0.f;
 		if (norm > 1.f) norm = 1.f;
 
-		colour = vec4(ka + kd + ks, C.w * norm);
+		float q = 0.99996f;
+		float repeat = 100000.f;
+
+		float expon = totalTime - mod(lt, repeat);
+		float alpha = 0.f;
+
+		if (expon < 0.f) {
+			expon += repeat;
+		}
+		alpha = pow(q, expon);
+		colour = vec4(ka + kd + ks, C.w * norm * alpha);
 	}
 	else {
 		colour = vec4(ka + kd + ks, C.w);

@@ -236,18 +236,20 @@ Streamline SphericalVectorField::streamline(const Eigen::Vector3d& seed, double 
 	Streamline back(*this);
 
 	Eigen::Vector3d currPos = seed;
+	double totalTime = 0.0;
 	double timeStep = maxStep;
 	double length = 0.0;
 
 	// Forward integrate in time
-	forw.addPoint(currPos);
+	forw.addPoint(currPos, totalTime);
 	while (length < maxDist) {
 
 		currPos = RKF45Adaptive(currPos, timeStep, tol, maxStep);
 		if (!vg.testPoint(sphToCart(currPos))) {
 			break;
 		}
-		forw.addPoint(currPos);
+		totalTime += timeStep;
+		forw.addPoint(currPos, totalTime);
 
 		if (forw.getTotalLength() - length < 10.0 || timeStep == 0.0) {
 			break;
@@ -255,18 +257,20 @@ Streamline SphericalVectorField::streamline(const Eigen::Vector3d& seed, double 
 		length = forw.getTotalLength();
 	}
 	currPos = seed;
+	totalTime = 0.0;
 	timeStep = -maxStep;
 	length = 0.0;
 
 	// Backward integrate in time
-	back.addPoint(currPos);
+	back.addPoint(currPos, totalTime);
 	while (back.getTotalLength() < maxDist) {
 
 		currPos = RKF45Adaptive(currPos, timeStep, tol, maxStep);
 		if (!vg.testPoint(sphToCart(currPos))) {
 			break;
 		}
-		back.addPoint(currPos);
+		totalTime += -timeStep;
+		back.addPoint(currPos, totalTime);
 
 		if (back.getTotalLength() - length < 10.0 || timeStep == 0.0) {
 			break;

@@ -13,6 +13,7 @@ layout (location = 0) in vec3 vertexHigh;
 layout (location = 1) in vec3 vertexLow;
 layout (location = 2) in vec4 colour;
 layout (location = 3) in vec3 tangent;
+layout (location = 4) in float localTime;
 
 out vec4 C;
 out vec3 L;
@@ -20,6 +21,7 @@ out vec3 V;
 out vec3 T;
 
 out float dist;
+out float lt;
 
 void main(void) {	
 
@@ -42,6 +44,7 @@ void main(void) {
 	V = normalize(eyeHigh - vertexHigh);
 	T = tangent;
 	C = colour;
+	lt = localTime;
 
 	vec4 pCamera = modelView * vec4(vertex, 1.f);
 	dist = length(pCamera.xyz);

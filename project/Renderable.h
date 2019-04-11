@@ -78,6 +78,7 @@ class StreamlineRenderable : public ColourRenderable {
 
 public:
 	virtual void addTangent(const glm::vec3& t) { tangents.push_back(t); }
+	virtual void addLocalTime(float localTime) { localTimes.push_back(localTime); }
 
 	virtual void assignBuffers();
 	virtual void setBufferData();
@@ -86,6 +87,7 @@ public:
 	virtual Shader getShaderType() const { return Shader::STREAMLINE; }
 
 	void clear() {
+		localTimes.clear();
 		tangents.clear();
 		colours.clear();
 		vertsHigh.clear();
@@ -94,8 +96,10 @@ public:
 
 private:
 	std::vector<glm::vec3> tangents;
+	std::vector<float> localTimes;
 
 	GLuint tangentBuffer;
+	GLuint timeBuffer;
 };
 
 //class Renderable2 {

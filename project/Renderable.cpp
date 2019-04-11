@@ -138,6 +138,12 @@ void StreamlineRenderable::assignBuffers() {
 	glBindBuffer(GL_ARRAY_BUFFER, tangentBuffer);
 	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 	glEnableVertexAttribArray(3);
+
+	// Time buffer
+	glGenBuffers(1, &timeBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, timeBuffer);
+	glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glEnableVertexAttribArray(4);
 }
 
 
@@ -148,11 +154,16 @@ void StreamlineRenderable::setBufferData() {
 	// Tangent buffer
 	glBindBuffer(GL_ARRAY_BUFFER, tangentBuffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*tangents.size(), tangents.data(), GL_STATIC_DRAW);
+
+	// Time buffer
+	glBindBuffer(GL_ARRAY_BUFFER, timeBuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*localTimes.size(), localTimes.data(), GL_STATIC_DRAW);
 }
 
 
 void StreamlineRenderable::deleteBufferData() {
 
+	glDeleteBuffers(1, &timeBuffer);
 	glDeleteBuffers(1, &tangentBuffer);
 	ColourRenderable::deleteBufferData();
 }

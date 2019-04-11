@@ -155,14 +155,13 @@ void Program::integrateStreamlines() {
 	std::uniform_real_distribution<double> lngDist(0.0, 2.0 * M_PI);
 	std::uniform_real_distribution<double> lvlDist(1.0, 1000.0);
 
-
 	double minLength = 5000000.0;
 	double sepDist = 250000.0;
 
 	VoxelGrid vg(mbarsToAbs(1.0) + 100.0, sepDist);
 
 
-	while (true) {
+	while (streamlines.size() < 320) {
 
 		Eigen::Vector3d seed(asin(latDist(rng)), lngDist(rng), lvlDist(rng));
 		if (!vg.testPoint(sphToCart(seed))) {
@@ -181,7 +180,7 @@ void Program::integrateStreamlines() {
 			mtx.unlock();
 		}
 	}
-
+	std::cout << "end" << std::endl;
 
 	//std::queue<Streamline> seedLines;
 

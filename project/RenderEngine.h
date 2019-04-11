@@ -34,6 +34,8 @@ private:
 	double near;
 	double far;
 
+	float totalTime;
+
 	GLuint mainProgram;
 	GLuint streamlineProgram;
 	bool fade;
