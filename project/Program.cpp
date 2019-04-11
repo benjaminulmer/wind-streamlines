@@ -68,6 +68,7 @@ void Program::start() {
 
 	reIntegrate = true;
 
+	numNewLines = 0;
 	std::thread t1(&Program::integrateStreamlines, this);
 	mainLoop();
 
@@ -113,10 +114,11 @@ void Program::mainLoop() {
 	while (true) {
 
 		mtx.lock();
-		streamlineRender.clear();
-		for (const Streamline& s : streamlines) {
-			s.addToRenderable(streamlineRender);
+		size_t size = streamlines.size();
+		for (size_t i = 0; i < numNewLines; i++) {
+			streamlines[size - 1 - i].addToRenderable(streamlineRender);
 		}
+		numNewLines = 0;
 		streamlineRender.setBufferData();
 		mtx.unlock();
 
@@ -142,58 +144,106 @@ void Program::mainLoop() {
 	}
 }
 
-
+#include <chrono>
 // Seeds and integrates streamlines
 void Program::integrateStreamlines() {
 
-	double minLength = 500000.0;
+	std::random_device dev;
+	std::default_random_engine rng(dev());
+	rng.seed(1);
+	std::uniform_real_distribution<double> latDist(-1.0, 1.0);
+	std::uniform_real_distribution<double> lngDist(0.0, 2.0 * M_PI);
+	std::uniform_real_distribution<double> lvlDist(1.0, 1000.0);
+
+
+	double minLength = 5000000.0;
 	double sepDist = 250000.0;
 
 	VoxelGrid vg(mbarsToAbs(1.0) + 100.0, sepDist);
 
-	std::queue<Streamline> seedLines;
 
-	// Need a starting streamline to seed off of
-	Streamline first = field.streamline(Eigen::Vector3d(0.0, 0.0, 1000.0), 5000000.0, 1000.0, 5000.0, vg);
-	for (const Eigen::Vector3d& p : first.getPoints()) {
-		vg.addPoint(sphToCart(p));
-	}
-	seedLines.push(first);
-	mtx.lock();
-	streamlines.push_back(first);
-	mtx.unlock();
+	while (true) {
 
-	while (!seedLines.empty()) {
+		Eigen::Vector3d seed(asin(latDist(rng)), lngDist(rng), lvlDist(rng));
+		if (!vg.testPoint(sphToCart(seed))) {
+			continue;
+		}
+		Streamline newLine = field.streamline(seed, 10000000.0, 1000.0, 1000.0, vg);
 
-		std::cout << seedLines.size() << std::endl;
+		if (newLine.getTotalLength() > minLength) {
 
-		Streamline seedLine = seedLines.front();
-		seedLines.pop();
-
-		std::vector<Eigen::Vector3d> seeds = seedLine.getSeeds(sepDist);
-
-		for (const Eigen::Vector3d& seed : seeds) {
-
-			// Do not use seed if it is too close to other lines
-			if (!vg.testPoint(sphToCart(seed))) {
-				continue;
+			for (const Eigen::Vector3d& p : newLine.getPoints()) {
+				vg.addPoint(sphToCart(p));
 			}
-
-			// Integrate streamline and add it if it was long enough
-			Streamline newLine = field.streamline(seed, 5000000.0, 1000.0, 5000.0, vg);
-			if (newLine.getTotalLength() > minLength) {
-
-				seedLines.push(newLine);
-				for (const Eigen::Vector3d& p : newLine.getPoints()) {
-					vg.addPoint(sphToCart(p));
-				}
-				mtx.lock();
-				streamlines.push_back(newLine);
-				mtx.unlock();
-			}
+			mtx.lock();
+			numNewLines++;
+			streamlines.push_back(newLine);
+			mtx.unlock();
 		}
 	}
-	std::cout << "end" << std::endl;
+
+
+	//std::queue<Streamline> seedLines;
+
+	//for (const Eigen::Vector3d& p : field.getHighVertPoints()) {
+	//	Streamline line = field.streamline(p, 5000000.0, 1000.0, 5000.0, vg);
+	//	for (const Eigen::Vector3d& p : line.getPoints()) {
+	//		vg.addPoint(sphToCart(p));
+	//	}
+	//	seedLines.push(line);
+	//	mtx.lock();
+	//	numNewLines++;
+	//	streamlines.push_back(line);
+	//	mtx.unlock();
+	//}
+	//std::cout << "high vert done" << std::endl;
+	//std::this_thread::sleep_for(std::chrono::seconds(50));
+	//std::cout << "resuming" << std::endl;
+
+
+	// Need a starting streamline to seed off of
+	//Streamline first = field.streamline(Eigen::Vector3d(0.0, 0.0, 2.0), 5000000.0, 1000.0, 5000.0, vg);
+	//for (const Eigen::Vector3d& p : first.getPoints()) {
+	//	vg.addPoint(sphToCart(p));
+	//}
+	//seedLines.push(first);
+	//mtx.lock();
+	//numNewLines++;
+	//streamlines.push_back(first);
+	//mtx.unlock();
+
+	//while (!seedLines.empty()) {
+
+	//	std::cout << seedLines.size() << std::endl;
+
+	//	Streamline seedLine = seedLines.front();
+	//	seedLines.pop();
+
+	//	std::vector<Eigen::Vector3d> seeds = seedLine.getSeeds(sepDist);
+
+	//	for (const Eigen::Vector3d& seed : seeds) {
+
+	//		// Do not use seed if it is too close to other lines
+	//		if (!vg.testPoint(sphToCart(seed))) {
+	//			continue;
+	//		}
+
+	//		// Integrate streamline and add it if it was long enough
+	//		Streamline newLine = field.streamline(seed, 5000000.0, 1000.0, 5000.0, vg);
+	//		if (newLine.getTotalLength() > minLength) {
+
+	//			seedLines.push(newLine);
+	//			for (const Eigen::Vector3d& p : newLine.getPoints()) {
+	//				vg.addPoint(sphToCart(p));
+	//			}
+	//			mtx.lock();
+	//			numNewLines++;
+	//			streamlines.push_back(newLine);
+	//			mtx.unlock();
+	//		}
+	//	}
+	//}
+	//std::cout << "end" << std::endl;
 
 
 

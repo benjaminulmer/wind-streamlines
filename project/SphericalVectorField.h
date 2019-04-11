@@ -22,6 +22,7 @@ public:
 	SphericalVectorField(const netCDF::NcFile& file);
 
 	double getMaxMagSq() const { return maxMagSq; }
+	const std::vector<Eigen::Vector3d>& getHighVertPoints() const { return highVertPoints; }
 	int level(size_t i) { return levels[i]; }
 
 	std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> findCriticalPoints() const;
@@ -52,6 +53,7 @@ private:
 	std::vector<Eigen::Vector3d> data;
 
 	double maxMagSq;
+	std::vector<Eigen::Vector3d> highVertPoints;
 
 	std::vector<int> levels;
 	std::vector<double> lats;

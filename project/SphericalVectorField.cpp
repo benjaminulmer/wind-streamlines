@@ -76,8 +76,14 @@ SphericalVectorField::SphericalVectorField(const netCDF::NcFile& file) :
 		double magSq = vel.squaredNorm();
 
 		maxMagSq = std::max(maxMagSq, magSq);
+
+		if (vel.z() > 0.6) {
+			highVertPoints.push_back(sphCoords(i));
+		}
 	}
 	std::cout << maxMagSq << std::endl;
+	std::cout << highVertPoints.size() << std::endl;
+	std::cout << " ******* " << std::endl;
 
 	delete[] uArry;
 	delete[] vArry;
@@ -436,7 +442,7 @@ Eigen::Vector3d SphericalVectorField::newPos(const Eigen::Vector3d& currPos, con
 	// TODO singularities at poles, how to account for this? Doing in physical space is not stable (trig on small angles)
 	newPos.x() = currPos.x() + velocity.x() / absRadius;
 	newPos.y() = (cosLat > 0.0001) ? currPos.y() + velocity.y() / (cos(currPos.x()) * absRadius) : currPos.y();
-	newPos.z() = currPos.z();// +0.01 * velocity.z();
+	newPos.z() = currPos.z() + 0.01 * velocity.z();
 
 	// TODO properly account for edge cases as opposed to this hacky method
 	if (newPos.x() > M_PI_2) newPos.x() = M_PI_2;

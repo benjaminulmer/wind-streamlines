@@ -37,6 +37,7 @@ private:
 	bool reIntegrate;
 
 	std::mutex mtx;
+	int numNewLines;
 
 	double scale;
 	double latRot;

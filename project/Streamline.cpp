@@ -64,7 +64,7 @@ std::vector<Eigen::Vector3d> Streamline::getSeeds(double sepDist) {
 
 	sepDist *= 1.001;
 
-	double fac = 1.0;
+	double fac = 50.0;
 
 	std::vector<Eigen::Vector3d> seeds;
 
@@ -76,8 +76,8 @@ std::vector<Eigen::Vector3d> Streamline::getSeeds(double sepDist) {
 	Eigen::Affine3d t10(Eigen::AngleAxis<double>(sepDist / cart0.norm(), tangent0));
 	Eigen::Affine3d t20(Eigen::AngleAxis<double>(-sepDist / cart0.norm(), tangent0));
 
-	//seeds.push_back(cartToSph(cart0 + cart0.normalized() * (sepDist / fac)));
-	//seeds.push_back(cartToSph(cart0 - cart0.normalized() * (sepDist / fac)));
+	seeds.push_back(cartToSph(cart0 + cart0.normalized() * (sepDist / fac)));
+	seeds.push_back(cartToSph(cart0 - cart0.normalized() * (sepDist / fac)));
 	seeds.push_back(cartToSph(t10 * cart0));
 	seeds.push_back(cartToSph(t20 * cart0));
 
@@ -91,8 +91,8 @@ std::vector<Eigen::Vector3d> Streamline::getSeeds(double sepDist) {
 		Eigen::Affine3d t1(Eigen::AngleAxis<double>(sepDist / cart.norm(), tangent));
 		Eigen::Affine3d t2(Eigen::AngleAxis<double>(-sepDist / cart.norm(), tangent));
 
-		//seeds.push_back(cartToSph(cart + cart.normalized() * (sepDist / fac)));
-		//seeds.push_back(cartToSph(cart - cart.normalized() * (sepDist / fac)));
+		seeds.push_back(cartToSph(cart + cart.normalized() * (sepDist / fac)));
+		seeds.push_back(cartToSph(cart - cart.normalized() * (sepDist / fac)));
 		seeds.push_back(cartToSph(t1 * cart));
 		seeds.push_back(cartToSph(t2 * cart));
 	}
@@ -105,8 +105,8 @@ std::vector<Eigen::Vector3d> Streamline::getSeeds(double sepDist) {
 	Eigen::Affine3d t1E(Eigen::AngleAxis<double>(sepDist / cartE.norm(), tangentE));
 	Eigen::Affine3d t2E(Eigen::AngleAxis<double>(-sepDist / cartE.norm(), tangentE));
 
-	//seeds.push_back(cartToSph(cartE + cartE.normalized() * (sepDist / fac)));
-	//seeds.push_back(cartToSph(cartE - cartE.normalized() * (sepDist / fac)));
+	seeds.push_back(cartToSph(cartE + cartE.normalized() * (sepDist / fac)));
+	seeds.push_back(cartToSph(cartE - cartE.normalized() * (sepDist / fac)));
 	seeds.push_back(cartToSph(t1E * cartE));
 	seeds.push_back(cartToSph(t2E * cartE));
 

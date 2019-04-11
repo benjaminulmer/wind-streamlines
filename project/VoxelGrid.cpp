@@ -25,8 +25,6 @@ bool VoxelGrid::testPoint(const Eigen::Vector3d& p) const {
 	size_t xM1 = (size_t)((p.x() + rad) / sepDist) - 1;
 	size_t yM1 = (size_t)((p.y() + rad) / sepDist) - 1;
 	size_t zM1 = (size_t)((p.z() + rad) / sepDist) - 1;
-	
-	int count = 0;
 
 	for (size_t xI = 0; xI < 3; xI++) {
 		for (size_t yI = 0; yI < 3; yI++) {
@@ -45,8 +43,6 @@ bool VoxelGrid::testPoint(const Eigen::Vector3d& p) const {
 				const auto cell = (*this)(x, y, z);
 				for (const Eigen::Vector3d t : cell) {
 
-					count++;
-
 					double pLen = p.norm();
 					double tLen = t.norm();
 
@@ -55,15 +51,13 @@ bool VoxelGrid::testPoint(const Eigen::Vector3d& p) const {
 					double vert = pLen - tLen;
 					double geod = height * acos((p / pLen).dot(t / tLen));
 
-					if ((p - t).squaredNorm() < sepDist * sepDist) {
-						//std::cout << "false count: " << count << std::endl;
+					if (geod * geod + 2500.0 * vert * vert < sepDist * sepDist) {
 						return false;
 					}
 				}
 			}
 		}
 	}
-	//std::cout << "true count: " << count << std::endl;
 	return true;
 }
 
