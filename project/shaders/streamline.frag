@@ -6,14 +6,17 @@ uniform bool fade;
 uniform float maxDist;
 uniform float minDist;
 uniform float totalTime;
+uniform float timeMultiplier;
+uniform float timeRepeat;
+uniform float alphaPerSecond;
 
 in vec4 C;
 in vec3 L;
 in vec3 V;
 in vec3 T;
 
-in float dist;
-in float lt;
+in float d;
+in float t;
 
 void main(void) {    	
 
@@ -39,22 +42,15 @@ void main(void) {
 	if (fade) {
 
 		// Fall off function
-		float norm = (dist - minDist) / (maxDist - minDist);
+		float norm = (d - minDist) / (maxDist - minDist);
 		norm = 1.f - 1.75f * norm;
 
 		if (norm < 0.f) norm = 0.f;
 		if (norm > 1.f) norm = 1.f;
 
-		float q = 0.99996f;
-		float repeat = 100000.f;
-
-		float expon = totalTime - mod(lt, repeat);
-		float alpha = 0.f;
-
-		if (expon < 0.f) {
-			expon += repeat;
-		}
-		alpha = pow(q, expon);
+		float expon = mod(totalTime - mod(t, timeRepeat), timeRepeat) / timeMultiplier;
+		float alpha = pow(alphaPerSecond, expon);
+		
 		colour = vec4(ka + kd + ks, C.w * norm * alpha);
 	}
 	else {

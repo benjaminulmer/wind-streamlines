@@ -20,8 +20,8 @@ out vec3 L;
 out vec3 V;
 out vec3 T;
 
-out float dist;
-out float lt;
+out float d;
+out float t;
 
 void main(void) {	
 
@@ -44,10 +44,10 @@ void main(void) {
 	V = normalize(eyeHigh - vertexHigh);
 	T = tangent;
 	C = colour;
-	lt = localTime;
+	t = localTime;
 
 	vec4 pCamera = modelView * vec4(vertex, 1.f);
-	dist = length(pCamera.xyz);
+	d = length(pCamera.xyz);
 
     gl_Position = projection * pCamera; 
 }

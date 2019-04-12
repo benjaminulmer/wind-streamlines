@@ -7,11 +7,12 @@
 #include <SDL2/SDL_opengl.h>
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <iostream>
 #include <limits>
-#include <random>
 #include <queue>
+#include <random>
 
 #include "Conversions.h"
 #include "ContentReadWrite.h"
@@ -111,6 +112,8 @@ void Program::setupWindow() {
 // Main loop
 void Program::mainLoop() {
 
+	std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
+
 	while (true) {
 
 		mtx.lock();
@@ -139,12 +142,16 @@ void Program::mainLoop() {
 		worldModel = glm::rotate(worldModel, latRot, glm::dvec3(-1.0, 0.0, 0.0));
 		worldModel = glm::rotate(worldModel, longRot, glm::dvec3(0.0, 1.0, 0.0));
 
-		renderEngine->render(objects, (glm::dmat4)camera->getLookAt() * worldModel, max, min);
+		std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+		std::chrono::duration<float> dTimeS = std::chrono::duration_cast<std::chrono::duration<double>>(t1 - t0);
+		t0 = t1;
+
+		renderEngine->render(objects, (glm::dmat4)camera->getLookAt() * worldModel, max, min, dTimeS.count());
 		SDL_GL_SwapWindow(window);
 	}
 }
 
-#include <chrono>
+
 // Seeds and integrates streamlines
 void Program::integrateStreamlines() {
 

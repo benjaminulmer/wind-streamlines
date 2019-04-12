@@ -15,11 +15,14 @@ RenderEngine::RenderEngine(SDL_Window* window) :
 	fovYRad(60.f * ((float)M_PI / 180.f)),
 	near(1.f),
 	far(1000.f),
+	totalTime(0.f),
+	timeMultiplier(30000.f),
+	timeRepeat(100000.f),
+	alphaPerSecond(0.3f),
 	fade(true),
 	scaleFactor(30.f) {
 
 	SDL_GetWindowSize(window, &width, &height);
-	totalTime = 0.f;
 
 	mainProgram = ShaderTools::compileShaders("./shaders/main.vert", "./shaders/main.frag");
 	streamlineProgram = ShaderTools::compileShaders("./shaders/streamline.vert", "./shaders/streamline.frag");
@@ -42,12 +45,11 @@ RenderEngine::RenderEngine(SDL_Window* window) :
 }
 
 // Called to render the active object. RenderEngine stores all information about how to render
-void RenderEngine::render(const std::vector<const Renderable*>& objects, const glm::dmat4& view, float max, float min) {
-
+void RenderEngine::render(const std::vector<const Renderable*>& objects, const glm::dmat4& view, float max, float min, float dTimeS) {
+	
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-	totalTime += 500.f;
-	totalTime = fmod(totalTime, 100000.f);
-
+	totalTime += dTimeS * timeMultiplier;
+	totalTime = fmod(totalTime, timeRepeat);
 
 	for (const Renderable* r : objects) {	
 		
@@ -88,6 +90,9 @@ void RenderEngine::render(const std::vector<const Renderable*>& objects, const g
 		glUniform1f(glGetUniformLocation(program, "maxDist"), max);
 		glUniform1f(glGetUniformLocation(program, "minDist"), min);
 		glUniform1f(glGetUniformLocation(program, "totalTime"), totalTime);
+		glUniform1f(glGetUniformLocation(program, "timeMultiplier"), timeMultiplier);
+		glUniform1f(glGetUniformLocation(program, "timeRepeat"), timeRepeat);
+		glUniform1f(glGetUniformLocation(program, "alphaPerSecond"), alphaPerSecond);
 
 		r->render();
 		glBindVertexArray(0);
