@@ -34,8 +34,7 @@ void InputHandler::pollEvent(SDL_Event& e) {
 		InputHandler::reshape(e.window);
 	}
 	else if (e.type == SDL_QUIT) {
-		SDL_Quit();
-		exit(0);
+		program->cleanup();
 	}
 }
 

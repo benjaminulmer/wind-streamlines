@@ -26,7 +26,7 @@ public:
 	double getFar() { return far; }
 	glm::dmat4 getProjection() { return projection; }
 
-private:
+//private:
 	SDL_Window* window;
 	int width, height;
 

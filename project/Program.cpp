@@ -1,6 +1,9 @@
 #define _USE_MATH_DEFINES
 #include "Program.h"
 
+#include "imgui_impl_sdl.h"
+#include "imgui_impl_opengl3.h"
+
 #include <GL/glew.h>
 #include <glm/gtx/intersect.hpp>
 #include <netcdf>
@@ -19,18 +22,17 @@
 #include "InputHandler.h"
 #include "VoxelGrid.h"
 
-
-Program::Program() {
-
-	window = nullptr;
-	renderEngine = nullptr;
-	camera = nullptr;
-
-	longRot = 0;
-	latRot = 0;
-
-	width = height = 800;
-}
+Program::Program() :
+	window(nullptr),
+	width(800),
+	height(800),
+	io(nullptr),
+	renderEngine(nullptr),
+	camera(nullptr),
+	numNewLines(0),
+	scale(1.0),
+	latRot(0.0),
+	longRot(0.0) {}
 
 // Called to start the program. Conducts set up then enters the main loop
 void Program::start() {	
@@ -46,9 +48,6 @@ void Program::start() {
 	camera = new Camera();
 	renderEngine = new RenderEngine(window);
 	InputHandler::setUp(camera, renderEngine, this);
-
-	// Set starting scale
-	scale = 1.0;
 
 	// Load coastline vector data
 	rapidjson::Document cl = ContentReadWrite::readJSON("data/coastlines.json");
@@ -66,8 +65,6 @@ void Program::start() {
 	objects.push_back(&streamlineRender);
 	streamlineRender.assignBuffers();
 	streamlineRender.setDrawMode(GL_LINES);
-
-	reIntegrate = true;
 
 	numNewLines = 0;
 	std::thread t1(&Program::integrateStreamlines, this);
@@ -101,11 +98,25 @@ void Program::setupWindow() {
 		exit(EXIT_FAILURE);
 	}
 
-	SDL_GLContext context = SDL_GL_CreateContext(window);
+	context = SDL_GL_CreateContext(window);
 	if (context == NULL) {
 		std::cout << "OpenGL context could not be created! SDL Error: " << SDL_GetError() << std::endl;
 	}
 	SDL_GL_SetSwapInterval(1); // Vsync on
+
+	// Set up IMGUI
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	io = &ImGui::GetIO();
+	io->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+	
+	ImGui::StyleColorsDark();
+	//ImGui::StyleColorsClassic();
+
+	// Setup Platform/Renderer bindings
+	ImGui_ImplSDL2_InitForOpenGL(window, context);
+	const char* glsl_version = "#version 430 core";
+	ImGui_ImplOpenGL3_Init(glsl_version);
 }
 
 
@@ -128,7 +139,11 @@ void Program::mainLoop() {
 		// Process all SDL events
 		SDL_Event e;
 		while (SDL_PollEvent(&e)) {
-			InputHandler::pollEvent(e);
+
+			ImGui_ImplSDL2_ProcessEvent(&e);
+			if (!io->WantCaptureMouse || !io->WantCaptureKeyboard) {
+				InputHandler::pollEvent(e);
+			}
 		}
 
 		// Find min and max distance from camera to cell renderable - used for fading effect
@@ -142,11 +157,31 @@ void Program::mainLoop() {
 		worldModel = glm::rotate(worldModel, latRot, glm::dvec3(-1.0, 0.0, 0.0));
 		worldModel = glm::rotate(worldModel, longRot, glm::dvec3(0.0, 1.0, 0.0));
 
+		// Testing
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplSDL2_NewFrame(window);
+		ImGui::NewFrame();
+
+		{
+			ImGui::Begin("Parameters");
+			ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+			ImGui::InputFloat("Time scale factor", &renderEngine->timeMultiplier, 100.f, 1000.f);
+			ImGui::InputFloat("Time repeat interval", &renderEngine->timeRepeat, 100.f, 1000.f);
+			ImGui::SliderFloat("Alpha multiplier/s", &renderEngine->alphaPerSecond, 0.0f, 1.0f);
+			ImGui::SliderFloat("Altitude scale factor", &renderEngine->scaleFactor, 0.0f, 100.f);
+
+
+			ImGui::End();
+		}
+
+
 		std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 		std::chrono::duration<float> dTimeS = std::chrono::duration_cast<std::chrono::duration<double>>(t1 - t0);
 		t0 = t1;
 
+		ImGui::Render();
 		renderEngine->render(objects, (glm::dmat4)camera->getLookAt() * worldModel, max, min, dTimeS.count());
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		SDL_GL_SwapWindow(window);
 	}
 }
@@ -345,4 +380,20 @@ void Program::updateScale(int inc) {
 		scale *= 1.4f;
 	}
 	camera->setScale(scale);
+}
+
+
+void Program::cleanup() {
+
+	coastRender.deleteBufferData();
+	streamlineRender.deleteBufferData();
+
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplSDL2_Shutdown();
+	ImGui::DestroyContext();
+
+	SDL_GL_DeleteContext(context);
+	SDL_DestroyWindow(window);
+	SDL_Quit();
+	exit(0);
 }
