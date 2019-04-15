@@ -125,9 +125,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="Color\ColorSpace.cpp" />
+    <ClCompile Include="Color\Comparison.cpp" />
+    <ClCompile Include="Color\Conversion.cpp" />
     <ClCompile Include="ContentReadWrite.cpp" />
-    <ClCompile Include="imgui_impl_opengl3.cpp" />
-    <ClCompile Include="imgui_impl_sdl.cpp" />
+    <ClCompile Include="imgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="imgui\imgui_impl_sdl.cpp" />
     <ClCompile Include="InputHandler.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Program.cpp" />
@@ -140,10 +143,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="Color\ColorSpace.h" />
+    <ClInclude Include="Color\Comparison.h" />
+    <ClInclude Include="Color\Conversion.h" />
+    <ClInclude Include="Color\Utils.h" />
     <ClInclude Include="Conversions.h" />
     <ClInclude Include="ContentReadWrite.h" />
-    <ClInclude Include="imgui_impl_opengl3.h" />
-    <ClInclude Include="imgui_impl_sdl.h" />
+    <ClInclude Include="imgui\imgui_impl_opengl3.h" />
+    <ClInclude Include="imgui\imgui_impl_sdl.h" />
     <ClInclude Include="InputHandler.h" />
     <ClInclude Include="Program.h" />
     <ClInclude Include="Renderable.h" />

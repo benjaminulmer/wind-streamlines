@@ -1,105 +1,65 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    <Filter Include="Color">
+      <UniqueIdentifier>{39ab9ff8-4b51-4022-97d1-570f2311ef1e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    <Filter Include="imgui">
+      <UniqueIdentifier>{d5cad5cf-31f5-4e0c-b7a1-c97216df02a8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{7a50ffd4-a878-4109-9fae-cd0e643c0012}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Color\ColorSpace.cpp">
+      <Filter>Color</Filter>
     </ClCompile>
-    <ClCompile Include="SphericalVectorField.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Color\Comparison.cpp">
+      <Filter>Color</Filter>
     </ClCompile>
-    <ClCompile Include="Camera.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Color\Conversion.cpp">
+      <Filter>Color</Filter>
     </ClCompile>
-    <ClCompile Include="ContentReadWrite.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="imgui\imgui_impl_opengl3.cpp">
+      <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="InputHandler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Program.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderable.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="RenderEngine.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ShaderTools.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Streamline.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="VoxelGrid.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui_impl_opengl3.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui_impl_sdl.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="imgui\imgui_impl_sdl.cpp">
+      <Filter>imgui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="SphericalVectorField.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Color\ColorSpace.h">
+      <Filter>Color</Filter>
     </ClInclude>
-    <ClInclude Include="Camera.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Color\Comparison.h">
+      <Filter>Color</Filter>
     </ClInclude>
-    <ClInclude Include="ContentReadWrite.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Color\Conversion.h">
+      <Filter>Color</Filter>
     </ClInclude>
-    <ClInclude Include="InputHandler.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Color\Utils.h">
+      <Filter>Color</Filter>
     </ClInclude>
-    <ClInclude Include="Program.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="imgui\imgui_impl_opengl3.h">
+      <Filter>imgui</Filter>
     </ClInclude>
-    <ClInclude Include="Renderable.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="RenderEngine.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ShaderTools.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Conversions.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Streamline.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="VoxelGrid.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui_impl_opengl3.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui_impl_sdl.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="imgui\imgui_impl_sdl.h">
+      <Filter>imgui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\main.frag" />
-    <None Include="shaders\main.vert" />
-    <None Include="shaders\streamline.frag" />
-    <None Include="shaders\streamline.vert" />
+    <None Include="shaders\main.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\main.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\streamline.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\streamline.vert">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

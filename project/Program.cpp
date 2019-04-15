@@ -1,8 +1,8 @@
 #define _USE_MATH_DEFINES
 #include "Program.h"
 
-#include "imgui_impl_sdl.h"
-#include "imgui_impl_opengl3.h"
+#include "imgui/imgui_impl_sdl.h"
+#include "imgui/imgui_impl_opengl3.h"
 
 #include <GL/glew.h>
 #include <glm/gtx/intersect.hpp>
