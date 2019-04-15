@@ -6,7 +6,7 @@ uniform bool fade;
 uniform float maxDist;
 uniform float minDist;
 
-in vec4 C;
+in vec3 C;
 
 in float dist;
 
@@ -22,9 +22,9 @@ void main(void) {
 		if (norm < 0.f) norm = 0.f;
 		if (norm > 1.f) norm = 1.f;
 
-		colour = vec4(C.xyz, C.w * norm);
+		colour = vec4(C, norm);
 	}
 	else {
-		colour = C;
+		colour = vec4(C, 1.f);
 	}
 }

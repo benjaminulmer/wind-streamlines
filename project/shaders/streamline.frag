@@ -9,8 +9,9 @@ uniform float totalTime;
 uniform float timeMultiplier;
 uniform float timeRepeat;
 uniform float alphaPerSecond;
+uniform float specularToggle;
 
-in vec4 C;
+in vec3 C;
 in vec3 L;
 in vec3 V;
 in vec3 T;
@@ -34,9 +35,9 @@ void main(void) {
 
 	// Phong reflection model
 	float n = 32.f;
-	vec3 ka = 0.2f * C.xyz;
-	vec3 kd = 0.8f * diffuse * C.xyz;
-	vec3 ks = 0.6f * pow(spec, n) * vec3(1.f, 1.f, 1.f);
+	vec3 ka = 0.2f * C;
+	vec3 kd = 0.8f * diffuse * C;
+	vec3 ks = 0.6f * pow(spec, n) * vec3(1.f, 1.f, 1.f) * specularToggle;
 
 	// Calculate alpha if fading is needed
 	if (fade) {
@@ -51,10 +52,10 @@ void main(void) {
 		float expon = mod(totalTime - mod(t, timeRepeat), timeRepeat) / timeMultiplier;
 		float alpha = pow(alphaPerSecond, expon);
 		
-		colour = vec4(ka + kd + ks, C.w * norm * alpha);
+		colour = vec4(ka + kd + ks, norm * alpha);
 	}
 	else {
-		colour = vec4(ka + kd + ks, C.w);
+		colour = vec4(ka + kd + ks, 1.f);
 	}
 
 

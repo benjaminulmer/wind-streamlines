@@ -54,7 +54,7 @@ public:
 	ColourRenderable() = default;
 	ColourRenderable(const rapidjson::Document& d);
 
-	virtual void addColour(const glm::vec4& c) { colours.push_back(c); }
+	virtual void addColour(const glm::vec3& c) { colours.push_back(c); }
 
 	virtual void assignBuffers();
 	virtual void setBufferData();
@@ -68,7 +68,7 @@ public:
 protected:
 	GLuint drawMode;
 
-	std::vector<glm::vec4> colours;
+	std::vector<glm::vec3> colours;
 
 	GLuint colourBuffer;
 };
@@ -101,35 +101,3 @@ private:
 	GLuint tangentBuffer;
 	GLuint timeBuffer;
 };
-
-//class Renderable2 {
-//
-//public:
-//	Renderable() : lineColour(glm::vec3(1.f, 1.f, 1.f)), vao(0), vertexHighBuffer(0), vertexLowBuffer(0), colourBuffer(0), uvBuffer(0), textureID(0), fade(true), drawMode(0) {}
-//	Renderable(const rapidjson::Document& d);
-//
-//	void doubleToFloats();
-//
-//	std::vector<glm::dvec3> verts;
-//
-//	std::vector<glm::vec3> vertsHigh;
-//	std::vector<glm::vec3> vertsLow;
-//	std::vector<glm::vec3> colours;
-//	std::vector<glm::vec2> uvs;
-//
-//	//glm::mat4 model;
-//
-//	glm::vec3 lineColour;
-//
-//	GLuint vao;
-//	GLuint vertexHighBuffer;
-//	GLuint vertexLowBuffer;
-//	GLuint colourBuffer;
-//	GLuint uvBuffer;
-//	GLuint textureID;
-//
-//	bool fade;
-//
-//	GLuint drawMode;
-//};
-

@@ -20,7 +20,8 @@ RenderEngine::RenderEngine(SDL_Window* window) :
 	timeRepeat(100000.f),
 	alphaPerSecond(0.3f),
 	fade(true),
-	scaleFactor(30.f) {
+	scaleFactor(30.f),
+	specular(true) {
 
 	SDL_GetWindowSize(window, &width, &height);
 
@@ -93,6 +94,7 @@ void RenderEngine::render(const std::vector<const Renderable*>& objects, const g
 		glUniform1f(glGetUniformLocation(program, "timeMultiplier"), timeMultiplier);
 		glUniform1f(glGetUniformLocation(program, "timeRepeat"), timeRepeat);
 		glUniform1f(glGetUniformLocation(program, "alphaPerSecond"), alphaPerSecond);
+		glUniform1f(glGetUniformLocation(program, "specularToggle"), (specular) ? 1.f : 0.f);
 
 		r->render();
 		glBindVertexArray(0);

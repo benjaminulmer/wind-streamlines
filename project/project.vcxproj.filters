@@ -1,25 +1,25 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Color">
-      <UniqueIdentifier>{39ab9ff8-4b51-4022-97d1-570f2311ef1e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="imgui">
       <UniqueIdentifier>{d5cad5cf-31f5-4e0c-b7a1-c97216df02a8}</UniqueIdentifier>
     </Filter>
     <Filter Include="shaders">
       <UniqueIdentifier>{7a50ffd4-a878-4109-9fae-cd0e643c0012}</UniqueIdentifier>
     </Filter>
+    <Filter Include="color">
+      <UniqueIdentifier>{39ab9ff8-4b51-4022-97d1-570f2311ef1e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Color\ColorSpace.cpp">
-      <Filter>Color</Filter>
+      <Filter>color</Filter>
     </ClCompile>
     <ClCompile Include="Color\Comparison.cpp">
-      <Filter>Color</Filter>
+      <Filter>color</Filter>
     </ClCompile>
     <ClCompile Include="Color\Conversion.cpp">
-      <Filter>Color</Filter>
+      <Filter>color</Filter>
     </ClCompile>
     <ClCompile Include="imgui\imgui_impl_opengl3.cpp">
       <Filter>imgui</Filter>
@@ -27,19 +27,30 @@
     <ClCompile Include="imgui\imgui_impl_sdl.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="ContentReadWrite.cpp" />
+    <ClCompile Include="InputHandler.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Program.cpp" />
+    <ClCompile Include="Renderable.cpp" />
+    <ClCompile Include="RenderEngine.cpp" />
+    <ClCompile Include="ShaderTools.cpp" />
+    <ClCompile Include="SphericalVectorField.cpp" />
+    <ClCompile Include="Streamline.cpp" />
+    <ClCompile Include="VoxelGrid.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Color\ColorSpace.h">
-      <Filter>Color</Filter>
+      <Filter>color</Filter>
     </ClInclude>
     <ClInclude Include="Color\Comparison.h">
-      <Filter>Color</Filter>
+      <Filter>color</Filter>
     </ClInclude>
     <ClInclude Include="Color\Conversion.h">
-      <Filter>Color</Filter>
+      <Filter>color</Filter>
     </ClInclude>
     <ClInclude Include="Color\Utils.h">
-      <Filter>Color</Filter>
+      <Filter>color</Filter>
     </ClInclude>
     <ClInclude Include="imgui\imgui_impl_opengl3.h">
       <Filter>imgui</Filter>
@@ -47,6 +58,17 @@
     <ClInclude Include="imgui\imgui_impl_sdl.h">
       <Filter>imgui</Filter>
     </ClInclude>
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="Conversions.h" />
+    <ClInclude Include="ContentReadWrite.h" />
+    <ClInclude Include="InputHandler.h" />
+    <ClInclude Include="Program.h" />
+    <ClInclude Include="Renderable.h" />
+    <ClInclude Include="RenderEngine.h" />
+    <ClInclude Include="ShaderTools.h" />
+    <ClInclude Include="SphericalVectorField.h" />
+    <ClInclude Include="Streamline.h" />
+    <ClInclude Include="VoxelGrid.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\main.frag">

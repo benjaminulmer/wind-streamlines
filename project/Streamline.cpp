@@ -1,6 +1,8 @@
 #define _USE_MATH_DEFINES
 #include "Streamline.h"
 
+#include "color/ColorSpace.h"
+
 #include "SphericalVectorField.h"
 #include "Conversions.h"
 
@@ -126,12 +128,30 @@ std::vector<Eigen::Vector3d> Streamline::getSeeds(double sepDist) {
 // r - renderable to add steamline geometry to
 void Streamline::addToRenderable(StreamlineRenderable& r) const {
 
+	double maxAlt = mbarsToAlt(1.0);
+	ColorSpace::Rgb lowRGB(0.0, 0.0, 0.545);
+	ColorSpace::Rgb highRGB(0.0, 1.0, 1.0);
+
+	ColorSpace::Lab lowLab;
+	ColorSpace::Lab highLab;
+
+	lowLab.Initialize(&lowRGB);
+	highLab.Initialize(&highRGB);
+
+	ColorSpace::Lab lab;
+	ColorSpace::Rgb RGB;
+
 	// First point
 	Eigen::Vector3d cart0 = sphToCart(points[0]);
 	Eigen::Vector3d tangent0 = (sphToCart(points[1]) - cart0).normalized();
+	double n0 = (cart0.norm() - RADIUS_EARTH_M) / maxAlt;
+	lab.l = (1.0 - n0) * lowLab.l + n0 * highLab.l;
+	lab.a = (1.0 - n0) * lowLab.a + n0 * highLab.a;
+	lab.b = (1.0 - n0) * lowLab.b + n0 * highLab.b;
+	lab.ToRgb(&RGB);
 
 	r.addVert(glm::dvec3(cart0.x(), cart0.y(), cart0.z()));
-	r.addColour(glm::vec4(0.f, 0.f, 1.f, 1.f));
+	r.addColour(glm::vec3(RGB.r, RGB.g, RGB.b));
 	r.addTangent(glm::vec3(tangent0.x(), tangent0.y(), tangent0.z()));
 	r.addLocalTime(localTimes[0]);
 
@@ -140,11 +160,16 @@ void Streamline::addToRenderable(StreamlineRenderable& r) const {
 
 		Eigen::Vector3d cart = sphToCart(points[i]);
 		Eigen::Vector3d tangent = (sphToCart(points[i + 1]) - sphToCart(points[i - 1])).normalized();
+		double n = (cart.norm() - RADIUS_EARTH_M) / maxAlt;
+		lab.l = (1.0 - n) * lowLab.l + n * highLab.l;
+		lab.a = (1.0 - n) * lowLab.a + n * highLab.a;
+		lab.b = (1.0 - n) * lowLab.b + n * highLab.b;
+		lab.ToRgb(&RGB);
 
 		r.addVert(glm::dvec3(cart.x(), cart.y(), cart.z()));
 		r.addVert(glm::dvec3(cart.x(), cart.y(), cart.z()));
-		r.addColour(glm::vec4(0.f, 0.f, 1.f, 1.f));
-		r.addColour(glm::vec4(0.f, 0.f, 1.f, 1.f));
+		r.addColour(glm::vec3(RGB.r, RGB.g, RGB.b));
+		r.addColour(glm::vec3(RGB.r, RGB.g, RGB.b));
 		r.addTangent(glm::vec3(tangent.x(), tangent.y(), tangent.z()));
 		r.addTangent(glm::vec3(tangent.x(), tangent.y(), tangent.z()));
 		r.addLocalTime(localTimes[i]);
@@ -154,9 +179,14 @@ void Streamline::addToRenderable(StreamlineRenderable& r) const {
 	// Last point
 	Eigen::Vector3d cartE = sphToCart(points.back());
 	Eigen::Vector3d tangentE = (cartE - sphToCart(points[size() - 2])).normalized();
+	double nE = (cartE.norm() - RADIUS_EARTH_M) / maxAlt;
+	lab.l = (1.0 - nE) * lowLab.l + nE * highLab.l;
+	lab.a = (1.0 - nE) * lowLab.a + nE * highLab.a;
+	lab.b = (1.0 - nE) * lowLab.b + nE * highLab.b;
+	lab.ToRgb(&RGB);
 
 	r.addVert(glm::dvec3(cartE.x(), cartE.y(), cartE.z()));
-	r.addColour(glm::vec4(0.f, 0.f, 1.f, 1.f));
+	r.addColour(glm::vec3(RGB.r, RGB.g, RGB.b));
 	r.addTangent(glm::vec3(tangentE.x(), tangentE.y(), tangentE.z()));
 	r.addLocalTime(localTimes.back());
 }

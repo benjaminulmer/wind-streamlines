@@ -165,6 +165,7 @@ void Program::mainLoop() {
 		{
 			ImGui::Begin("Parameters");
 			ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+			ImGui::Checkbox("Specular highlights", &renderEngine->specular);
 			ImGui::InputFloat("Time scale factor", &renderEngine->timeMultiplier, 100.f, 1000.f);
 			ImGui::InputFloat("Time repeat interval", &renderEngine->timeRepeat, 100.f, 1000.f);
 			ImGui::SliderFloat("Alpha multiplier/s", &renderEngine->alphaPerSecond, 0.0f, 1.0f);

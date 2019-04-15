@@ -38,6 +38,7 @@ public:
 	float timeMultiplier;
 	float timeRepeat;
 	float alphaPerSecond;
+	bool specular;
 
 	GLuint mainProgram;
 	GLuint streamlineProgram;
