@@ -7,7 +7,7 @@ VoxelGrid::VoxelGrid(double rad, double sepDist) :
 	rad(rad),
 	sepDist(sepDist),
 	numCells((size_t)((rad * 2.0) / sepDist) + 1),
-	grid(numCells * numCells * numCells) {}
+	grid(numCells * numCells) {}
 
 
 void VoxelGrid::addPoint(const Eigen::Vector3d& p) {
@@ -16,9 +16,30 @@ void VoxelGrid::addPoint(const Eigen::Vector3d& p) {
 	size_t y = (size_t)((p.y() + rad) / sepDist);
 	size_t z = (size_t)((p.z() + rad) / sepDist);
 
-	(*this)(x, y, z).push_back(p);
+	//if (grid.find(indexToOffset(x, y, z)) == grid.end()) {
+		grid[indexToOffset(x, y, z)].push_back(p);
+	//}
+	//else {
+	//	auto cell = grid.at(indexToOffset(x, y, z));
+
+	//	for (const Eigen::Vector3d t : cell) {
+
+	//		double pLen = p.norm();
+	//		double tLen = t.norm();
+
+	//		double height = std::min(pLen, tLen);
+
+	//		double vert = pLen - tLen;
+	//		double geod = height * acos((p / pLen).dot(t / tLen));
+
+	//		if (geod * geod + 2500.0 * vert * vert < 0.5 * 0.5 * sepDist * sepDist) {
+	//			return;
+	//		}
+	//	}
+	//	cell.push_back(p);
+	//}
 }
-#include <iostream>
+
 
 bool VoxelGrid::testPoint(const Eigen::Vector3d& p) const {
 
@@ -40,19 +61,21 @@ bool VoxelGrid::testPoint(const Eigen::Vector3d& p) const {
 					continue;
 				}
 
-				const auto cell = (*this)(x, y, z);
-				for (const Eigen::Vector3d t : cell) {
+				if (grid.find(indexToOffset(x, y, z)) != grid.end()) {
+					const auto cell = grid.at(indexToOffset(x, y, z));
+					for (const Eigen::Vector3d t : cell) {
 
-					double pLen = p.norm();
-					double tLen = t.norm();
+						double pLen = p.norm();
+						double tLen = t.norm();
 
-					double height = std::min(pLen, tLen);
+						double height = std::min(pLen, tLen);
 
-					double vert = pLen - tLen;
-					double geod = height * acos((p / pLen).dot(t / tLen));
+						double vert = pLen - tLen;
+						double geod = height * acos((p / pLen).dot(t / tLen));
 
-					if (geod * geod + 2500.0 * vert * vert < sepDist * sepDist) {
-						return false;
+						if (geod * geod + 2500.0 * vert * vert < sepDist * sepDist) {
+							return false;
+						}
 					}
 				}
 			}
@@ -64,14 +87,4 @@ bool VoxelGrid::testPoint(const Eigen::Vector3d& p) const {
 
 size_t VoxelGrid::indexToOffset(size_t x, size_t y, size_t z) const {
 	return y + numCells * (x + numCells * z);
-}
-
-
-std::vector<Eigen::Vector3d>& VoxelGrid::operator()(size_t x, size_t y, size_t z) {
-	return grid[indexToOffset(x, y, z)];
-}
-
-
-const std::vector<Eigen::Vector3d>& VoxelGrid::operator()(size_t x, size_t y, size_t z) const {
-	return grid[indexToOffset(x, y, z)];
 }

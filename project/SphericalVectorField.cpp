@@ -10,7 +10,7 @@
 // Construct vector field from data provided in NetCDF file
 // Assumes data is of a certain format, does not work for general files
 //
-// file - netCDF file containing ERA5 wind data (u, v, w) at all levels at one time slice
+// file - NetCDF file containing ERA5 wind data (u, v, w) at all levels at one time slice
 SphericalVectorField::SphericalVectorField(const netCDF::NcFile& file) : 
 	data(NUM_LONGS * NUM_LATS * NUM_LEVELS),
 	levels(NUM_LEVELS), 
@@ -319,7 +319,7 @@ Eigen::Vector3d SphericalVectorField::RKF45Adaptive(const Eigen::Vector3d& currP
 		}
 
 		// If time step is too small, terminate and indicate by setting timeStep to 0
-		else if (abs(timeStep) < 0.01) {
+		else if (abs(timeStep) < 1.0) {
 
 			std::cout << "small step" << std::endl;
 			std::cout << velocityAt(currPos) << std::endl;
@@ -451,8 +451,8 @@ Eigen::Vector3d SphericalVectorField::newPos(const Eigen::Vector3d& currPos, con
 	// TODO properly account for edge cases as opposed to this hacky method
 	if (newPos.x() > M_PI_2) newPos.x() = M_PI_2;
 	if (newPos.x() < -M_PI_2) newPos.x() = -M_PI_2;
-	if (newPos.y() < 0.0) newPos.y() += 2.0 * M_PI;
-	if (newPos.y() > 2.0 * M_PI) newPos.y() -= 2.0 * M_PI;
+	while (newPos.y() < 0.0) newPos.y() += 2.0 * M_PI;
+	while (newPos.y() > 2.0 * M_PI) newPos.y() -= 2.0 * M_PI;
 	if (newPos.z() > levels[NUM_LEVELS - 1]) newPos.z() = levels[NUM_LEVELS - 1];
 	if (newPos.z() < levels[0]) newPos.z() = levels[0];
 	return newPos;

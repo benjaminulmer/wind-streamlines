@@ -39,24 +39,15 @@ void main(void) {
 	vec3 kd = 0.8f * diffuse * C;
 	vec3 ks = 0.6f * pow(spec, n) * vec3(1.f, 1.f, 1.f) * specularToggle;
 
-	// Calculate alpha if fading is needed
-	if (fade) {
+	// Fall off function
+	float norm = (d - minDist) / (maxDist - minDist);
+	norm = 1.f - 1.75f * norm;
 
-		// Fall off function
-		float norm = (d - minDist) / (maxDist - minDist);
-		norm = 1.f - 1.75f * norm;
+	if (norm < 0.f) norm = 0.f;
+	if (norm > 1.f) norm = 1.f;
 
-		if (norm < 0.f) norm = 0.f;
-		if (norm > 1.f) norm = 1.f;
-
-		float expon = mod(totalTime - mod(t, timeRepeat), timeRepeat) / timeMultiplier;
-		float alpha = pow(alphaPerSecond, expon);
+	float expon = mod(totalTime - mod(t, timeRepeat), timeRepeat) / timeMultiplier;
+	float alpha = pow(alphaPerSecond, expon);
 		
-		colour = vec4(ka + kd + ks, norm * alpha);
-	}
-	else {
-		colour = vec4(ka + kd + ks, 1.f);
-	}
-
-
+	colour = vec4(ka + kd + ks, norm * alpha);
 }

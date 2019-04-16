@@ -91,7 +91,7 @@ std::vector<Eigen::Vector3d> Streamline::getSeeds(double sepDist) {
 	seeds.push_back(cartToSph(t20 * cart0));
 
 	// Non-end point geometry is duplicated for drawing lines
-	for (size_t i = 1; i < size() - 2; i++) {
+	for (size_t i = 1; i < size() - 2; i+=50) {
 
 		Eigen::Vector3d cart = sphToCart(points[i]);
 		Eigen::Vector3d tangent = (sphToCart(points[i + 1]) - sphToCart(points[i - 1])).normalized();

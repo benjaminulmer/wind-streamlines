@@ -118,5 +118,6 @@ void InputHandler::scroll(SDL_MouseWheelEvent& e) {
 void InputHandler::reshape(SDL_WindowEvent& e) {
 	if (e.event == SDL_WINDOWEVENT_RESIZED) {
 		renderEngine->setWindowSize(e.data1, e.data2);
+		program->setWindowSize(e.data1, e.data2);
 	}
 }

@@ -94,7 +94,7 @@ public:
 		vertsLow.clear();
 	}
 
-private:
+//private:
 	std::vector<glm::vec3> tangents;
 	std::vector<float> localTimes;
 

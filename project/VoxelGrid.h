@@ -2,7 +2,8 @@
 
 #include <Eigen/Dense>
 
-#include <vector>
+#include <unordered_map>
+#include <iostream>
 
 class VoxelGrid {
 
@@ -14,14 +15,23 @@ public:
 
 	size_t indexToOffset(size_t x, size_t y, size_t z) const;
 
-	std::vector<Eigen::Vector3d>& operator()(size_t x, size_t y, size_t z);
-	const std::vector<Eigen::Vector3d>& operator()(size_t x, size_t y, size_t z) const;
+	//void prints() const {
+	//	int count = 0;
+	//	int total = 0;
+	//	for (const auto& c : grid) {
+	//		if (c.size() > 0) {
+	//			count++;
+	//			total += c.size();
+	//		}
+	//	}
+	//	std::cout << total / count << std::endl;
+	//}
 
 private:
 	double rad;
 	double sepDist;
 	size_t numCells;
 
-	std::vector<std::vector<Eigen::Vector3d>> grid;
+	std::unordered_map<size_t, std::vector<Eigen::Vector3d>> grid;
 };
 

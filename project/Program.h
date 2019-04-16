@@ -20,6 +20,10 @@ public:
 
 	void updateRotation(int oldX, int newX, int oldY, int newY, bool skew);
 	void updateScale(int inc);
+	void setWindowSize(int newWidth, int newHeight) {
+		width = newWidth;
+		height = newHeight;
+	}
 	void cleanup();
 
 private:
@@ -40,8 +44,9 @@ private:
 	std::vector<Streamline> streamlines;
 
 	std::mutex mtx;
-	int numNewLines;
+	volatile int numNewLines;
 
+	bool stop = false;
 	double scale;
 	double latRot;
 	double longRot;
