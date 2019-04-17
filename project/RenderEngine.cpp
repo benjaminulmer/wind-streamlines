@@ -8,8 +8,21 @@
 
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <imgui.h>
 
 #include <iostream>
+
+
+// Dear ImGUI window. Allows chaning render parameters
+void RenderEngine::ImGui() {
+	ImGui::Begin("Render params");
+	ImGui::Checkbox("Specular highlights", &specular);
+	ImGui::InputFloat("Time scale factor", &timeMultiplier, 100.f, 1000.f);
+	ImGui::InputFloat("Time repeat interval", &timeRepeat, 100.f, 1000.f);
+	ImGui::SliderFloat("Alpha multiplier/s", &alphaPerSecond, 0.0f, 1.0f);
+	ImGui::SliderFloat("Altitude scale factor", &scaleFactor, 0.0f, 100.f);
+	ImGui::End();
+}
 
 
 // Create engine for the provided window

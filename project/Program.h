@@ -33,6 +33,8 @@ public:
 	}
 	void cleanup();
 
+	void ImGui();
+
 private:
 	SDL_Window* window;
 	SDL_GLContext context;

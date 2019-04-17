@@ -28,8 +28,9 @@ public:
 	double getFar() { return far; }
 	glm::dmat4 getProjection() { return projection; }
 
-// TODO make this private again - better communication with Dear ImGUI for parameters
-//private:
+	void ImGui();
+	
+private:
 	SDL_Window* window;
 	int width, height;
 

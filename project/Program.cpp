@@ -24,6 +24,16 @@
 #include <random>
 
 
+// Dear ImGUI window. Show misc status 
+void Program::ImGui() {
+	ImGui::Begin("Status");
+	ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	ImGui::Text("%i streamlines", streamlines.size());
+	ImGui::Text("%i streamline vertices", streamlineRender.size());
+	ImGui::End();
+}
+
+
 Program::Program() :
 	window(nullptr),
 	width(800),
@@ -177,17 +187,8 @@ void Program::mainLoop() {
 		ImGui_ImplSDL2_NewFrame(window);
 		ImGui::NewFrame();
 
-		// Window for basic program parameters
-		{
-			ImGui::Begin("Parameters");
-			ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-			ImGui::Checkbox("Specular highlights", &renderEngine->specular);
-			ImGui::InputFloat("Time scale factor", &renderEngine->timeMultiplier, 100.f, 1000.f);
-			ImGui::InputFloat("Time repeat interval", &renderEngine->timeRepeat, 100.f, 1000.f);
-			ImGui::SliderFloat("Alpha multiplier/s", &renderEngine->alphaPerSecond, 0.0f, 1.0f);
-			ImGui::SliderFloat("Altitude scale factor", &renderEngine->scaleFactor, 0.0f, 100.f);
-			ImGui::End();
-		}
+		renderEngine->ImGui();
+		ImGui();
 
 		// Update time since last frame
 		std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();

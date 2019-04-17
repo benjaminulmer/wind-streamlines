@@ -38,6 +38,8 @@ class DoublePrecisionRenderable : public Renderable {
 public: 
 	virtual void addVert(const glm::dvec3& v);
 
+	virtual size_t size() { return vertsHigh.size(); }
+
 	virtual void assignBuffers();
 	virtual void setBufferData();
 	virtual void deleteBufferData();
