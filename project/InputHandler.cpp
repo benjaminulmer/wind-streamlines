@@ -13,7 +13,9 @@
 InputHandler::InputHandler(Camera* camera, RenderEngine* renderEngine, Program* program) : 
 	camera(camera),
 	renderEngine(renderEngine),
-	program(program) {}
+	program(program),
+	mouseOldX(0), 
+	mouseOldY(0) {}
 
 
 // Process a single event
@@ -23,11 +25,9 @@ void InputHandler::pollEvent(SDL_Event& e) {
 	if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) {
 		InputHandler::key(e.key);
 	}
-	else if (e.type == SDL_MOUSEBUTTONDOWN) {
-		moved = false;
-	}
 	else if (e.type == SDL_MOUSEBUTTONUP) {
-		InputHandler::mouse(e.button);
+		mouseOldX = e.button.x;
+		mouseOldY = e.button.y;
 	}
 	else if (e.type == SDL_MOUSEMOTION) {
 		InputHandler::motion(e.motion);
@@ -61,20 +61,10 @@ void InputHandler::key(SDL_KeyboardEvent& e) {
 		else if (key == SDLK_k) {
 			renderEngine->updateScaleFactor(-1);
 		}
-		else if (key == SDLK_ESCAPE) {
-			SDL_Quit();
-			exit(0);
+		else if (key == SDLK_c) {
+			camera->reset();
 		}
 	}
-}
-
-
-// Handle mouse button press
-//
-// e - mouse button event
-void InputHandler::mouse(SDL_MouseButtonEvent& e) {
-	mouseOldX = e.x;
-	mouseOldY = e.y;
 }
 
 

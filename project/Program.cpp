@@ -150,9 +150,14 @@ void Program::mainLoop() {
 		while (SDL_PollEvent(&e)) {
 
 			ImGui_ImplSDL2_ProcessEvent(&e);
-			if (!io->WantCaptureMouse && !io->WantCaptureKeyboard) {
-				input->pollEvent(e);
+			if (io->WantCaptureMouse && (e.type == SDL_MOUSEBUTTONDOWN || e.type == SDL_MOUSEBUTTONUP || 
+				                         e.type == SDL_MOUSEMOTION || e.type == SDL_MOUSEWHEEL)) {
+				continue;
 			}
+			if (io->WantCaptureKeyboard && (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)) {
+				continue;
+			}
+			input->pollEvent(e);
 		}
 
 		// TODO replace Earth reference model and remove all code related to this effect
@@ -268,7 +273,7 @@ void Program::integrateStreamlines() {
 
 	while (!seedLines.empty()) {
 
-		std::cout << seedLines.size() << std::endl;
+		//std::cout << seedLines.size() << std::endl;
 
 		Streamline seedLine = seedLines.front();
 		seedLines.pop();
@@ -377,13 +382,13 @@ void Program::updateRotation(int oldX, int newX, int oldY, int newY, bool skew) 
 		double latNew = M_PI_2 - acos(iPosNew.y / sphereRad);
 		
 		if (skew) {
-			camera->updateLatitudeRotation(latNew - latOld);
+			camera->updateFromVertical(newYN - oldYN);
+			camera->updateNorthRotation(newXN - oldXN);
 		}
 		else {
 			latRot += latNew - latOld;
 			longRot += longNew - longOld;
 		}
-		//reIntegrate = true;
 	}
 }
 

@@ -2,6 +2,7 @@
 
 #include <GL/glew.h>
 #include <glm/glm.hpp>
+#define RAPIDJSON_NOMEMBERITERATORCLASS
 #include <rapidjson/document.h>
 
 #include <vector>

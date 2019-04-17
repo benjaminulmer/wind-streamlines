@@ -213,12 +213,7 @@ int SphericalVectorField::criticalPointInTet(size_t i0, size_t i1, size_t i2, si
 	p2 << sphCoords(i2), 1.0;
 	p3 << sphCoords(i3), 1.0;
 
-	if (signTet(p0, p1, p2, p3, i0, i1, i2, i3) != simplexSign) {
-		return -1;
-	}
-	else {
-		return 1;
-	}
+	return (signTet(p0, p1, p2, p3, i0, i1, i2, i3) != simplexSign) ? -1 : 1;
 }
 
 
@@ -311,9 +306,7 @@ Eigen::Vector3d SphericalVectorField::RKF45Adaptive(const Eigen::Vector3d& currP
 
 		double error = (highOrder - lowOrder).norm();
 		timeStep *= 0.9 * std::min(std::max((tol / error), 0.3), 2.0);
-
-		if (timeStep > maxStep) timeStep = maxStep;
-		if (timeStep < -maxStep) timeStep = -maxStep;
+		timeStep = std::clamp(timeStep, -maxStep, maxStep);
 
 		// Return if error is low enough
 		if (error < tol) {
@@ -450,13 +443,13 @@ Eigen::Vector3d SphericalVectorField::newPos(const Eigen::Vector3d& currPos, con
 	newPos.y() = (cosLat > 0.0001) ? currPos.y() + velocity.y() / (cos(currPos.x()) * absRadius) : currPos.y();
 	newPos.z() = currPos.z() + 0.01 * velocity.z();
 
-	// TODO properly account for edge cases as opposed to this hacky method
-	if (newPos.x() > M_PI_2) newPos.x() = M_PI_2;
-	if (newPos.x() < -M_PI_2) newPos.x() = -M_PI_2;
+	// Clamp and wrap around
+	newPos.x() = std::clamp(newPos.x(), -M_PI_2, M_PI_2);
+	newPos.z() = std::clamp(newPos.z(), (double)levels[0], (double)levels.back());
+
 	while (newPos.y() < 0.0) newPos.y() += 2.0 * M_PI;
 	while (newPos.y() > 2.0 * M_PI) newPos.y() -= 2.0 * M_PI;
-	if (newPos.z() > levels[NUM_LEVELS - 1]) newPos.z() = levels[NUM_LEVELS - 1];
-	if (newPos.z() < levels[0]) newPos.z() = levels[0];
+
 	return newPos;
 }
 

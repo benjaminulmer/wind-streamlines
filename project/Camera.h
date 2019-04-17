@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 
 
+// Class for camera information in look at format
 class Camera {
 
 public:
@@ -15,10 +16,9 @@ public:
 
 	void setScale(double scale);
 
-	void updateLongitudeRotation(double rad);
-	void updateLatitudeRotation(double rad);
+	void updateFromVertical(double rad);
+	void updateNorthRotation(double rad);
 	void updateZoom(int value);
-	void translate(const glm::dvec3& planeTranslation);
 
 	void reset();
 
@@ -26,14 +26,17 @@ private:
 	const double zoomScale;
 	const double rotScale;
 
-	double curScale;
+	double scale;
 
 	glm::dvec3 eye;
 	glm::dvec3 up;
 	glm::dvec3 centre;
 
-	double longitudeRotRad;
-	double latitudeRotRad;
+	glm::dvec3 rotatedEye;
+	glm::dvec3 rotatedUp;
 
-	glm::dvec3 translation;
+	double fromVerticalRad;
+	double northRotationRad;
+
+	void updateVectors();
 };
