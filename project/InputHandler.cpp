@@ -80,7 +80,7 @@ void InputHandler::motion(SDL_MouseMotionEvent& e) {
 	if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)) {
 		program->updateRotation(mouseOldX, e.x, mouseOldY, e.y, false);
 	}
-	else if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_MIDDLE)) {
+	else if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_RIGHT)) {
 		program->updateRotation(mouseOldX, e.x, mouseOldY, e.y, true);
 	}
 
@@ -101,6 +101,7 @@ void InputHandler::motion(SDL_MouseMotionEvent& e) {
 //
 // e - mouse scroll event
 void InputHandler::scroll(SDL_MouseWheelEvent& e) {
+	std::cout << e.y << " : " << e.x << std::endl;
 	program->updateScale(e.y);
 }
 

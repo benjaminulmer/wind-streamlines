@@ -402,7 +402,7 @@ void Program::updateScale(int dir) {
 	if (dir < 0) {
 		scale /= 1.4f;
 	}
-	else {
+	else if (dir > 0) {
 		scale *= 1.4f;
 	}
 	camera->setScale(scale);
