@@ -5,6 +5,7 @@
 #include "Streamline.h"
 #include "VoxelGrid.h"
 
+
 // Construct vector field from data provided in NetCDF file
 // Assumes data is of a certain format, does not work for general files
 //
@@ -226,6 +227,8 @@ int SphericalVectorField::criticalPointInTet(size_t i0, size_t i1, size_t i2, si
 // seed - starting seed point (lat, long, rad) in rads and mbars
 // totalTime - total amount of time to integrate forwards and backwards
 // tol - error tolerance
+// maxStep - maximum step size in seconds
+// vg - voxel grid containing points from streamlines already integrated
 // return - list of points in streamline in coordinates (lat, long, rad) in rads and mbars
 Streamline SphericalVectorField::streamline(const Eigen::Vector3d& seed, double maxDist, double tol, double maxStep,
                                             const VoxelGrid& vg) const {
@@ -288,6 +291,7 @@ Streamline SphericalVectorField::streamline(const Eigen::Vector3d& seed, double 
 // currPos - current position (lat, long, rad) in rads and mbars
 // timeStep - current step size in and updated step size out. Gets set to 0 if it becomes prohibitively small
 // tol - error tolerance 
+// maxStep - maximum step size in seconds
 // return - next position (lat, long, rad) in rads and mbars
 Eigen::Vector3d SphericalVectorField::RKF45Adaptive(const Eigen::Vector3d& currPos, double& timeStep, double tol, double maxStep) const {
 

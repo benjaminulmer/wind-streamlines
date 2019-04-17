@@ -12,6 +12,9 @@
 #include <iostream>
 
 
+// Create engine for the provided window
+//
+// window - SDL window to render to and manage
 RenderEngine::RenderEngine(SDL_Window* window) :
 	window(window),
 	fovYRad(60.f * ((float)M_PI / 180.f)),
@@ -27,6 +30,8 @@ RenderEngine::RenderEngine(SDL_Window* window) :
 
 	SDL_GetWindowSize(window, &width, &height);
 
+	// Compile shaders
+	// TODO this could be static - does not need to be done for each engine
 	mainProgram = ShaderTools::compileShaders("./shaders/main.vert", "./shaders/main.frag");
 	streamlineProgram = ShaderTools::compileShaders("./shaders/streamline.vert", "./shaders/streamline.frag");
 
@@ -47,7 +52,14 @@ RenderEngine::RenderEngine(SDL_Window* window) :
 	glClearColor(0.4f, 0.4f, 0.4f, 1.f);
 }
 
-// Called to render the active object. RenderEngine stores all information about how to render
+
+// Render provided object. Render engine stores all information about how to render
+//
+// objects - list of renderables to render
+// view - view matrix
+// max - TODO remove
+// min - TODO remove
+// dTimeS - time since last render in seconds
 void RenderEngine::render(const std::vector<const Renderable*>& objects, const glm::dmat4& view, float max, float min, float dTimeS) {
 	
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -67,6 +79,7 @@ void RenderEngine::render(const std::vector<const Renderable*>& objects, const g
 		}
 		glUseProgram(program);
 
+		// Get eye position from view matrix
 		glm::dmat4 modelViewD = view;
 
 		glm::dmat4 inv = glm::inverse(modelViewD);
@@ -79,7 +92,7 @@ void RenderEngine::render(const std::vector<const Renderable*>& objects, const g
 		glm::vec3 eyeHigh = eyePos;
 		glm::vec3 eyeLow = eyePos - (glm::dvec3)eyeHigh;
 
-
+		// Set uniforms
 		glUniform3fv(glGetUniformLocation(program, "eyeHigh"), 1, glm::value_ptr(eyeHigh));
 		glUniform3fv(glGetUniformLocation(program, "eyeLow"), 1, glm::value_ptr(eyeLow));
 
@@ -105,6 +118,9 @@ void RenderEngine::render(const std::vector<const Renderable*>& objects, const g
 
 
 // Sets projection and viewport for new width and height
+//
+// newWidth - new window width
+// newHeight - new window height
 void RenderEngine::setWindowSize(int newWidth, int newHeight) {
 	width = newWidth;
 	height = newHeight;
@@ -113,6 +129,9 @@ void RenderEngine::setWindowSize(int newWidth, int newHeight) {
 }
 
 
+// Update altitude scale factor
+//
+// dir - direction of change, possitive or negative
 void RenderEngine::updateScaleFactor(int dir) {
 
 	if (dir > 0) {

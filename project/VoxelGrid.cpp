@@ -4,6 +4,10 @@
 #include "Conversions.h"
 
 
+// Create voxel grid for a size and seperation distance
+//
+// rad - radius (half width) of grid
+// sepDist - distance between cell centres i.e. cell width
 VoxelGrid::VoxelGrid(double rad, double sepDist) :
 	rad(rad),
 	sepDist(sepDist),
@@ -11,37 +15,23 @@ VoxelGrid::VoxelGrid(double rad, double sepDist) :
 	grid(numCells * numCells) {}
 
 
+// Adds point to the grid
+//
+// p - point to add in cartesian
 void VoxelGrid::addPoint(const Eigen::Vector3d& p) {
 
 	size_t x = (size_t)((p.x() + rad) / sepDist);
 	size_t y = (size_t)((p.y() + rad) / sepDist);
 	size_t z = (size_t)((p.z() + rad) / sepDist);
 
-	//if (grid.find(indexToOffset(x, y, z)) == grid.end()) {
-		grid[indexToOffset(x, y, z)].push_back(p);
-	//}
-	//else {
-	//	auto cell = grid.at(indexToOffset(x, y, z));
-
-	//	for (const Eigen::Vector3d t : cell) {
-
-	//		double pLen = p.norm();
-	//		double tLen = t.norm();
-
-	//		double height = std::min(pLen, tLen);
-
-	//		double vert = pLen - tLen;
-	//		double geod = height * acos((p / pLen).dot(t / tLen));
-
-	//		if (geod * geod + 2500.0 * vert * vert < 0.5 * 0.5 * sepDist * sepDist) {
-	//			return;
-	//		}
-	//	}
-	//	cell.push_back(p);
-	//}
+	grid[indexToOffset(x, y, z)].push_back(p);
 }
 
 
+// Test if point is within seperation distance of other points in grid
+//
+// p - point to test in cartesian
+// return - false if point is within sepDist of another point, otherwise true
 bool VoxelGrid::testPoint(const Eigen::Vector3d& p) const {
 
 	size_t xM1 = (size_t)((p.x() + rad) / sepDist) - 1;
@@ -86,6 +76,12 @@ bool VoxelGrid::testPoint(const Eigen::Vector3d& p) const {
 }
 
 
+// Convert x, y, z index to absolute index
+//
+// x - x index
+// y - y index
+// z - z index
+// return - absolute 1D index
 size_t VoxelGrid::indexToOffset(size_t x, size_t y, size_t z) const {
 	return y + numCells * (x + numCells * z);
 }

@@ -3,6 +3,10 @@
 #include <iostream>
 
 
+// Compile vertex and fragment shaders
+//
+// vertextFilename - path for vertex shader
+// fragmentFilename - path for fragement shader
 GLuint ShaderTools::compileShaders(const char* vertexFilename, const char* fragmentFilename) {
 	GLuint vertex_shader;
 	GLuint fragment_shader;
@@ -67,6 +71,12 @@ GLuint ShaderTools::compileShaders(const char* vertexFilename, const char* fragm
 	return program;
 }
 
+
+// Compile vertex, geometry, and fragment shaders
+//
+// vertextFilename - path for vertex shader
+// geometryFilename - path for geometry shader
+// fragmentFilename - path for fragment shader
 GLuint ShaderTools::compileShaders(const char* vertexFilename, const char* geometryFilename, const char* fragmentFilename) {
 	GLuint vertex_shader;
 	GLuint fragment_shader;
@@ -155,6 +165,11 @@ GLuint ShaderTools::compileShaders(const char* vertexFilename, const char* geome
 	return program;
 }
 
+
+// Gets length of file
+//
+// file - file to check
+// return - length in bytes
 unsigned long ShaderTools::getFileLength(std::ifstream& file) {
 	if (!file.good()) return 0;
 
@@ -165,6 +180,11 @@ unsigned long ShaderTools::getFileLength(std::ifstream& file) {
 	return len;
 }
 
+
+// Gets shader souce code from file
+//
+// filename - path to shader
+// return - shader source code
 GLchar* ShaderTools::loadshader(std::string filename) {
 	std::ifstream file;
 	file.open(filename.c_str(), std::ios::in); // opens as ASCII!
@@ -198,9 +218,13 @@ GLchar* ShaderTools::loadshader(std::string filename) {
 	return ShaderSource; // No Error
 }
 
-void ShaderTools::unloadshader( GLchar** ShaderSource ) {
-	if (*ShaderSource != 0) {
-		delete[] * ShaderSource;
+
+// Deletes source code of shader from memory
+//
+// shaderSource - shader source code
+void ShaderTools::unloadshader(GLchar** shaderSource ) {
+	if (*shaderSource != 0) {
+		delete[] * shaderSource;
 	}
-	*ShaderSource = 0;
+	*shaderSource = 0;
 }

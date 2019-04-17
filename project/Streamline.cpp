@@ -43,7 +43,8 @@ Streamline::Streamline(const Streamline& back, const Streamline& forw, const Sph
 
 // Adds a point to the steamline and updates total length and angle
 //
-// p - point to add (lat, long, rad) in rads and mbars
+// p - point to add (lat, long, altitude) in rads and mbars
+// time - integration time of point in seconds
 void Streamline::addPoint(const Eigen::Vector3d& p, float time) {
 
 	// Need two points for first distance
@@ -68,6 +69,10 @@ void Streamline::addPoint(const Eigen::Vector3d& p, float time) {
 }
 
 
+// Gets seed candidates from streamline
+//
+// sepDist - seperation distance seeds are from line
+// return - list of candidate seed points (lat, long, altitude) in rads and mbars
 std::vector<Eigen::Vector3d> Streamline::getSeeds(double sepDist) {
 
 	sepDist *= 1.001;
@@ -122,7 +127,7 @@ std::vector<Eigen::Vector3d> Streamline::getSeeds(double sepDist) {
 }
 
 
-// Adds the steamline to a renderable object
+// Adds the streamline to a renderable object
 //
 // r - renderable to add steamline geometry to
 void Streamline::addToRenderable(StreamlineRenderable& r) const {

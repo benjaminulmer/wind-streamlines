@@ -5,13 +5,20 @@
 #include "Program.h"
 
 
-// Must be called before processing any SDL2 events
+// Construct with reference to a camera, render engine, and main program
+//
+// camera - pointer to camera object that should be updated
+// renderEngine - pointer to render engine object that should be updated
+// program - pointer to main program object that should be updated
 InputHandler::InputHandler(Camera* camera, RenderEngine* renderEngine, Program* program) : 
 	camera(camera),
 	renderEngine(renderEngine),
 	program(program) {}
 
 
+// Process a single event
+//
+// e - event to process
 void InputHandler::pollEvent(SDL_Event& e) {
 	if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) {
 		InputHandler::key(e.key);
@@ -37,7 +44,9 @@ void InputHandler::pollEvent(SDL_Event& e) {
 }
 
 
-// Callback for key presses
+// Handle key press
+//
+// e - keyboard event
 void InputHandler::key(SDL_KeyboardEvent& e) {
 	
 	auto key = e.keysym.sym;
@@ -60,14 +69,18 @@ void InputHandler::key(SDL_KeyboardEvent& e) {
 }
 
 
-// Callback for mouse button presses
+// Handle mouse button press
+//
+// e - mouse button event
 void InputHandler::mouse(SDL_MouseButtonEvent& e) {
 	mouseOldX = e.x;
 	mouseOldY = e.y;
 }
 
 
-// Callback for mouse motion
+// Handle mouse motion event
+//
+// e - mouse motion event
 void InputHandler::motion(SDL_MouseMotionEvent& e) {
 	int dx, dy;
 	dx = e.x - mouseOldX;
@@ -88,36 +101,23 @@ void InputHandler::motion(SDL_MouseMotionEvent& e) {
 
 	int iX = e.x;
 	int iY = height - e.y;
-	//program->setMousePos(iX, iY);
 
 	mouseOldX = e.x;
 	mouseOldY = e.y;
 }
 
 
-// Callback for mouse scroll
+// Handle mouse scroll event
+//
+// e - mouse scroll event
 void InputHandler::scroll(SDL_MouseWheelEvent& e) {
-	int dy;
-	dy = e.x - e.y;
-
-	const Uint8 *state = SDL_GetKeyboardState(0);
-	if (state[SDL_SCANCODE_U]) {
-		//program->updateRadialBounds(RadialBound::MAX, -dy);
-	}
-	else if (state[SDL_SCANCODE_J]) {
-		//program->updateRadialBounds(RadialBound::MIN, -dy);
-	}
-	else if (state[SDL_SCANCODE_M]) {
-		//program->updateRadialBounds(RadialBound::BOTH, -dy);
-	}
-	else {
-		program->updateScale(-dy);
-		//camera->updateZoom(dy);
-	}
+	program->updateScale(e.y);
 }
 
 
-// Callback for window reshape/resize
+// Handle resizing of window
+//
+// e - window event
 void InputHandler::reshape(SDL_WindowEvent& e) {
 	if (e.event == SDL_WINDOWEVENT_RESIZED) {
 		renderEngine->setWindowSize(e.data1, e.data2);

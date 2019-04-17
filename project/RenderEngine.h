@@ -9,6 +9,8 @@
 class Renderable;
 
 
+// Class for managine rendering to an SDL OpenGL window
+// TODO better integration/communication with Renderable classes
 class RenderEngine {
 
 public:
@@ -26,6 +28,7 @@ public:
 	double getFar() { return far; }
 	glm::dmat4 getProjection() { return projection; }
 
+// TODO make this private again - better communication with Dear ImGUI for parameters
 //private:
 	SDL_Window* window;
 	int width, height;

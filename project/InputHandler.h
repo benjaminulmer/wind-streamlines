@@ -7,6 +7,8 @@ class Program;
 #include <SDL2/SDL.h>
 
 
+// Class for processing inputs and updating state
+// Does not process GUI inputs, those are done with Dear ImGUI
 class InputHandler {
 
 public:

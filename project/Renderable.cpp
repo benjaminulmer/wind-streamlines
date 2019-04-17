@@ -4,7 +4,9 @@
 #include "Conversions.h"
 
 
-// Creates a renderable of the geometry specified in json document
+// Construct renderable from geometry specified in json document
+//
+// d - json data
 ColourRenderable::ColourRenderable(const rapidjson::Document& d) {
 
 	drawMode = GL_LINES;
@@ -30,8 +32,12 @@ ColourRenderable::ColourRenderable(const rapidjson::Document& d) {
 }
 
 
+// Add vertex to list of verts
+//
+// v - vertex to add
 void DoublePrecisionRenderable::addVert(const glm::dvec3 & v) {
 
+	// Split into high and low precision components
 	glm::vec3 high = v;
 
 	vertsHigh.push_back(high);
@@ -39,6 +45,7 @@ void DoublePrecisionRenderable::addVert(const glm::dvec3 & v) {
 }
 
 
+// Assign GPU buffers for object
 void DoublePrecisionRenderable::assignBuffers() {
 
 	glGenVertexArrays(1, &vao);
@@ -58,6 +65,7 @@ void DoublePrecisionRenderable::assignBuffers() {
 }
 
 
+// Set data in GPU buffers
 void DoublePrecisionRenderable::setBufferData() {
 
 	// Vertex high buffer
@@ -70,6 +78,7 @@ void DoublePrecisionRenderable::setBufferData() {
 }
 
 
+// Delete GPU buffers for object
 void DoublePrecisionRenderable::deleteBufferData() {
 
 	glDeleteBuffers(1, &vertexHighBuffer);
@@ -79,6 +88,7 @@ void DoublePrecisionRenderable::deleteBufferData() {
 }
 
 
+// Assign GPU buffers for object
 void ColourRenderable::assignBuffers() {
 
 	DoublePrecisionRenderable::assignBuffers();
@@ -91,6 +101,7 @@ void ColourRenderable::assignBuffers() {
 }
 
 
+// Set data in GPU buffers
 void ColourRenderable::setBufferData() {
 
 	DoublePrecisionRenderable::setBufferData();
@@ -101,6 +112,7 @@ void ColourRenderable::setBufferData() {
 }
 
 
+// Delete GPU buffers for object
 void ColourRenderable::deleteBufferData() {
 
 	glDeleteBuffers(1, &colourBuffer);
@@ -109,11 +121,13 @@ void ColourRenderable::deleteBufferData() {
 }
 
 
+// Make the appropriate OpenGL render call for the object
 void ColourRenderable::render() const {
 	glDrawArrays(drawMode, 0, (GLsizei)vertsHigh.size());
 }
 
 
+// Assign GPU buffers for object
 void StreamlineRenderable::assignBuffers() {
 
 	ColourRenderable::assignBuffers();
@@ -132,6 +146,7 @@ void StreamlineRenderable::assignBuffers() {
 }
 
 
+// Set data in GPU buffers
 void StreamlineRenderable::setBufferData() {
 
 	ColourRenderable::setBufferData();
@@ -146,6 +161,7 @@ void StreamlineRenderable::setBufferData() {
 }
 
 
+// Delete GPU buffers for object
 void StreamlineRenderable::deleteBufferData() {
 
 	glDeleteBuffers(1, &timeBuffer);

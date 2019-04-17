@@ -16,6 +16,8 @@ class RenderEngine;
 #include <mutex>
 
 
+// Main class for running the program
+// TODO god class, split up functionality
 class Program {
 
 public:
@@ -24,7 +26,7 @@ public:
 	void start();
 
 	void updateRotation(int oldX, int newX, int oldY, int newY, bool skew);
-	void updateScale(int inc);
+	void updateScale(int dir);
 	void setWindowSize(int newWidth, int newHeight) {
 		width = newWidth;
 		height = newHeight;
@@ -52,7 +54,6 @@ private:
 	std::mutex mtx;
 	volatile int numNewLines;
 
-	bool stop = false;
 	double scale;
 	double latRot;
 	double longRot;

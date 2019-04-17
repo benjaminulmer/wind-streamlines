@@ -7,12 +7,14 @@
 #include <vector>
 
 
+// Enumeration of different shaders
 enum class Shader {
 	DEFAULT,
 	STREAMLINE
 };
 
 
+// Abstract class to represent object that can be rendered
 class Renderable {
 
 public:
@@ -29,6 +31,7 @@ protected:
 };
 
 
+// Class for renderable that uses double precision for vertex locations
 class DoublePrecisionRenderable : public Renderable {
 
 public: 
@@ -47,6 +50,7 @@ protected:
 };
 
 
+// Class for renderable that has colour data for each vertex
 class ColourRenderable : public DoublePrecisionRenderable {
 
 public:
@@ -73,6 +77,7 @@ protected:
 };
 
 
+// Class for renderable that is used for streamlines. Each vertex has a tangent and integration time
 class StreamlineRenderable : public ColourRenderable {
 
 public:
@@ -93,7 +98,7 @@ public:
 		vertsLow.clear();
 	}
 
-//private:
+private:
 	std::vector<glm::vec3> tangents;
 	std::vector<float> localTimes;
 

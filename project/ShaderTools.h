@@ -5,6 +5,7 @@
 #include <fstream>
 
 
+// Class for compiling and managing GLSL shaders
 class ShaderTools {
 
 public:
@@ -14,5 +15,5 @@ public:
 private:
 	static unsigned long getFileLength(std::ifstream& file);
 	static GLchar* loadshader(std::string filename);
-	static void unloadshader( GLchar** ShaderSource );
+	static void unloadshader(GLchar** shaderSource );
 };

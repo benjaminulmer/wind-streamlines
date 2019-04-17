@@ -37,13 +37,14 @@ Program::Program() :
 	latRot(0.0),
 	longRot(0.0) {}
 
+
 // Called to start the program. Conducts set up then enters the main loop
 void Program::start() {	
 
 	setupWindow();
 	GLenum err = glewInit();
 	if (glewInit() != GLEW_OK) {
-		std::cerr << glewGetErrorString(err) << std::endl;
+		std::cerr << "glewInit error: " << glewGetErrorString(err) << std::endl;
 		system("pause");
 		exit(EXIT_FAILURE);
 	}
@@ -52,7 +53,7 @@ void Program::start() {
 	renderEngine = new RenderEngine(window);
 	input = new InputHandler(camera, renderEngine, this);
 
-	// Load coastline vector data
+	// Load coastline vector data and set up renderable for it
 	rapidjson::Document cl = ContentReadWrite::readJSON("data/coastlines.json");
 	coastRender = ColourRenderable(cl);
 
@@ -69,15 +70,14 @@ void Program::start() {
 	streamlineRender.assignBuffers();
 	streamlineRender.setDrawMode(GL_LINES);
 
+	// Start integration and rendering in separate threads
 	numNewLines = 0;
 	std::thread t1(&Program::integrateStreamlines, this);
 	mainLoop();
-
-	t1.join();
 }
 
 
-// Creates SDL window for the program and sets callbacks for input
+// Creates SDL OpenGL window for the program and connects it with Dear ImGUI 
 void Program::setupWindow() {
 
 	if (SDL_Init(SDL_INIT_VIDEO) != 0){
@@ -95,15 +95,18 @@ void Program::setupWindow() {
 
 	window = SDL_CreateWindow("615 Project", 10, 30, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 	if (window == nullptr) {
-		//TODO: cleanup methods upon exit
 		std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
+		system("pause");
 		SDL_Quit();
 		exit(EXIT_FAILURE);
 	}
 
 	context = SDL_GL_CreateContext(window);
 	if (context == NULL) {
-		std::cout << "OpenGL context could not be created! SDL Error: " << SDL_GetError() << std::endl;
+		std::cerr << "SDL_GL_CreateContext Error: " << SDL_GetError() << std::endl;
+		system("pause");
+		SDL_Quit();
+		exit(EXIT_FAILURE);
 	}
 	//SDL_GL_SetSwapInterval(1); // Vsync on
 
@@ -114,7 +117,6 @@ void Program::setupWindow() {
 	io->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 	
 	ImGui::StyleColorsDark();
-	//ImGui::StyleColorsClassic();
 
 	// Setup Platform/Renderer bindings
 	ImGui_ImplSDL2_InitForOpenGL(window, context);
@@ -123,14 +125,16 @@ void Program::setupWindow() {
 }
 
 
-// Main loop
+// Main loop of the program
 void Program::mainLoop() {
 
 	std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
 
 	while (true) {
 
+		// Update streamline renderable if new ones have been integrated
 		if (numNewLines > 0) {
+
 			mtx.lock();
 			size_t size = streamlines.size();
 			for (size_t i = 0; i < numNewLines; i++) {
@@ -141,16 +145,17 @@ void Program::mainLoop() {
 			mtx.unlock();
 		}
 
-		// Process all SDL events
+		// Process SDL events
 		SDL_Event e;
 		while (SDL_PollEvent(&e)) {
 
 			ImGui_ImplSDL2_ProcessEvent(&e);
-			if (!io->WantCaptureMouse || !io->WantCaptureKeyboard) {
+			if (!io->WantCaptureMouse && !io->WantCaptureKeyboard) {
 				input->pollEvent(e);
 			}
 		}
 
+		// TODO replace Earth reference model and remove all code related to this effect
 		// Find min and max distance from camera to cell renderable - used for fading effect
 		glm::vec3 cameraPos = camera->getPosition();
 		float max = glm::length(cameraPos) + (float)RADIUS_EARTH_VIEW;
@@ -162,30 +167,29 @@ void Program::mainLoop() {
 		worldModel = glm::rotate(worldModel, latRot, glm::dvec3(-1.0, 0.0, 0.0));
 		worldModel = glm::rotate(worldModel, longRot, glm::dvec3(0.0, 1.0, 0.0));
 
-		// Testing
+		// Dear ImGUI setup
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplSDL2_NewFrame(window);
 		ImGui::NewFrame();
 
+		// Window for basic program parameters
 		{
 			ImGui::Begin("Parameters");
 			ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			ImGui::Checkbox("Specular highlights", &renderEngine->specular);
-			ImGui::Checkbox("Stop", &this->stop);
 			ImGui::InputFloat("Time scale factor", &renderEngine->timeMultiplier, 100.f, 1000.f);
 			ImGui::InputFloat("Time repeat interval", &renderEngine->timeRepeat, 100.f, 1000.f);
 			ImGui::SliderFloat("Alpha multiplier/s", &renderEngine->alphaPerSecond, 0.0f, 1.0f);
 			ImGui::SliderFloat("Altitude scale factor", &renderEngine->scaleFactor, 0.0f, 100.f);
-
-
 			ImGui::End();
 		}
 
-
+		// Update time since last frame
 		std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 		std::chrono::duration<float> dTimeS = std::chrono::duration_cast<std::chrono::duration<double>>(t1 - t0);
 		t0 = t1;
 
+		// Render everything
 		ImGui::Render();
 		renderEngine->render(objects, (glm::dmat4)camera->getLookAt() * worldModel, max, min, dTimeS.count());
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -326,8 +330,13 @@ void Program::integrateStreamlines() {
 }
 
 
-// Updates camera rotation
-// Locations are in pixel coordinates
+// Updates rotation/orientation of Earth model
+//
+// oldX - old x pixel location of mouse
+// oldY - old y pixel location of mouse
+// newX - new x pixel location of mouse
+// newY - new y pixel location of mouse
+// skew - true tilts the camera, otherwise rotates the Earth
 void Program::updateRotation(int oldX, int newX, int oldY, int newY, bool skew) {
 
 	glm::dmat4 projView = renderEngine->getProjection() * camera->getLookAt();
@@ -379,10 +388,12 @@ void Program::updateRotation(int oldX, int newX, int oldY, int newY, bool skew) 
 }
 
 
-// Changes scale of model
-void Program::updateScale(int inc) {
+// Changes scale of Earth model (zooms camera)
+//
+// dir - direction of change, possitive or negative
+void Program::updateScale(int dir) {
 
-	if (inc < 0) {
+	if (dir < 0) {
 		scale /= 1.4f;
 	}
 	else {
@@ -392,6 +403,7 @@ void Program::updateScale(int inc) {
 }
 
 
+// Perform cleanup and exit
 void Program::cleanup() {
 
 	coastRender.deleteBufferData();

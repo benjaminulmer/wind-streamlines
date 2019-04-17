@@ -5,6 +5,8 @@
 #include <unordered_map>
 
 
+// Hashing voxel grid for simple spatial partitioning
+// TODO better solution
 class VoxelGrid {
 
 public:
@@ -14,18 +16,6 @@ public:
 	bool testPoint(const Eigen::Vector3d& p) const;
 
 	size_t indexToOffset(size_t x, size_t y, size_t z) const;
-
-	//void prints() const {
-	//	int count = 0;
-	//	int total = 0;
-	//	for (const auto& c : grid) {
-	//		if (c.size() > 0) {
-	//			count++;
-	//			total += c.size();
-	//		}
-	//	}
-	//	std::cout << total / count << std::endl;
-	//}
 
 private:
 	double rad;
