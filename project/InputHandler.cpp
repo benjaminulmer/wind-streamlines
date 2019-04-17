@@ -1,18 +1,16 @@
 #include "InputHandler.h"
 
-Camera* InputHandler::camera;
-RenderEngine* InputHandler::renderEngine;
-Program* InputHandler::program;
-int InputHandler::mouseOldX;
-int InputHandler::mouseOldY;
-bool InputHandler::moved;
+#include "Camera.h"
+#include "RenderEngine.h"
+#include "Program.h"
+
 
 // Must be called before processing any SDL2 events
-void InputHandler::setUp(Camera* camera, RenderEngine* renderEngine, Program* program) {
-	InputHandler::camera = camera;
-	InputHandler::renderEngine = renderEngine;
-	InputHandler::program = program;
-}
+InputHandler::InputHandler(Camera* camera, RenderEngine* renderEngine, Program* program) : 
+	camera(camera),
+	renderEngine(renderEngine),
+	program(program) {}
+
 
 void InputHandler::pollEvent(SDL_Event& e) {
 	if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) {
@@ -38,6 +36,7 @@ void InputHandler::pollEvent(SDL_Event& e) {
 	}
 }
 
+
 // Callback for key presses
 void InputHandler::key(SDL_KeyboardEvent& e) {
 	
@@ -60,11 +59,13 @@ void InputHandler::key(SDL_KeyboardEvent& e) {
 	}
 }
 
+
 // Callback for mouse button presses
 void InputHandler::mouse(SDL_MouseButtonEvent& e) {
 	mouseOldX = e.x;
 	mouseOldY = e.y;
 }
+
 
 // Callback for mouse motion
 void InputHandler::motion(SDL_MouseMotionEvent& e) {
@@ -93,6 +94,7 @@ void InputHandler::motion(SDL_MouseMotionEvent& e) {
 	mouseOldY = e.y;
 }
 
+
 // Callback for mouse scroll
 void InputHandler::scroll(SDL_MouseWheelEvent& e) {
 	int dy;
@@ -113,6 +115,7 @@ void InputHandler::scroll(SDL_MouseWheelEvent& e) {
 		//camera->updateZoom(dy);
 	}
 }
+
 
 // Callback for window reshape/resize
 void InputHandler::reshape(SDL_WindowEvent& e) {

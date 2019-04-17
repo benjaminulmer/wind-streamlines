@@ -3,6 +3,7 @@
 
 #include "Conversions.h"
 
+
 VoxelGrid::VoxelGrid(double rad, double sepDist) :
 	rad(rad),
 	sepDist(sepDist),

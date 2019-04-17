@@ -1,11 +1,13 @@
 #define _USE_MATH_DEFINES
-#include "Camera.h"
 #define GLM_ENABLE_EXPERIMENTAL
+
+#include "Camera.h"
+#include "Conversions.h"
+
 #include <glm/gtx/rotate_vector.hpp>
 
 #include <cmath>
 
-#include "Conversions.h"
 
 Camera::Camera() : zoomScale(1.3), rotScale(0.008) {
 	reset();

@@ -1,9 +1,7 @@
 #pragma once
 
 #include <GL/glew.h>
-#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
-#include <glm/gtx/transform.hpp>
 #include <rapidjson/document.h>
 
 #include <vector>
@@ -13,6 +11,7 @@ enum class Shader {
 	DEFAULT,
 	STREAMLINE
 };
+
 
 class Renderable {
 

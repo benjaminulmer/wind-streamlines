@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+
 GLuint ShaderTools::compileShaders(const char* vertexFilename, const char* fragmentFilename) {
 	GLuint vertex_shader;
 	GLuint fragment_shader;

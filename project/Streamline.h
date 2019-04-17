@@ -1,11 +1,12 @@
 #pragma once
 
+#include "Renderable.h"
+
+class SphericalVectorField;
+
 #include <Eigen/Dense>
 
 #include <vector>
-
-#include "Renderable.h"
-class SphericalVectorField;
 
 
 // Class for storing and representing a single streamline

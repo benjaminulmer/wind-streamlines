@@ -1,17 +1,11 @@
 #pragma once
 
-#include <glm/glm.hpp>
 #include <rapidjson/document.h>
-#include <rapidjson/stringbuffer.h>
 
-#include <string>
 
-#include "Renderable.h"
+// Namespace for reading and writing files of different formats
+namespace ContentReadWrite {
 
-class ContentReadWrite {
-
-public:
-	static bool loadOBJ(const char* path, Renderable& r);
-	static rapidjson::Document readJSON(std::string path);
+	rapidjson::Document readJSON(const char* path);
 };
 

@@ -6,8 +6,8 @@
 
 #include <vector>
 
-#include "Camera.h"
-#include "Renderable.h"
+class Renderable;
+
 
 class RenderEngine {
 

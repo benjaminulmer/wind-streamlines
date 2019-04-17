@@ -1,14 +1,16 @@
 #define _USE_MATH_DEFINES
+#define GLM_ENABLE_EXPERIMENTAL
 #include "RenderEngine.h"
+
+#include "Conversions.h"
+#include "Renderable.h"
+#include "ShaderTools.h"
 
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <cmath>
 #include <iostream>
 
-#include "Conversions.h"
-#include "ShaderTools.h"
 
 RenderEngine::RenderEngine(SDL_Window* window) :
 	window(window),

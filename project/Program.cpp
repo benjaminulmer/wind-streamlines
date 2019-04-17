@@ -1,26 +1,28 @@
 #define _USE_MATH_DEFINES
+#define GLM_ENABLE_EXPERIMENTAL
 #include "Program.h"
 
 #include "imgui/imgui_impl_sdl.h"
 #include "imgui/imgui_impl_opengl3.h"
 
+#include "Camera.h"
+#include "ContentReadWrite.h"
+#include "Conversions.h"
+#include "InputHandler.h"
+#include "RenderEngine.h"
+#include "VoxelGrid.h"
+
 #include <GL/glew.h>
 #include <glm/gtx/intersect.hpp>
+#include <glm/gtx/transform.hpp>
 #include <netcdf>
 #include <SDL2/SDL_opengl.h>
 
-#include <algorithm>
 #include <chrono>
-#include <cmath>
 #include <iostream>
-#include <limits>
 #include <queue>
 #include <random>
 
-#include "Conversions.h"
-#include "ContentReadWrite.h"
-#include "InputHandler.h"
-#include "VoxelGrid.h"
 
 Program::Program() :
 	window(nullptr),
@@ -29,6 +31,7 @@ Program::Program() :
 	io(nullptr),
 	renderEngine(nullptr),
 	camera(nullptr),
+	input(nullptr),
 	numNewLines(0),
 	scale(1.0),
 	latRot(0.0),
@@ -47,7 +50,7 @@ void Program::start() {
 
 	camera = new Camera();
 	renderEngine = new RenderEngine(window);
-	InputHandler::setUp(camera, renderEngine, this);
+	input = new InputHandler(camera, renderEngine, this);
 
 	// Load coastline vector data
 	rapidjson::Document cl = ContentReadWrite::readJSON("data/coastlines.json");
@@ -144,7 +147,7 @@ void Program::mainLoop() {
 
 			ImGui_ImplSDL2_ProcessEvent(&e);
 			if (!io->WantCaptureMouse || !io->WantCaptureKeyboard) {
-				InputHandler::pollEvent(e);
+				input->pollEvent(e);
 			}
 		}
 
@@ -393,6 +396,11 @@ void Program::cleanup() {
 
 	coastRender.deleteBufferData();
 	streamlineRender.deleteBufferData();
+
+	SDL_DestroyWindow(window);
+	delete renderEngine;
+	delete camera;
+	delete input;
 
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplSDL2_Shutdown();

@@ -2,10 +2,8 @@
 #include "SphericalVectorField.h"
 
 #include "Conversions.h"
-
-#include <algorithm>
-#include <cmath>
-
+#include "Streamline.h"
+#include "VoxelGrid.h"
 
 // Construct vector field from data provided in NetCDF file
 // Assumes data is of a certain format, does not work for general files

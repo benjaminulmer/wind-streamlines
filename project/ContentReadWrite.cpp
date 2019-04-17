@@ -1,17 +1,14 @@
 #include "ContentReadWrite.h"
 
-#include <cstring>
 #include <fstream>
 #include <iostream>
-#include <vector>
 
-// Load obj file from path into indexed list data structure
-bool ContentReadWrite::loadOBJ(const char* path, Renderable& r) {
-	return false;
-}
 
-// Reads in explosion graph from file
-rapidjson::Document ContentReadWrite::readJSON(std::string path) {
+// Reads in json data from file
+//
+// path - path of json file to read
+// return - rapidjson document containing file data
+rapidjson::Document ContentReadWrite::readJSON(const char* path) {
 
 	// Open file
 	std::ifstream file(path);

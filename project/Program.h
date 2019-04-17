@@ -1,15 +1,20 @@
 #pragma once
 
+#include "Renderable.h"
+#include "SphericalVectorField.h"
+#include "Streamline.h"
+
+class Camera;
+class InputHandler;
+class RenderEngine;
+
 #include <imgui.h>
 #include <SDL2/SDL.h>
 #undef main
 
-#include "Camera.h"
-#include "RenderEngine.h"
-#include "SphericalVectorField.h"
-#include "Streamline.h"
-
+#include <vector>
 #include <mutex>
+
 
 class Program {
 
@@ -35,6 +40,7 @@ private:
 
 	RenderEngine* renderEngine;
 	Camera* camera;
+	InputHandler* input;
 
 	ColourRenderable coastRender;
 	StreamlineRenderable streamlineRender;

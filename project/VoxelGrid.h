@@ -3,7 +3,7 @@
 #include <Eigen/Dense>
 
 #include <unordered_map>
-#include <iostream>
+
 
 class VoxelGrid {
 

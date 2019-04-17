@@ -2,9 +2,8 @@
 #include "Streamline.h"
 
 #include "color/ColorSpace.h"
-
-#include "SphericalVectorField.h"
 #include "Conversions.h"
+#include "SphericalVectorField.h"
 
 
 // Default constructor

@@ -1,13 +1,8 @@
 #define _USE_MATH_DEFINES
 #include "Renderable.h"
 
-#include <glm/gtc/type_ptr.hpp>
-
 #include "Conversions.h"
 
-#include <algorithm>
-#include <cmath>
-#include <limits>
 
 // Creates a renderable of the geometry specified in json document
 ColourRenderable::ColourRenderable(const rapidjson::Document& d) {

@@ -5,6 +5,7 @@
 
 #include <cmath>
 
+
 const double RADIUS_EARTH_M = 6371008.0;
 const double RADIUS_EARTH_VIEW = 10.0;
 
@@ -34,32 +35,4 @@ inline Eigen::Vector3d cartToSph(const Eigen::Vector3d& v) {
 	double lng = atan2(v.x(), v.z());
 	if (lng < 0.0) lng += 2.0 * M_PI;
 	return Eigen::Vector3d(asin(v.y() / rad), lng, absToMBars(rad));
-}
-
-
-#include <vector>
-#include "Streamline.h"
-
-inline bool pointValid(Eigen::Vector3d point, const std::vector<Streamline>& streamlines, double sepDist) {
-
-	for (const Streamline& s : streamlines) {
-		for (const Eigen::Vector3d p : s.getPoints()) {
-
-			Eigen::Vector3d pointC = sphToCart(point);
-			Eigen::Vector3d pC = sphToCart(p);
-
-			double pointLen = pointC.norm();
-			double pLen = pC.norm();
-
-			double height = std::min(pointLen, pLen);
-
-			double vert = pointLen - pLen;
-			double geod = height * acos((pointC / pointLen).dot(pC / pLen));
-
-			if (geod * geod + (10000.0) * vert * vert < sepDist * sepDist) {
-				return false;
-			}
-		}
-	}
-	return true;
 }
