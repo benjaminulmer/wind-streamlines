@@ -10,10 +10,8 @@
 #include <cmath>
 
 
-Camera::Camera() :
-	zoomScale(1.3),
-	rotScale(0.008),
-	scale(1.0) {
+Camera::Camera(double scale) :
+	scale(scale) {
 
 	reset();
 }
@@ -69,8 +67,8 @@ glm::dvec3 Camera::getLookDir() const {
 void Camera::setScale(double newScale) {
 	scale = newScale;
 
-	eye = glm::dvec3(0.0, 0.0, RADIUS_EARTH_VIEW * scale + 30.0);
-	centre = glm::dvec3(0.0, 0.0, RADIUS_EARTH_VIEW * scale);
+	eye = glm::dvec3(0.0, 0.0, scale + 30.0);
+	centre = glm::dvec3(0.0, 0.0, scale);
 	updateVectors();
 }
 
@@ -94,26 +92,11 @@ void Camera::updateNorthRotation(double rad) {
 }
 
 
-// Zooms camera in or out
-//
-// sign - in or out, possitive or negative
-void Camera::updateZoom(int sign) {
-
-	if (sign < 0) {
-		eye.z = (eye.z - RADIUS_EARTH_VIEW) / zoomScale + RADIUS_EARTH_VIEW;
-	}
-	else {
-		eye.z = (eye.z - RADIUS_EARTH_VIEW) * zoomScale + RADIUS_EARTH_VIEW;;
-	}
-	eye.z = std::max(eye.z, 4.0 * RADIUS_EARTH_VIEW);
-}
-
-
 // Reset camera to starting position
 void Camera::reset() {
-	eye = glm::dvec3(0.0, 0.0, RADIUS_EARTH_VIEW * scale + 30.0);
+	eye = glm::dvec3(0.0, 0.0, scale + 30.0);
 	up = glm::dvec3(0.0, 1.0, 0.0);
-	centre = glm::dvec3(0.0, 0.0, RADIUS_EARTH_VIEW * scale);
+	centre = glm::dvec3(0.0, 0.0, scale);
 
 	fromVerticalRad = 0;
 	northRotationRad = 0;

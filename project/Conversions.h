@@ -7,7 +7,6 @@
 
 // Collection of constants and formulas for converting between units and coordinate systems
 const double RADIUS_EARTH_M = 6371008.0;
-const double RADIUS_EARTH_VIEW = 10.0;
 
 
 // mbars to meters above surface of Earth
@@ -45,6 +44,7 @@ inline Eigen::Vector3d sphToCart(const Eigen::Vector3d& v) {
 inline Eigen::Vector3d cartToSph(const Eigen::Vector3d& v) {
 	double rad = v.norm();
 	double lng = atan2(v.x(), v.z());
-	if (lng < 0.0) lng += 2.0 * M_PI;
+	if (lng < 0.0)
+		lng += 2.0 * M_PI;
 	return Eigen::Vector3d(asin(v.y() / rad), lng, absToMBars(rad));
 }

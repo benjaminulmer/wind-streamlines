@@ -7,7 +7,7 @@
 class Camera {
 
 public:
-	Camera();
+	Camera(double scale);
 
 	glm::dmat4 getLookAt() const;
 	glm::dvec3 getPosition() const;
@@ -18,14 +18,10 @@ public:
 
 	void updateFromVertical(double rad);
 	void updateNorthRotation(double rad);
-	void updateZoom(int value);
 
 	void reset();
 
 private:
-	const double zoomScale;
-	const double rotScale;
-
 	double scale;
 
 	glm::dvec3 eye;

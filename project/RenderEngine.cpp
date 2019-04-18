@@ -39,7 +39,7 @@ RenderEngine::RenderEngine(SDL_Window* window) :
 	alphaPerSecond(0.3f),
 	fade(true),
 	scaleFactor(30.f),
-	specular(true) {
+	specular(false) {
 
 	SDL_GetWindowSize(window, &width, &height);
 

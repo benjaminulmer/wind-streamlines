@@ -58,7 +58,7 @@ private:
 
 	double scale;
 	double latRot;
-	double longRot;
+	double lngRot;
 
 	void setupWindow();
 	void mainLoop();

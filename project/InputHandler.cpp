@@ -101,7 +101,6 @@ void InputHandler::motion(SDL_MouseMotionEvent& e) {
 //
 // e - mouse scroll event
 void InputHandler::scroll(SDL_MouseWheelEvent& e) {
-	std::cout << e.y << " : " << e.x << std::endl;
 	program->updateScale(e.y);
 }
 

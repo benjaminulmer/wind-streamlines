@@ -24,7 +24,7 @@
 #include <random>
 
 
-// Dear ImGUI window. Show misc status 
+// Dear ImGUI window. Show misc statuses
 void Program::ImGui() {
 	ImGui::Begin("Status");
 	ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -43,9 +43,9 @@ Program::Program() :
 	camera(nullptr),
 	input(nullptr),
 	numNewLines(0),
-	scale(1.0),
+	scale(10.0),
 	latRot(0.0),
-	longRot(0.0) {}
+	lngRot(0.0) {}
 
 
 // Called to start the program. Conducts set up then enters the main loop
@@ -59,7 +59,7 @@ void Program::start() {
 		exit(EXIT_FAILURE);
 	}
 
-	camera = new Camera();
+	camera = new Camera(scale);
 	renderEngine = new RenderEngine(window);
 	input = new InputHandler(camera, renderEngine, this);
 
@@ -118,7 +118,7 @@ void Program::setupWindow() {
 		SDL_Quit();
 		exit(EXIT_FAILURE);
 	}
-	//SDL_GL_SetSwapInterval(1); // Vsync on
+	SDL_GL_SetSwapInterval(0); // Vsync on
 
 	// Set up IMGUI
 	IMGUI_CHECKVERSION();
@@ -154,7 +154,7 @@ void Program::mainLoop() {
 			streamlineRender.setBufferData();
 			mtx.unlock();
 		}
-
+		
 		// Process SDL events
 		SDL_Event e;
 		while (SDL_PollEvent(&e)) {
@@ -173,14 +173,14 @@ void Program::mainLoop() {
 		// TODO replace Earth reference model and remove all code related to this effect
 		// Find min and max distance from camera to cell renderable - used for fading effect
 		glm::vec3 cameraPos = camera->getPosition();
-		float max = glm::length(cameraPos) + (float)RADIUS_EARTH_VIEW;
-		float min = glm::length(cameraPos) - (float)RADIUS_EARTH_VIEW;
+		float max = glm::length(cameraPos) + (float)scale;
+		float min = glm::length(cameraPos) - (float)scale;
 
 		glm::dmat4 worldModel(1.f);
-		double s = scale * (1.0 / RADIUS_EARTH_M) * RADIUS_EARTH_VIEW;
+		double s = scale * (1.0 / RADIUS_EARTH_M);
 		worldModel = glm::scale(worldModel, glm::dvec3(s, s, s));
 		worldModel = glm::rotate(worldModel, latRot, glm::dvec3(-1.0, 0.0, 0.0));
-		worldModel = glm::rotate(worldModel, longRot, glm::dvec3(0.0, 1.0, 0.0));
+		worldModel = glm::rotate(worldModel, lngRot, glm::dvec3(0.0, 1.0, 0.0));
 
 		// Dear ImGUI setup
 		ImGui_ImplOpenGL3_NewFrame();
@@ -368,7 +368,7 @@ void Program::updateRotation(int oldX, int newX, int oldY, int newY, bool skew) 
 	glm::dvec3 rayO = camera->getPosition();
 	glm::dvec3 rayDOld = glm::normalize(glm::dvec3(worldOld) - rayO);
 	glm::dvec3 rayDNew = glm::normalize(glm::dvec3(worldNew) - rayO);
-	double sphereRad = RADIUS_EARTH_VIEW * scale;
+	double sphereRad = scale;
 	glm::dvec3 sphereO = glm::dvec3(0.0);
 
 	glm::dvec3 iPosOld, iPosNew, iNorm;
@@ -388,7 +388,7 @@ void Program::updateRotation(int oldX, int newX, int oldY, int newY, bool skew) 
 		}
 		else {
 			latRot += latNew - latOld;
-			longRot += longNew - longOld;
+			lngRot += longNew - longOld;
 		}
 	}
 }
@@ -400,10 +400,10 @@ void Program::updateRotation(int oldX, int newX, int oldY, int newY, bool skew) 
 void Program::updateScale(int dir) {
 
 	if (dir < 0) {
-		scale /= 1.4f;
+		scale /= 1.2f;
 	}
 	else if (dir > 0) {
-		scale *= 1.4f;
+		scale *= 1.2f;
 	}
 	camera->setScale(scale);
 }
