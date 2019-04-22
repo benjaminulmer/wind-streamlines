@@ -38,7 +38,7 @@ RenderEngine::RenderEngine(SDL_Window* window) :
 	timeRepeat(100000.f),
 	alphaPerSecond(0.3f),
 	fade(true),
-	scaleFactor(30.f),
+	scaleFactor(10.f),
 	specular(false) {
 
 	SDL_GetWindowSize(window, &width, &height);
@@ -73,15 +73,19 @@ RenderEngine::RenderEngine(SDL_Window* window) :
 // max - TODO remove
 // min - TODO remove
 // dTimeS - time since last render in seconds
-void RenderEngine::render(const std::vector<const Renderable*>& objects, const glm::dmat4& view, float max, float min, float dTimeS) {
+void RenderEngine::render(const std::vector<Renderable*>& objects, const glm::dmat4& view, float max, float min, float dTimeS) {
 	
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	totalTime += dTimeS * timeMultiplier;
 	totalTime = fmod(totalTime, timeRepeat);
 
-	for (const Renderable* r : objects) {	
+	for (Renderable* r : objects) {	
 		
 		GLuint program;
+		if (r->getVAO() == -1) {
+			r->assignBuffers();
+			r->setBufferData();
+		}
 		glBindVertexArray(r->getVAO());
 
 		if (r->getShaderType() == Shader::DEFAULT) {

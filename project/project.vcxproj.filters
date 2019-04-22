@@ -38,6 +38,7 @@
     <ClCompile Include="SphericalVectorField.cpp" />
     <ClCompile Include="Streamline.cpp" />
     <ClCompile Include="VoxelGrid.cpp" />
+    <ClCompile Include="SeedingEngine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Color\ColorSpace.h">
@@ -69,6 +70,7 @@
     <ClInclude Include="SphericalVectorField.h" />
     <ClInclude Include="Streamline.h" />
     <ClInclude Include="VoxelGrid.h" />
+    <ClInclude Include="SeedingEngine.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\main.frag">

@@ -10,6 +10,7 @@
 #include "Conversions.h"
 #include "InputHandler.h"
 #include "RenderEngine.h"
+#include "SeedingEngine.h"
 #include "VoxelGrid.h"
 
 #include <GL/glew.h>
@@ -20,16 +21,13 @@
 
 #include <chrono>
 #include <iostream>
-#include <queue>
-#include <random>
 
 
 // Dear ImGUI window. Show misc statuses
 void Program::ImGui() {
 	ImGui::Begin("Status");
 	ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-	ImGui::Text("%i streamlines", streamlines.size());
-	ImGui::Text("%i streamline vertices", streamlineRender.size());
+	seeder->ImGui();
 	ImGui::End();
 }
 
@@ -42,7 +40,8 @@ Program::Program() :
 	renderEngine(nullptr),
 	camera(nullptr),
 	input(nullptr),
-	numNewLines(0),
+	seeder(nullptr),
+	//numNewLines(0),
 	scale(10.0),
 	latRot(0.0),
 	lngRot(0.0) {}
@@ -67,22 +66,23 @@ void Program::start() {
 	rapidjson::Document cl = ContentReadWrite::readJSON("data/coastlines.json");
 	coastRender = ColourRenderable(cl);
 
-	objects.push_back(&coastRender);
+	//objects.push_back(&coastRender);
 	coastRender.assignBuffers();
 	coastRender.setBufferData();
 
 	// Load vector field
 	netCDF::NcFile file("data/2018-05-27T12.nc", netCDF::NcFile::read);
 	field = SphericalVectorField(file);
+	seeder = new SeedingEngine(field);
 
 	// Set up renderable for streamlines
-	objects.push_back(&streamlineRender);
-	streamlineRender.assignBuffers();
-	streamlineRender.setDrawMode(GL_LINES);
+	//objects.push_back(&streamlineRender);
+	//streamlineRender.assignBuffers();
+	//streamlineRender.setDrawMode(GL_LINES);
 
 	// Start integration and rendering in separate threads
-	numNewLines = 0;
-	std::thread t1(&Program::integrateStreamlines, this);
+	//numNewLines = 0;
+	std::thread t1(&SeedingEngine::seedGlobal, seeder);
 	mainLoop();
 }
 
@@ -143,17 +143,23 @@ void Program::mainLoop() {
 	while (true) {
 
 		// Update streamline renderable if new ones have been integrated
-		if (numNewLines > 0) {
+		//if (numNewLines > 0) {
 
-			mtx.lock();
-			size_t size = streamlines.size();
-			for (size_t i = 0; i < numNewLines; i++) {
-				streamlines[size - 1 - i].addToRenderable(streamlineRender);
-			}
-			numNewLines = 0;
-			streamlineRender.setBufferData();
-			mtx.unlock();
-		}
+		//	mtx.lock();
+		//	size_t size = streamlines.size();
+		//	for (size_t i = 0; i < numNewLines; i++) {
+
+		//		StreamlineRenderable* r = new StreamlineRenderable();
+		//		r->setDrawMode(GL_LINES);
+		//		r->assignBuffers();
+		//		streamlines[size - 1 - i].addToRenderable(*r);
+		//		r->setBufferData();
+		//		objects.push_back(r);
+		//	}
+		//	numNewLines = 0;
+
+		//	mtx.unlock();
+		//}
 		
 		// Process SDL events
 		SDL_Event e;
@@ -197,142 +203,12 @@ void Program::mainLoop() {
 
 		// Render everything
 		ImGui::Render();
+		std::vector<Renderable*> objects = seeder->getLinesToRender(5);
+		objects.push_back(&coastRender);
 		renderEngine->render(objects, (glm::dmat4)camera->getLookAt() * worldModel, max, min, dTimeS.count());
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		SDL_GL_SwapWindow(window);
 	}
-}
-
-
-// Seeds and integrates streamlines
-void Program::integrateStreamlines() {
-
-	//std::random_device dev;
-	//std::default_random_engine rng(dev());
-	//rng.seed(1);
-	//std::uniform_real_distribution<double> latDist(-1.0, 1.0);
-	//std::uniform_real_distribution<double> lngDist(0.0, 2.0 * M_PI);
-	//std::uniform_real_distribution<double> lvlDist(1.0, 1000.0);
-
-	double minLength = 1000000.0;
-	double sepDist = 250000.0;
-
-	VoxelGrid vg(mbarsToAbs(1.0) + 100.0, sepDist);
-
-
-	//while (streamlines.size() < 2000 && !stop) {
-
-	//	Eigen::Vector3d seed(asin(latDist(rng)), lngDist(rng), lvlDist(rng));
-	//	if (!vg.testPoint(sphToCart(seed))) {
-	//		continue;
-	//	}
-	//	Streamline newLine = field.streamline(seed, 10000000.0, 1000.0, 5000.0, vg);
-
-	//	if (newLine.getTotalLength() > minLength) {
-
-	//		for (const Eigen::Vector3d& p : newLine.getPoints()) {
-	//			vg.addPoint(sphToCart(p));
-	//		}
-	//		mtx.lock();
-	//		numNewLines++;
-	//		streamlines.push_back(newLine);
-	//		mtx.unlock();
-	//		std::cout << newLine.size() << " : " << streamlines.size() << " : " << streamlineRender.tangents.size() << std::endl;
-	//	}
-	//}
-	//std::cout << "end" << std::endl;
-	//vg.prints();
-
-	std::queue<Streamline> seedLines;
-
-	//for (const Eigen::Vector3d& p : field.getHighVertPoints()) {
-	//	Streamline line = field.streamline(p, 5000000.0, 1000.0, 5000.0, vg);
-	//	for (const Eigen::Vector3d& p : line.getPoints()) {
-	//		vg.addPoint(sphToCart(p));
-	//	}
-	//	seedLines.push(line);
-	//	mtx.lock();
-	//	numNewLines++;
-	//	streamlines.push_back(line);
-	//	mtx.unlock();
-	//}
-	//std::cout << "high vert done" << std::endl;
-	//std::this_thread::sleep_for(std::chrono::seconds(50));
-	//std::cout << "resuming" << std::endl;
-
-
-	// Need a starting streamline to seed off of
-	Streamline first = field.streamline(Eigen::Vector3d(0.0, 0.0, 999.0), 10000000.0, 1000.0, 10000.0, vg);
-	for (const Eigen::Vector3d& p : first.getPoints()) {
-		vg.addPoint(sphToCart(p));
-	}
-	seedLines.push(first);
-	mtx.lock();
-	numNewLines++;
-	streamlines.push_back(first);
-	mtx.unlock();
-
-	while (!seedLines.empty()) {
-
-		//std::cout << seedLines.size() << std::endl;
-
-		Streamline seedLine = seedLines.front();
-		seedLines.pop();
-
-		std::vector<Eigen::Vector3d> seeds = seedLine.getSeeds(sepDist);
-
-		for (const Eigen::Vector3d& seed : seeds) {
-
-			// Do not use seed if it is too close to other lines
-			if (!vg.testPoint(sphToCart(seed))) {
-				continue;
-			}
-
-			// Integrate streamline and add it if it was long enough
-			Streamline newLine = field.streamline(seed, 10000000.0, 1000.0, 10000.0, vg);
-			if (newLine.getTotalLength() > minLength) {
-
-				seedLines.push(newLine);
-				for (const Eigen::Vector3d& p : newLine.getPoints()) {
-					vg.addPoint(sphToCart(p));
-				}
-				mtx.lock();
-				numNewLines++;
-				streamlines.push_back(newLine);
-				mtx.unlock();
-			}
-		}
-	}
-	std::cout << "end" << std::endl;
-
-
-
-	//std::random_device dev;
-	//std::default_random_engine rng(dev());
-	//std::uniform_real_distribution<double> latDist(-1.0, 1.0);
-	//std::uniform_real_distribution<double> lngDist(0.0, 2.0 * M_PI);
-	//std::uniform_real_distribution<double> lvlDist(1.0, 1000.0);
-
-	//std::cout << "starting critical points" << std::endl;
-	//std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> criticalIndices;// = field.findCriticalPoints();
-	//std::cout << criticalIndices.size() << std::endl;
-
-	//double maxA = -1.0;
-
-	//for (int i = 0; i < 3000; i++) {
-
-	//	Eigen::Vector3d pos(asin(latDist(rng)), lngDist(rng), lvlDist(rng));
-	//	streamlines.push_back(field.streamline(pos, 1000000.0, 1000.0, 5000.0));
-	//	//std::cout << streamlines.back().getTotalLength() << " : " << streamlines.back().getTotalAngle() << std::endl;
-
-	//	double ratio = streamlines.back().getTotalAngle() / streamlines.back().getTotalLength();
-	//	//std::cout << ratio << std::endl;
-	//	maxA = std::max(ratio, maxA);
-	//}
-	//for (const Streamline& s : streamlines) {
-	//	s.addToRenderable(streamlineRender);
-	//}
-	//streamlineRender.setBufferData();
 }
 
 
@@ -413,7 +289,7 @@ void Program::updateScale(int dir) {
 void Program::cleanup() {
 
 	coastRender.deleteBufferData();
-	streamlineRender.deleteBufferData();
+	//streamlineRender.deleteBufferData();
 
 	SDL_DestroyWindow(window);
 	delete renderEngine;

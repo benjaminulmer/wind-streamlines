@@ -64,7 +64,7 @@ bool VoxelGrid::testPoint(const Eigen::Vector3d& p) const {
 						double vert = pLen - tLen;
 						double geod = height * acos((p / pLen).dot(t / tLen));
 
-						if (geod * geod + 2500.0 * vert * vert < sepDist * sepDist) {
+						if (geod * geod + RADIAL_DIST_SCALE * RADIAL_DIST_SCALE * vert * vert < sepDist * sepDist) {
 							return false;
 						}
 					}

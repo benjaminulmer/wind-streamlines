@@ -19,6 +19,8 @@ enum class Shader {
 class Renderable {
 
 public:
+	Renderable() : vao(-1) {}
+
 	virtual void assignBuffers() = 0;
 	virtual void setBufferData() = 0;
 	virtual void deleteBufferData() = 0;
@@ -60,7 +62,7 @@ public:
 	ColourRenderable() = default;
 	ColourRenderable(const rapidjson::Document& d);
 
-	virtual void addColour(const glm::vec3& c) { colours.push_back(c); }
+	virtual void addColour(const glm::u8vec3& c) { colours.push_back(c); }
 
 	virtual void assignBuffers();
 	virtual void setBufferData();
@@ -74,7 +76,7 @@ public:
 protected:
 	GLuint drawMode;
 
-	std::vector<glm::vec3> colours;
+	std::vector<glm::u8vec3> colours;
 
 	GLuint colourBuffer;
 };

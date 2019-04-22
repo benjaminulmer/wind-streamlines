@@ -7,6 +7,7 @@
 class Camera;
 class InputHandler;
 class RenderEngine;
+class SeedingEngine;
 
 #include <imgui.h>
 #include <SDL2/SDL.h>
@@ -45,16 +46,13 @@ private:
 	RenderEngine* renderEngine;
 	Camera* camera;
 	InputHandler* input;
+	SeedingEngine* seeder;
 
 	ColourRenderable coastRender;
-	StreamlineRenderable streamlineRender;
-	std::vector<const Renderable*> objects;
+	//std::vector<const Renderable*> objects;
 
 	SphericalVectorField field;
 	std::vector<Streamline> streamlines;
-
-	std::mutex mtx;
-	volatile int numNewLines;
 
 	double scale;
 	double latRot;
@@ -62,6 +60,4 @@ private:
 
 	void setupWindow();
 	void mainLoop();
-
-	void integrateStreamlines();
 };

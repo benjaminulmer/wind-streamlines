@@ -7,7 +7,7 @@
 
 // Collection of constants and formulas for converting between units and coordinate systems
 const double RADIUS_EARTH_M = 6371008.0;
-
+const double RADIAL_DIST_SCALE = 34.222;
 
 // mbars to meters above surface of Earth
 inline double mbarsToAlt(double mb) {

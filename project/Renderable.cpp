@@ -21,11 +21,11 @@ ColourRenderable::ColourRenderable(const rapidjson::Document& d) {
 			double lat = coordArray[j][1].GetDouble() * M_PI / 180.0;
 
 			addVert(glm::dvec3(sin(lng)*cos(lat), sin(lat), cos(lng)*cos(lat)) * RADIUS_EARTH_M);
-			colours.push_back(glm::vec3(0.f, 0.f, 0.f));
+			colours.push_back(glm::u8vec3(0, 0, 0));
 
 			if (j != 0 && j != coordArray.Size() - 1) {
 				addVert(glm::dvec3(sin(lng)*cos(lat), sin(lat), cos(lng)*cos(lat)) * RADIUS_EARTH_M);
-				colours.push_back(glm::vec3(0.f, 0.f, 0.f));
+				colours.push_back(glm::u8vec3(0, 0, 0));
 			}
 		}
 	}
@@ -70,11 +70,11 @@ void DoublePrecisionRenderable::setBufferData() {
 
 	// Vertex high buffer
 	glBindBuffer(GL_ARRAY_BUFFER, vertexHighBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*vertsHigh.size(), vertsHigh.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*vertsHigh.size(), vertsHigh.data(), GL_DYNAMIC_DRAW);
 
 	// Vertex low buffer
 	glBindBuffer(GL_ARRAY_BUFFER, vertexLowBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*vertsLow.size(), vertsLow.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*vertsLow.size(), vertsLow.data(), GL_DYNAMIC_DRAW);
 }
 
 
@@ -96,7 +96,7 @@ void ColourRenderable::assignBuffers() {
 	// Colour buffer
 	glGenBuffers(1, &colourBuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, colourBuffer);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glVertexAttribPointer(2, 3, GL_UNSIGNED_BYTE, GL_TRUE, 0, (void*)0);
 	glEnableVertexAttribArray(2);
 }
 
@@ -108,7 +108,7 @@ void ColourRenderable::setBufferData() {
 
 	// Colour buffer
 	glBindBuffer(GL_ARRAY_BUFFER, colourBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*colours.size(), colours.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::u8vec3)*colours.size(), colours.data(), GL_DYNAMIC_DRAW);
 }
 
 
@@ -153,11 +153,11 @@ void StreamlineRenderable::setBufferData() {
 
 	// Tangent buffer
 	glBindBuffer(GL_ARRAY_BUFFER, tangentBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*tangents.size(), tangents.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*tangents.size(), tangents.data(), GL_DYNAMIC_DRAW);
 
 	// Time buffer
 	glBindBuffer(GL_ARRAY_BUFFER, timeBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*localTimes.size(), localTimes.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*localTimes.size(), localTimes.data(), GL_DYNAMIC_DRAW);
 }
 
 
