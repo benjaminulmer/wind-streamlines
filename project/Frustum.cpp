@@ -64,7 +64,7 @@ bool Frustum::pointInside(const Eigen::Vector3d& p) const {
 bool Frustum::overlap(const std::vector<Eigen::Vector3d>& points) const {
 	
 	for (const Eigen::Vector3d& p : points) {
-		if (pointInside(sphToCart(p))) {
+		if (pointInside(p)) {
 			return true;
 		}
 	}

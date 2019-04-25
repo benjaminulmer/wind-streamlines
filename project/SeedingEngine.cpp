@@ -11,6 +11,7 @@
 #include <queue>
 #include <random>
 
+
 void SeedingEngine::ImGui() {
 	ImGui::Text("%i streamlines", streamlines[0].size());
 	ImGui::Text("%i streamlines in view", prevNum);
@@ -35,7 +36,7 @@ void SeedingEngine::seedGlobal() {
 	// Need a starting streamline to seed off of
 	Streamline first = field.streamline(Eigen::Vector3d(0.0, 0.0, 999.0), 10000000.0, 1000.0, 10000.0, vg);
 	for (const Eigen::Vector3d& p : first.getPoints()) {
-		vg.addPoint(sphToCart(p));
+		vg.addPoint(p);
 	}
 	seedLines.push(first);
 	StreamlineRenderable* r = new StreamlineRenderable();
@@ -57,17 +58,17 @@ void SeedingEngine::seedGlobal() {
 		for (const Eigen::Vector3d& seed : seeds) {
 
 			// Do not use seed if it is too close to other lines
-			if (!vg.testPoint(sphToCart(seed))) {
+			if (!vg.testPoint(seed)) {
 				continue;
 			}
 
 			// Integrate streamline and add it if it was long enough
-			Streamline newLine = field.streamline(seed, 10000000.0, 1000.0, 10000.0, vg);
+			Streamline newLine = field.streamline(cartToSph(seed), 10000000.0, 1000.0, 10000.0, vg);
 			if (newLine.getTotalLength() > minLength) {
 
 				seedLines.push(newLine);
 				for (const Eigen::Vector3d& p : newLine.getPoints()) {
-					vg.addPoint(sphToCart(p));
+					vg.addPoint(p);
 				}
 
 				StreamlineRenderable* r = new StreamlineRenderable();
