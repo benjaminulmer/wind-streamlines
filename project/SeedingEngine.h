@@ -2,6 +2,7 @@
 
 #include "Streamline.h"
 
+class Frustum;
 class SphericalVectorField;
 
 #include <mutex>
@@ -14,7 +15,7 @@ public:
 	SeedingEngine(SphericalVectorField& field);
 
 	void seedGlobal();
-	std::vector<Renderable*> getLinesToRender(int frustum) const;
+	std::vector<Renderable*> getLinesToRender(const Frustum& f) const;
 
 	void ImGui();
 
@@ -22,7 +23,7 @@ private:
 	SphericalVectorField& field;
 	std::vector<std::vector<Streamline>> streamlines;
 
-	std::vector<Renderable*> test;
+	mutable int prevNum;
 
 	void mainLoop();
 };

@@ -14,19 +14,20 @@ class Renderable;
 class RenderEngine {
 
 public:
-	RenderEngine(SDL_Window* window);
+	RenderEngine(SDL_Window* window, double cameraDist);
 
 	void render(const std::vector<Renderable*>& objects, const glm::dmat4& view, float max, float min, float dTimeS);
 
 	void setWindowSize(int newWidth, int newHeight);
 	void toggleFade() { fade = !fade; }
 	void updateScaleFactor(int dir);
+	void updatePlanes(double cameraDist);
 
-	double getFovY() { return fovYRad; }
-	double getAspectRatio() { return (float)width/height; }
-	double getNear() { return near; }
-	double getFar() { return far; }
-	glm::dmat4 getProjection() { return projection; }
+	double getFovY() const { return fovYRad; }
+	double getAspectRatio() const { return (float)width/height; }
+	double getNear() const { return near; }
+	double getFar() const { return far; }
+	const glm::dmat4& getProjection() const { return projection; }
 
 	void ImGui();
 	

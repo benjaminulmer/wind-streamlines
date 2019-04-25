@@ -39,6 +39,7 @@
     <ClCompile Include="Streamline.cpp" />
     <ClCompile Include="VoxelGrid.cpp" />
     <ClCompile Include="SeedingEngine.cpp" />
+    <ClCompile Include="Frustum.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Color\ColorSpace.h">
@@ -71,6 +72,7 @@
     <ClInclude Include="Streamline.h" />
     <ClInclude Include="VoxelGrid.h" />
     <ClInclude Include="SeedingEngine.h" />
+    <ClInclude Include="Frustum.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\main.frag">

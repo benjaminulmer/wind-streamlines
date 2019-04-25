@@ -10,22 +10,42 @@
 #include <cmath>
 
 
-Camera::Camera(double scale) :
-	scale(scale) {
+// Create camera with intial distance from the surface of the Earth
+//
+// initialDist - distance camera is from surface
+Camera::Camera(double initialDist) :
+	latRot(0.0),
+	lngRot(0.0),
+	fromVertRot(0.0),
+	northRot(0.0) {
 
+	eye = glm::dvec3(0.0, 0.0, RADIUS_EARTH_M + initialDist);
+	up = glm::dvec3(0.0, 1.0, 0.0);
+	centre = glm::dvec3(0.0, 0.0, RADIUS_EARTH_M);
 	reset();
 }
 
 
-void Camera::updateVectors() {
+// Rotates vectors to create final eye, up, and centre vector
+void Camera::rotateVectors() {
 
-	glm::dvec3 axis1 = glm::normalize(glm::cross(eye, glm::dvec3(0.0, 1.0, 0.0)));
-	glm::dvec3 axis2 = glm::normalize(eye);
+	glm::dvec3 rightW(1.0, 0.0, 0.0);
+	glm::dvec3 forwW(0.0, 0.0, 1.0);
+	glm::dvec3 downW(0.0, -1.0, 0.0);
 
-	rotatedEye = glm::rotate((eye - centre), -fromVerticalRad, axis1);
-	rotatedEye = glm::rotate(rotatedEye, northRotationRad, axis2);
-	rotatedUp = glm::rotate(up, -fromVerticalRad, axis1);
-	rotatedUp = glm::rotate(rotatedUp, northRotationRad, axis2);
+	// Tile and north rotation
+	rotatedEye = glm::rotate((eye - centre), fromVertRot, rightW);
+	rotatedEye = glm::rotate(rotatedEye, northRot, forwW);
+	rotatedUp = glm::rotate(up, fromVertRot, rightW);
+	rotatedUp = glm::rotate(rotatedUp, northRot, forwW);
+
+	// Latitude and longitude rotation, i.e. panning
+	rotatedEye = glm::rotate(rotatedEye, latRot, rightW);
+	rotatedEye = glm::rotate(rotatedEye, lngRot, downW);
+	rotatedUp = glm::rotate(rotatedUp, latRot, rightW);
+	rotatedUp = glm::rotate(rotatedUp, lngRot, downW);
+	rotatedCentre = glm::rotate(centre, latRot, rightW);
+	rotatedCentre = glm::rotate(rotatedCentre, lngRot, downW);
 }
 
 
@@ -33,7 +53,7 @@ void Camera::updateVectors() {
 //
 // return - view matrix
 glm::dmat4 Camera::getLookAt() const {
-	return glm::lookAt(centre + rotatedEye, centre, rotatedUp);
+	return glm::lookAt(rotatedCentre + rotatedEye, rotatedCentre, rotatedUp);
 }
 
 
@@ -41,7 +61,7 @@ glm::dmat4 Camera::getLookAt() const {
 // 
 // return - position of camera
 glm::dvec3 Camera::getPosition() const {
-	return centre + rotatedEye;
+	return rotatedCentre + rotatedEye;
 }
 
 
@@ -57,48 +77,61 @@ glm::dvec3 Camera::getUp() const {
 //
 // return - looking direction vector
 glm::dvec3 Camera::getLookDir() const {
-	return glm::normalize(centre - getPosition());
+	return glm::normalize(rotatedCentre - getPosition());
 }
 
 
-// Sets current Earth model scale and updates accordingly
+// Sets the distance camera is from the surface of the Earth
 //
-// newScale - scale to set to
-void Camera::setScale(double newScale) {
-	scale = newScale;
+// newDist - new distance
+void Camera::setDist(double newDist) {
 
-	eye = glm::dvec3(0.0, 0.0, scale + 30.0);
-	centre = glm::dvec3(0.0, 0.0, scale);
-	updateVectors();
+	eye = glm::dvec3(0.0, 0.0, RADIUS_EARTH_M + newDist);
+	centre = glm::dvec3(0.0, 0.0, RADIUS_EARTH_M);
+	rotateVectors();
 }
 
 
 // Updates amount of rotation about the vector tangent to the Earth and going right in screen space
 //
 // rad - number of radians to add to current rotation
-void Camera::updateFromVertical(double rad) {
-	fromVerticalRad += rad;
-	fromVerticalRad = std::clamp(fromVerticalRad, 0.0, M_PI_2);
-	updateVectors();
+void Camera::updateFromVertRot(double rad) {
+	fromVertRot += rad;
+	fromVertRot = std::clamp(fromVertRot, 0.0, M_PI_2);
+	rotateVectors();
 }
 
 
 // Updates amount of rotation about the normal at the look at position
 //
 // rad - number of radians to add to current rotation
-void Camera::updateNorthRotation(double rad) {
-	northRotationRad -= rad;
-	updateVectors();
+void Camera::updateNorthRot(double rad) {
+	northRot += rad;
+	rotateVectors();
 }
 
 
-// Reset camera to starting position
-void Camera::reset() {
-	eye = glm::dvec3(0.0, 0.0, scale + 30.0);
-	up = glm::dvec3(0.0, 1.0, 0.0);
-	centre = glm::dvec3(0.0, 0.0, scale);
+// Updates amount of latitude rotation
+//
+// rad - number of radians to add to current rotation
+void Camera::updateLatRot(double rad) {
+	latRot += rad;
+	rotateVectors();
+}
 
-	fromVerticalRad = 0;
-	northRotationRad = 0;
-	updateVectors();
+
+// Updates amount of longitude rotation
+//
+// rad - number of radians to add to current rotation
+void Camera::updateLngRot(double rad) {
+	lngRot += rad;
+	rotateVectors();
+}
+
+
+// Reset tilt and north rotation of camera
+void Camera::reset() {
+	fromVertRot = 0.0;
+	northRot = 0.0;
+	rotateVectors();
 }

@@ -27,7 +27,7 @@ public:
 	void start();
 
 	void updateRotation(int oldX, int newX, int oldY, int newY, bool skew);
-	void updateScale(int dir);
+	void updateCameraDist(int dir);
 	void setWindowSize(int newWidth, int newHeight) {
 		width = newWidth;
 		height = newHeight;
@@ -54,9 +54,7 @@ private:
 	SphericalVectorField field;
 	std::vector<Streamline> streamlines;
 
-	double scale;
-	double latRot;
-	double lngRot;
+	double cameraDist;
 
 	void setupWindow();
 	void mainLoop();

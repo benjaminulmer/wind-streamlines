@@ -10,8 +10,6 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
 
-#include <iostream>
-
 
 // Dear ImGUI window. Allows chaning render parameters
 void RenderEngine::ImGui() {
@@ -25,14 +23,13 @@ void RenderEngine::ImGui() {
 }
 
 
-// Create engine for the provided window
+// Create engine for the provided window and camera distance
 //
 // window - SDL window to render to and manage
-RenderEngine::RenderEngine(SDL_Window* window) :
+// cameraDist - distance camera is from surface of Earth. Used for setting near and far planes
+RenderEngine::RenderEngine(SDL_Window* window, double cameraDist) :
 	window(window),
 	fovYRad(60.f * ((float)M_PI / 180.f)),
-	near(1.f),
-	far(1000.f),
 	totalTime(0.f),
 	timeMultiplier(30000.f),
 	timeRepeat(100000.f),
@@ -48,7 +45,7 @@ RenderEngine::RenderEngine(SDL_Window* window) :
 	mainProgram = ShaderTools::compileShaders("./shaders/main.vert", "./shaders/main.frag");
 	streamlineProgram = ShaderTools::compileShaders("./shaders/streamline.vert", "./shaders/streamline.frag");
 
-	projection = glm::perspective(fovYRad, (double)width/height, near, far);
+	updatePlanes(cameraDist);
 
 	// Default openGL state
 	// If you change state you must change back to default after
@@ -161,4 +158,17 @@ void RenderEngine::updateScaleFactor(int dir) {
 	if (scaleFactor < 1.f) {
 		scaleFactor = 1.f;
 	}
+}
+
+
+// Updates near and far planes based on camera distance
+//
+// cameraDist - distance camera is from surface of the Earth
+void RenderEngine::updatePlanes(double cameraDist) {
+
+	// TODO these values are fine but could be better
+	far = cameraDist + RADIUS_EARTH_M * 1.1;
+	near = 10000.0;
+
+	projection = glm::perspective(fovYRad, (double)width / height, near, far);
 }

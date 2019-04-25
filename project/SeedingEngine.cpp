@@ -2,6 +2,7 @@
 #include "SeedingEngine.h"
 
 #include "Conversions.h"
+#include "Frustum.h"
 #include "SphericalVectorField.h"
 #include "VoxelGrid.h"
 
@@ -12,6 +13,7 @@
 
 void SeedingEngine::ImGui() {
 	ImGui::Text("%i streamlines", streamlines[0].size());
+	ImGui::Text("%i streamlines in view", prevNum);
 	//ImGui::Text("%i streamline vertices", streamlineRender.size());
 }
 
@@ -36,11 +38,12 @@ void SeedingEngine::seedGlobal() {
 		vg.addPoint(sphToCart(p));
 	}
 	seedLines.push(first);
-	streamlines[0].push_back(first);
 	StreamlineRenderable* r = new StreamlineRenderable();
 	r->setDrawMode(GL_LINES);
 	first.addToRenderable(*r);
-	test.push_back(r);
+	first.r = r;
+	streamlines[0].push_back(first);
+	//test.push_back(r);
 
 
 	// Seed until you can't seed no more
@@ -67,18 +70,28 @@ void SeedingEngine::seedGlobal() {
 					vg.addPoint(sphToCart(p));
 				}
 
-				streamlines[0].push_back(newLine);
 				StreamlineRenderable* r = new StreamlineRenderable();
 				r->setDrawMode(GL_LINES);
 				newLine.addToRenderable(*r);
-				test.push_back(r);
+				newLine.r = r;
+				streamlines[0].push_back(newLine);
+				//test.push_back(r);
 			}
 		}
 	}
 }
 
 
-std::vector<Renderable*> SeedingEngine::getLinesToRender(int frustum) const {
+std::vector<Renderable*> SeedingEngine::getLinesToRender(const Frustum& f) const {
+	
 
-	return test;
+	std::vector<Renderable*> toReturn;
+
+	for (const Streamline& s : streamlines[0]) {
+		if (f.overlap(s.getPoints())) {
+			toReturn.push_back(s.r);
+		}
+	}
+	prevNum = toReturn.size();
+	return toReturn;
 }

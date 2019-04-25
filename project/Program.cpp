@@ -8,6 +8,7 @@
 #include "Camera.h"
 #include "ContentReadWrite.h"
 #include "Conversions.h"
+#include "Frustum.h"
 #include "InputHandler.h"
 #include "RenderEngine.h"
 #include "SeedingEngine.h"
@@ -28,6 +29,11 @@ void Program::ImGui() {
 	ImGui::Begin("Status");
 	ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	seeder->ImGui();
+	ImGui::Text("Near: %.0f", renderEngine->getNear());
+	ImGui::Text("Far: %.0f", renderEngine->getFar());
+	ImGui::Text("FOV Y: %.1f", renderEngine->getFovY() * 180.0 / M_PI);
+	ImGui::Text("FOV X: %.1f", renderEngine->getFovY() * renderEngine->getAspectRatio() * 180.0 / M_PI);
+	ImGui::Text("Aspect ratio: %.3f", renderEngine->getAspectRatio());
 	ImGui::End();
 }
 
@@ -41,10 +47,7 @@ Program::Program() :
 	camera(nullptr),
 	input(nullptr),
 	seeder(nullptr),
-	//numNewLines(0),
-	scale(10.0),
-	latRot(0.0),
-	lngRot(0.0) {}
+	cameraDist(RADIUS_EARTH_M * 3.0) {}
 
 
 // Called to start the program. Conducts set up then enters the main loop
@@ -58,8 +61,8 @@ void Program::start() {
 		exit(EXIT_FAILURE);
 	}
 
-	camera = new Camera(scale);
-	renderEngine = new RenderEngine(window);
+	camera = new Camera(cameraDist);
+	renderEngine = new RenderEngine(window, cameraDist);
 	input = new InputHandler(camera, renderEngine, this);
 
 	// Load coastline vector data and set up renderable for it
@@ -75,13 +78,7 @@ void Program::start() {
 	field = SphericalVectorField(file);
 	seeder = new SeedingEngine(field);
 
-	// Set up renderable for streamlines
-	//objects.push_back(&streamlineRender);
-	//streamlineRender.assignBuffers();
-	//streamlineRender.setDrawMode(GL_LINES);
-
 	// Start integration and rendering in separate threads
-	//numNewLines = 0;
 	std::thread t1(&SeedingEngine::seedGlobal, seeder);
 	mainLoop();
 }
@@ -141,25 +138,6 @@ void Program::mainLoop() {
 	std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
 
 	while (true) {
-
-		// Update streamline renderable if new ones have been integrated
-		//if (numNewLines > 0) {
-
-		//	mtx.lock();
-		//	size_t size = streamlines.size();
-		//	for (size_t i = 0; i < numNewLines; i++) {
-
-		//		StreamlineRenderable* r = new StreamlineRenderable();
-		//		r->setDrawMode(GL_LINES);
-		//		r->assignBuffers();
-		//		streamlines[size - 1 - i].addToRenderable(*r);
-		//		r->setBufferData();
-		//		objects.push_back(r);
-		//	}
-		//	numNewLines = 0;
-
-		//	mtx.unlock();
-		//}
 		
 		// Process SDL events
 		SDL_Event e;
@@ -179,14 +157,8 @@ void Program::mainLoop() {
 		// TODO replace Earth reference model and remove all code related to this effect
 		// Find min and max distance from camera to cell renderable - used for fading effect
 		glm::vec3 cameraPos = camera->getPosition();
-		float max = glm::length(cameraPos) + (float)scale;
-		float min = glm::length(cameraPos) - (float)scale;
-
-		glm::dmat4 worldModel(1.f);
-		double s = scale * (1.0 / RADIUS_EARTH_M);
-		worldModel = glm::scale(worldModel, glm::dvec3(s, s, s));
-		worldModel = glm::rotate(worldModel, latRot, glm::dvec3(-1.0, 0.0, 0.0));
-		worldModel = glm::rotate(worldModel, lngRot, glm::dvec3(0.0, 1.0, 0.0));
+		float max = glm::length(cameraPos) + (float)RADIUS_EARTH_M;
+		float min = glm::length(cameraPos) - (float)RADIUS_EARTH_M;
 
 		// Dear ImGUI setup
 		ImGui_ImplOpenGL3_NewFrame();
@@ -203,9 +175,9 @@ void Program::mainLoop() {
 
 		// Render everything
 		ImGui::Render();
-		std::vector<Renderable*> objects = seeder->getLinesToRender(5);
+		std::vector<Renderable*> objects = seeder->getLinesToRender(Frustum(*camera, *renderEngine));
 		objects.push_back(&coastRender);
-		renderEngine->render(objects, (glm::dmat4)camera->getLookAt() * worldModel, max, min, dTimeS.count());
+		renderEngine->render(objects, (glm::dmat4)camera->getLookAt(), max, min, dTimeS.count());
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		SDL_GL_SwapWindow(window);
 	}
@@ -244,7 +216,7 @@ void Program::updateRotation(int oldX, int newX, int oldY, int newY, bool skew) 
 	glm::dvec3 rayO = camera->getPosition();
 	glm::dvec3 rayDOld = glm::normalize(glm::dvec3(worldOld) - rayO);
 	glm::dvec3 rayDNew = glm::normalize(glm::dvec3(worldNew) - rayO);
-	double sphereRad = scale;
+	double sphereRad = RADIUS_EARTH_M;
 	glm::dvec3 sphereO = glm::dvec3(0.0);
 
 	glm::dvec3 iPosOld, iPosNew, iNorm;
@@ -259,29 +231,30 @@ void Program::updateRotation(int oldX, int newX, int oldY, int newY, bool skew) 
 		double latNew = M_PI_2 - acos(iPosNew.y / sphereRad);
 		
 		if (skew) {
-			camera->updateFromVertical(newYN - oldYN);
-			camera->updateNorthRotation(newXN - oldXN);
+			camera->updateFromVertRot(newYN - oldYN);
+			camera->updateNorthRot(oldXN - newXN);
 		}
 		else {
-			latRot += latNew - latOld;
-			lngRot += longNew - longOld;
+			camera->updateLatRot(latNew - latOld);
+			camera->updateLngRot(longNew - longOld);
 		}
 	}
 }
 
 
-// Changes scale of Earth model (zooms camera)
+// Moves camera towards or away from Earth
 //
-// dir - direction of change, possitive or negative
-void Program::updateScale(int dir) {
+// dir - direction of change, possitive for closer and negative for farther
+void Program::updateCameraDist(int dir) {
 
-	if (dir < 0) {
-		scale /= 1.2f;
+	if (dir > 0) {
+		cameraDist /= 1.2f;
 	}
-	else if (dir > 0) {
-		scale *= 1.2f;
+	else if (dir < 0) {
+		cameraDist *= 1.2f;
 	}
-	camera->setScale(scale);
+	camera->setDist(cameraDist);
+	renderEngine->updatePlanes(cameraDist);
 }
 
 

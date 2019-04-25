@@ -26,6 +26,7 @@ public:
 	std::vector<Eigen::Vector3d> getSeeds(double sepDist);
 
 	void addToRenderable(StreamlineRenderable& r) const;
+	Renderable* r;
 
 	const Eigen::Vector3d& operator[](size_t i) const { return points[i]; }
 

@@ -7,22 +7,23 @@
 class Camera {
 
 public:
-	Camera(double scale);
+	Camera(double initialDist);
 
 	glm::dmat4 getLookAt() const;
 	glm::dvec3 getPosition() const;
 	glm::dvec3 getUp() const;
 	glm::dvec3 getLookDir() const;
 
-	void setScale(double scale);
+	void setDist(double newDist);
 
-	void updateFromVertical(double rad);
-	void updateNorthRotation(double rad);
+	void updateFromVertRot(double rad);
+	void updateNorthRot(double rad);
+	void updateLatRot(double rad);
+	void updateLngRot(double rad);
 
 	void reset();
 
 private:
-	double scale;
 
 	glm::dvec3 eye;
 	glm::dvec3 up;
@@ -30,9 +31,12 @@ private:
 
 	glm::dvec3 rotatedEye;
 	glm::dvec3 rotatedUp;
+	glm::dvec3 rotatedCentre;
 
-	double fromVerticalRad;
-	double northRotationRad;
+	double latRot;
+	double lngRot;
+	double fromVertRot;
+	double northRot;
 
-	void updateVectors();
+	void rotateVectors();
 };

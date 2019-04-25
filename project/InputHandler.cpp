@@ -101,7 +101,7 @@ void InputHandler::motion(SDL_MouseMotionEvent& e) {
 //
 // e - mouse scroll event
 void InputHandler::scroll(SDL_MouseWheelEvent& e) {
-	program->updateScale(e.y);
+	program->updateCameraDist(e.y);
 }
 
 
