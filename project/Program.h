@@ -49,10 +49,9 @@ private:
 	SeedingEngine* seeder;
 
 	ColourRenderable coastRender;
-	//std::vector<const Renderable*> objects;
+	bool frustumUpdate;
 
 	SphericalVectorField field;
-	std::vector<Streamline> streamlines;
 
 	double cameraDist;
 

@@ -20,11 +20,13 @@ void SeedingEngine::ImGui() {
 
 
 SeedingEngine::SeedingEngine(SphericalVectorField & field) :
-	field(field) {}
+	field(field),
+	globalDone(false) {}
 
 
 void SeedingEngine::seedGlobal() {
 
+	streamlines.push_back(std::vector<Streamline>());
 	streamlines.push_back(std::vector<Streamline>());
 
 	double minLength = 1000000.0;
@@ -44,7 +46,6 @@ void SeedingEngine::seedGlobal() {
 	first.addToRenderable(*r);
 	first.r = r;
 	streamlines[0].push_back(first);
-	//test.push_back(r);
 
 
 	// Seed until you can't seed no more
@@ -76,23 +77,92 @@ void SeedingEngine::seedGlobal() {
 				newLine.addToRenderable(*r);
 				newLine.r = r;
 				streamlines[0].push_back(newLine);
-				//test.push_back(r);
 			}
 		}
 	}
+	globalDone = true;
 }
 
 
-std::vector<Renderable*> SeedingEngine::getLinesToRender(const Frustum& f) const {
-	
+std::vector<Renderable*> SeedingEngine::getLinesToRender(const Frustum& f, double cameraDist) {
 
-	std::vector<Renderable*> toReturn;
+	std::vector<Streamline> linesR;
 
-	for (const Streamline& s : streamlines[0]) {
-		if (f.overlap(s.getPoints())) {
-			toReturn.push_back(s.r);
+	if (!globalDone) {
+		for (const Streamline& s : streamlines[0]) {
+			if (f.overlap(s.getPoints())) {
+				linesR.push_back(s);
+			}
 		}
+		prevNum = linesR.size();
 	}
-	prevNum = toReturn.size();
+	else {
+
+		for (const Streamline& s : streamlines[0]) {
+			if (f.overlap(s.getPoints())) {
+				linesR.push_back(s);
+			}
+
+			if (cameraDist < 861500) {
+
+				double frac = 0.5;
+
+				double minLength = 1000000.0 * frac;
+				double sepDist = 200000.0 * frac;
+
+				VoxelGrid vg(mbarsToAbs(1.0) + 100.0, sepDist);
+				std::queue<Streamline> seedLines;
+
+				// Need a starting streamline to seed off of
+
+				for (Streamline& s : linesR) {
+					for (const Eigen::Vector3d& p : s.getPoints()) {
+						vg.addPoint(p);
+					}
+					seedLines.push(s);
+				}
+
+				// Seed until you can't seed no more
+				while (!seedLines.empty()) {
+
+					Streamline seedLine = seedLines.front();
+					seedLines.pop();
+
+					std::vector<Eigen::Vector3d> seeds = seedLine.getSeeds(sepDist);
+
+					for (const Eigen::Vector3d& seed : seeds) {
+
+						// Do not use seed if it is too close to other lines
+						if (!vg.testPoint(seed) || !f.pointInside(seed)) {
+							continue;
+						}
+
+						// Integrate streamline and add it if it was long enough
+						Streamline newLine = field.streamline(cartToSph(seed), 10000000.0, 1000.0, 10000.0, vg);
+						if (newLine.getTotalLength() > minLength) {
+
+							seedLines.push(newLine);
+							for (const Eigen::Vector3d& p : newLine.getPoints()) {
+								vg.addPoint(p);
+							}
+
+							StreamlineRenderable* r = new StreamlineRenderable();
+							r->setDrawMode(GL_LINES);
+							newLine.addToRenderable(*r);
+							newLine.r = r;
+							linesR.push_back(newLine);
+						}
+					}
+				}
+			}
+
+		}
+		//prevNum = toReturn.size();
+	}
+	std::vector<Renderable*> toReturn;
+	for (const Streamline& s : linesR) {
+		toReturn.push_back(s.r);
+	}
+
 	return toReturn;
 }

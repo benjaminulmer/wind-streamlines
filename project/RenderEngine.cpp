@@ -166,9 +166,13 @@ void RenderEngine::updateScaleFactor(int dir) {
 // cameraDist - distance camera is from surface of the Earth
 void RenderEngine::updatePlanes(double cameraDist) {
 
-	// TODO these values are fine but could be better
-	far = cameraDist + RADIUS_EARTH_M * 1.1;
-	near = 10000.0;
+	double cameraPlusRad = RADIUS_EARTH_M + cameraDist;
+	double t = sqrt(cameraPlusRad * cameraPlusRad + RADIUS_EARTH_M * RADIUS_EARTH_M);
+	double theta = asin(RADIUS_EARTH_M / cameraPlusRad);
+
+	far = cos(theta) * t;
+	// TODO maybe a better way to calculate near
+	near = far / 1500.0;
 
 	projection = glm::perspective(fovYRad, (double)width / height, near, far);
 }

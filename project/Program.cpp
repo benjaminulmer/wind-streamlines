@@ -27,8 +27,10 @@
 // Dear ImGUI window. Show misc statuses
 void Program::ImGui() {
 	ImGui::Begin("Status");
+	//frustumUpdate = ImGui::Button("Frust");
 	ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	seeder->ImGui();
+	ImGui::Text("Camera dist: %.0f", cameraDist);
 	ImGui::Text("Near: %.0f", renderEngine->getNear());
 	ImGui::Text("Far: %.0f", renderEngine->getFar());
 	ImGui::Text("FOV Y: %.1f", renderEngine->getFovY() * 180.0 / M_PI);
@@ -47,6 +49,7 @@ Program::Program() :
 	camera(nullptr),
 	input(nullptr),
 	seeder(nullptr),
+	frustumUpdate(true),
 	cameraDist(RADIUS_EARTH_M * 3.0) {}
 
 
@@ -79,7 +82,7 @@ void Program::start() {
 	seeder = new SeedingEngine(field);
 
 	// Start integration and rendering in separate threads
-	std::thread t1(&SeedingEngine::seedGlobal, seeder);
+	seeder->seedGlobal();
 	mainLoop();
 }
 
@@ -136,6 +139,7 @@ void Program::setupWindow() {
 void Program::mainLoop() {
 
 	std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
+	std::vector<Renderable*> objects;
 
 	while (true) {
 		
@@ -175,8 +179,13 @@ void Program::mainLoop() {
 
 		// Render everything
 		ImGui::Render();
-		std::vector<Renderable*> objects = seeder->getLinesToRender(Frustum(*camera, *renderEngine));
-		objects.push_back(&coastRender);
+		
+		if (frustumUpdate) {
+			objects = seeder->getLinesToRender(Frustum(*camera, *renderEngine), cameraDist);
+			objects.push_back(&coastRender);
+			frustumUpdate = false;
+		}
+		
 		renderEngine->render(objects, (glm::dmat4)camera->getLookAt(), max, min, dTimeS.count());
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		SDL_GL_SwapWindow(window);
@@ -192,6 +201,8 @@ void Program::mainLoop() {
 // newY - new y pixel location of mouse
 // skew - true tilts the camera, otherwise rotates the Earth
 void Program::updateRotation(int oldX, int newX, int oldY, int newY, bool skew) {
+
+	frustumUpdate = true;
 
 	glm::dmat4 projView = renderEngine->getProjection() * camera->getLookAt();
 	glm::dmat4 invProjView = glm::inverse(projView);
@@ -246,6 +257,8 @@ void Program::updateRotation(int oldX, int newX, int oldY, int newY, bool skew) 
 //
 // dir - direction of change, possitive for closer and negative for farther
 void Program::updateCameraDist(int dir) {
+
+	frustumUpdate = true;
 
 	if (dir > 0) {
 		cameraDist /= 1.2f;

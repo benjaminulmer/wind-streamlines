@@ -15,7 +15,7 @@ public:
 	SeedingEngine(SphericalVectorField& field);
 
 	void seedGlobal();
-	std::vector<Renderable*> getLinesToRender(const Frustum& f) const;
+	std::vector<Renderable*> getLinesToRender(const Frustum& f, double cameraDist);
 
 	void ImGui();
 
@@ -24,7 +24,6 @@ private:
 	std::vector<std::vector<Streamline>> streamlines;
 
 	mutable int prevNum;
-
-	void mainLoop();
+	bool globalDone;
 };
 
