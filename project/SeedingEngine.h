@@ -24,6 +24,7 @@ private:
 	std::vector<std::vector<Streamline>> streamlines;
 
 	mutable int prevNum;
+	mutable int maxI;
 	bool globalDone;
 };
 

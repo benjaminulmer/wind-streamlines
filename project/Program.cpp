@@ -82,7 +82,8 @@ void Program::start() {
 	seeder = new SeedingEngine(field);
 
 	// Start integration and rendering in separate threads
-	seeder->seedGlobal();
+	std::thread t1(&SeedingEngine::seedGlobal, seeder);
+	//seeder->seedGlobal();
 	mainLoop();
 }
 
@@ -180,7 +181,7 @@ void Program::mainLoop() {
 		// Render everything
 		ImGui::Render();
 		
-		if (frustumUpdate) {
+		if (true) {
 			objects = seeder->getLinesToRender(Frustum(*camera, *renderEngine), cameraDist);
 			objects.push_back(&coastRender);
 			frustumUpdate = false;
