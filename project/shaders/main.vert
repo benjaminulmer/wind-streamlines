@@ -15,8 +15,6 @@ layout (location = 2) in vec3 colour;
 
 out vec3 C;
 
-out float dist;
-
 void main(void) {	
 
 	float len = length(vertexHigh);
@@ -36,7 +34,6 @@ void main(void) {
 	C = colour;
 
 	vec4 pCamera = modelView * vec4(vertex, 1.f);
-	dist = length(pCamera.xyz);
 
     gl_Position = projection * pCamera;   
 }

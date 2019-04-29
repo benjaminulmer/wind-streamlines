@@ -48,6 +48,7 @@ private:
 	InputHandler* input;
 	SeedingEngine* seeder;
 
+	ColourRenderable sphereRender;
 	ColourRenderable coastRender;
 	bool frustumUpdate;
 

@@ -59,24 +59,24 @@ RenderEngine::RenderEngine(SDL_Window* window, double cameraDist) :
 
 	glPointSize(2.f);
 	glLineWidth(1.f);
-	glClearColor(0.4f, 0.4f, 0.4f, 1.f);
+	glClearColor(0.f, 0.f, 0.f, 1.f);
 }
 
-
+#include <iostream>
 // Render provided object. Render engine stores all information about how to render
 //
 // objects - list of renderables to render
 // view - view matrix
-// max - TODO remove
-// min - TODO remove
 // dTimeS - time since last render in seconds
-void RenderEngine::render(const std::vector<Renderable*>& objects, const glm::dmat4& view, float max, float min, float dTimeS) {
+void RenderEngine::render(const std::vector<Renderable*>& objects, const glm::dmat4& view, float dTimeS) {
 	
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	totalTime += dTimeS * timeMultiplier;
 	totalTime = fmod(totalTime, timeRepeat);
 
-	for (Renderable* r : objects) {	
+	for (size_t i = objects.size(); i >= 1; i--) {
+
+		Renderable* r = objects[i - 1];
 		
 		GLuint program;
 		if (r->getVAO() == -1) {
@@ -117,8 +117,6 @@ void RenderEngine::render(const std::vector<Renderable*>& objects, const glm::dm
 		glUniform1f(glGetUniformLocation(program, "radiusEarthM"), (float)RADIUS_EARTH_M);
 
 		glUniform1i(glGetUniformLocation(program, "fade"), fade);
-		glUniform1f(glGetUniformLocation(program, "maxDist"), max);
-		glUniform1f(glGetUniformLocation(program, "minDist"), min);
 		glUniform1f(glGetUniformLocation(program, "totalTime"), totalTime);
 		glUniform1f(glGetUniformLocation(program, "timeMultiplier"), timeMultiplier);
 		glUniform1f(glGetUniformLocation(program, "timeRepeat"), timeRepeat);
@@ -172,7 +170,19 @@ void RenderEngine::updatePlanes(double cameraDist) {
 
 	far = cos(theta) * t;
 	// TODO maybe a better way to calculate near
-	near = far / 1500.0;
+	near = cameraDist - RADIUS_EARTH_M - 33000.0 * scaleFactor;
+	//if (near < 0.0) {
+	//	near = cameraDist - 33000.0 * scaleFactor;
+	//}
+	if (near < 0.0) {
+		if (far < 6500000.0) {
+			near = far / 1000.0;
+		}
+		else {
+			near = far / 100.0;
+		}
+
+	}
 
 	projection = glm::perspective(fovYRad, (double)width / height, near, far);
 }

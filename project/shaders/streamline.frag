@@ -2,9 +2,6 @@
 
 out vec4 colour;
 
-uniform bool fade;
-uniform float maxDist;
-uniform float minDist;
 uniform float totalTime;
 uniform float timeMultiplier;
 uniform float timeRepeat;
@@ -16,7 +13,6 @@ in vec3 L;
 in vec3 V;
 in vec3 T;
 
-in float d;
 in float t;
 
 void main(void) {    	
@@ -39,15 +35,8 @@ void main(void) {
 	vec3 kd = 0.8f * diffuse * C;
 	vec3 ks = 0.6f * pow(spec, n) * vec3(1.f, 1.f, 1.f) * specularToggle;
 
-	// Fall off function
-	float norm = (d - minDist) / (maxDist - minDist);
-	norm = 1.f - 1.75f * norm;
-
-	if (norm < 0.f) norm = 0.f;
-	if (norm > 1.f) norm = 1.f;
-
 	float expon = mod(totalTime - mod(t, timeRepeat), timeRepeat) / timeMultiplier;
 	float alpha = pow(alphaPerSecond, expon);
 		
-	colour = vec4(ka + kd + ks, norm * alpha);
+	colour = vec4(ka + kd + ks, alpha);
 }

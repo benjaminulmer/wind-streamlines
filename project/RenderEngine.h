@@ -16,7 +16,7 @@ class RenderEngine {
 public:
 	RenderEngine(SDL_Window* window, double cameraDist);
 
-	void render(const std::vector<Renderable*>& objects, const glm::dmat4& view, float max, float min, float dTimeS);
+	void render(const std::vector<Renderable*>& objects, const glm::dmat4& view, float dTimeS);
 
 	void setWindowSize(int newWidth, int newHeight);
 	void toggleFade() { fade = !fade; }

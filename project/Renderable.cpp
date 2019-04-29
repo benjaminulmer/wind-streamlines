@@ -21,11 +21,11 @@ ColourRenderable::ColourRenderable(const rapidjson::Document& d) {
 			double lat = coordArray[j][1].GetDouble() * M_PI / 180.0;
 
 			addVert(glm::dvec3(sin(lng)*cos(lat), sin(lat), cos(lng)*cos(lat)) * RADIUS_EARTH_M);
-			colours.push_back(glm::u8vec3(0, 0, 0));
+			colours.push_back(glm::u8vec3(255, 255, 255));
 
 			if (j != 0 && j != coordArray.Size() - 1) {
 				addVert(glm::dvec3(sin(lng)*cos(lat), sin(lat), cos(lng)*cos(lat)) * RADIUS_EARTH_M);
-				colours.push_back(glm::u8vec3(0, 0, 0));
+				colours.push_back(glm::u8vec3(255, 255, 255));
 			}
 		}
 	}

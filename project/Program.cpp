@@ -31,6 +31,7 @@ void Program::ImGui() {
 	ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	seeder->ImGui();
 	ImGui::Text("Camera dist: %.0f", cameraDist);
+	ImGui::Text("Ratio: %.1f", renderEngine->getFar() / renderEngine->getNear());
 	ImGui::Text("Near: %.0f", renderEngine->getNear());
 	ImGui::Text("Far: %.0f", renderEngine->getFar());
 	ImGui::Text("FOV Y: %.1f", renderEngine->getFovY() * 180.0 / M_PI);
@@ -72,9 +73,13 @@ void Program::start() {
 	rapidjson::Document cl = ContentReadWrite::readJSON("data/coastlines.json");
 	coastRender = ColourRenderable(cl);
 
+	ContentReadWrite::loadOBJ("sphere.obj", sphereRender);
+
 	//objects.push_back(&coastRender);
 	coastRender.assignBuffers();
 	coastRender.setBufferData();
+	sphereRender.assignBuffers();
+	sphereRender.setBufferData();
 
 	// Load vector field
 	netCDF::NcFile file("data/2018-05-27T12.nc", netCDF::NcFile::read);
@@ -82,8 +87,8 @@ void Program::start() {
 	seeder = new SeedingEngine(field);
 
 	// Start integration and rendering in separate threads
-	std::thread t1(&SeedingEngine::seedGlobal, seeder);
-	//seeder->seedGlobal();
+	//std::thread t1(&SeedingEngine::seedGlobal, seeder);
+	seeder->seedGlobal();
 	mainLoop();
 }
 
@@ -159,12 +164,6 @@ void Program::mainLoop() {
 			input->pollEvent(e);
 		}
 
-		// TODO replace Earth reference model and remove all code related to this effect
-		// Find min and max distance from camera to cell renderable - used for fading effect
-		glm::vec3 cameraPos = camera->getPosition();
-		float max = glm::length(cameraPos) + (float)RADIUS_EARTH_M;
-		float min = glm::length(cameraPos) - (float)RADIUS_EARTH_M;
-
 		// Dear ImGUI setup
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplSDL2_NewFrame(window);
@@ -184,10 +183,11 @@ void Program::mainLoop() {
 		if (true) {
 			objects = seeder->getLinesToRender(Frustum(*camera, *renderEngine), cameraDist);
 			objects.push_back(&coastRender);
+			objects.push_back(&sphereRender);
 			frustumUpdate = false;
 		}
 		
-		renderEngine->render(objects, (glm::dmat4)camera->getLookAt(), max, min, dTimeS.count());
+		renderEngine->render(objects, (glm::dmat4)camera->getLookAt(), dTimeS.count());
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		SDL_GL_SwapWindow(window);
 	}
@@ -276,6 +276,7 @@ void Program::updateCameraDist(int dir) {
 void Program::cleanup() {
 
 	coastRender.deleteBufferData();
+	sphereRender.deleteBufferData();
 	//streamlineRender.deleteBufferData();
 
 	SDL_DestroyWindow(window);

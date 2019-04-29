@@ -1,5 +1,7 @@
 #pragma once
 
+class ColourRenderable;
+
 #define RAPIDJSON_NOMEMBERITERATORCLASS
 #include <rapidjson/document.h>
 
@@ -8,5 +10,6 @@
 namespace ContentReadWrite {
 
 	rapidjson::Document readJSON(const char* path);
+	bool loadOBJ(const char* path, ColourRenderable& r);
 };
 
