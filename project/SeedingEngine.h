@@ -23,8 +23,7 @@ private:
 	SphericalVectorField& field;
 	std::vector<std::vector<Streamline>> streamlines;
 
-	mutable int prevNum;
-	mutable int maxI;
-	bool globalDone;
+	int numLevels;
+	int showLevels;
 };
 

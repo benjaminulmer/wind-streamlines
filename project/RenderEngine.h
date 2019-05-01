@@ -19,7 +19,6 @@ public:
 	void render(const std::vector<Renderable*>& objects, const glm::dmat4& view, float dTimeS);
 
 	void setWindowSize(int newWidth, int newHeight);
-	void toggleFade() { fade = !fade; }
 	void updateScaleFactor(int dir);
 	void updatePlanes(double cameraDist);
 
@@ -44,10 +43,12 @@ private:
 	float timeRepeat;
 	float alphaPerSecond;
 	bool specular;
+	bool diffuse;
+	bool colourScale;
+	bool pause;
 
 	GLuint mainProgram;
 	GLuint streamlineProgram;
-	bool fade;
 	float scaleFactor;
 
 	glm::dmat4 projection;

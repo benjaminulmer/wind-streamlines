@@ -9,11 +9,14 @@ uniform vec3 eyeLow;
 uniform float altScale;
 uniform float radiusEarthM;
 
+uniform bool scale;
+
 layout (location = 0) in vec3 vertexHigh;
 layout (location = 1) in vec3 vertexLow;
 layout (location = 2) in vec3 colour;
-layout (location = 3) in vec3 tangent;
-layout (location = 4) in float localTime;
+layout (location = 3) in vec3 c2;
+layout (location = 4) in vec3 tangent;
+layout (location = 5) in float localTime;
 
 out vec3 C;
 out vec3 L;
@@ -43,6 +46,8 @@ void main(void) {
 	V = normalize(eyeHigh - vertexHigh);
 	T = tangent;
 	C = colour;
+	if (!scale)
+		C = c2;
 	t = localTime;
 
 	vec4 pCamera = modelView * vec4(vertex, 1.f);

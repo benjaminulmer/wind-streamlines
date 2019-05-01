@@ -8,6 +8,8 @@ uniform float timeRepeat;
 uniform float alphaPerSecond;
 uniform float specularToggle;
 
+uniform bool diff;
+
 in vec3 C;
 in vec3 L;
 in vec3 V;
@@ -22,7 +24,7 @@ void main(void) {
 	float lDt = dot(L, T);
 	float vDt = dot(V, T);
 
-	// N dot V
+	// L dot N
 	float diffuse = sqrt(1.f - (lDt * lDt));
 	diffuse *= diffuse;
 
@@ -35,8 +37,11 @@ void main(void) {
 	vec3 kd = 0.8f * diffuse * C;
 	vec3 ks = 0.6f * pow(spec, n) * vec3(1.f, 1.f, 1.f) * specularToggle;
 
-	float expon = mod(totalTime - mod(t, timeRepeat), timeRepeat) / timeMultiplier;
+	float expon = mod(totalTime - t, timeRepeat) / timeMultiplier;
 	float alpha = pow(alphaPerSecond, expon);
-		
-	colour = vec4(ka + kd + ks, alpha);
+	
+	if (diff)
+		colour = vec4(ka + kd + ks, alpha);
+	else 
+		colour = vec4(C, alpha);
 }

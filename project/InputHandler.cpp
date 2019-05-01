@@ -52,10 +52,7 @@ void InputHandler::key(SDL_KeyboardEvent& e) {
 	auto key = e.keysym.sym;
 
 	if (e.state == SDL_PRESSED) {
-		if (key == SDLK_f) {
-			renderEngine->toggleFade();
-		}
-		else if (key == SDLK_i) {
+		if (key == SDLK_i) {
 			renderEngine->updateScaleFactor(1);
 		}
 		else if (key == SDLK_k) {

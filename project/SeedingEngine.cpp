@@ -13,16 +13,16 @@
 
 
 void SeedingEngine::ImGui() {
-	ImGui::Text("%i streamlines", streamlines[0].size());
-	ImGui::Text("%i streamlines in view", prevNum);
-	ImGui::Text("Level %i", maxI);
-	//ImGui::Text("%i streamline vertices", streamlineRender.size());
+	ImGui::Begin("Multiscale");
+	ImGui::SliderInt("Show levels", &showLevels, 1, numLevels);
+	ImGui::End();
 }
 
 
 SeedingEngine::SeedingEngine(SphericalVectorField & field) :
 	field(field),
-	globalDone(false) {}
+	numLevels(5),
+	showLevels(1) {}
 
 
 void SeedingEngine::seedGlobal() {
@@ -30,7 +30,7 @@ void SeedingEngine::seedGlobal() {
 	double minLength = 1000000.0 * 1.25;
 	double sepDist = 200000.0 * 1.25;
 
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < numLevels; i++) {
 
 		streamlines.push_back(std::vector<Streamline>());
 
@@ -43,7 +43,7 @@ void SeedingEngine::seedGlobal() {
 		// Need a starting streamline to seed off of
 
 		if (i == 0) {
-			Streamline first = field.streamline(Eigen::Vector3d(0.0, 0.0, 999.0), 10000000.0, 1000.0, 10000.0, vg);
+			Streamline first = field.streamline(Eigen::Vector3d(0.0, 1.0, 999.0), 10000000.0, 1000.0, 10000.0, vg);
 			for (const Eigen::Vector3d& p : first.getPoints()) {
 				vg.addPoint(p);
 			}
@@ -83,6 +83,7 @@ void SeedingEngine::seedGlobal() {
 
 				// Integrate streamline and add it if it was long enough
 				Streamline newLine = field.streamline(cartToSph(seed), 10000000.0, 1000.0, 10000.0, vg);
+
 				if (newLine.getTotalLength() > minLength) {
 
 					seedLines.push(newLine);
@@ -100,7 +101,6 @@ void SeedingEngine::seedGlobal() {
 		}
 		std::cout << i << " done" << std::endl;
 	}
-	globalDone = true;
 }
 
 
@@ -113,17 +113,15 @@ std::vector<Renderable*> SeedingEngine::getLinesToRender(const Frustum& f, doubl
 
 	double step = (out - close) / 4.0;
 
-	int i = 0;
+	int i = 1;
 	for (const std::vector<Streamline>& v : streamlines) {
 
-		if (i == 0 || cameraDist < out - step * i) {
+		if (i <= showLevels) {
 			for (const Streamline& s : v) {
 				if (f.overlap(s.getPoints())) {
 					linesR.push_back(s);
 				}
 			}
-			prevNum = linesR.size();
-			maxI = i;
 		}
 		else {
 			break;

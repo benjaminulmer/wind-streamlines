@@ -62,7 +62,15 @@ public:
 	ColourRenderable() = default;
 	ColourRenderable(const rapidjson::Document& d);
 
-	virtual void addColour(const glm::u8vec3& c) { colours.push_back(c); }
+	virtual void addColour(const glm::u8vec3& c) { 
+		colours.push_back(c); 
+		if (c == glm::u8vec3(76, 76, 76)) {
+			c2s.push_back(c);
+		}
+		else {
+			c2s.push_back(glm::u8vec3(0, 0, 139));
+		}
+	}
 
 	virtual void assignBuffers();
 	virtual void setBufferData();
@@ -77,8 +85,10 @@ protected:
 	GLuint drawMode;
 
 	std::vector<glm::u8vec3> colours;
+	std::vector<glm::u8vec3> c2s;
 
 	GLuint colourBuffer;
+	GLuint c2;
 };
 
 

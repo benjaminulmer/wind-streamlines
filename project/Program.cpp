@@ -29,7 +29,6 @@ void Program::ImGui() {
 	ImGui::Begin("Status");
 	//frustumUpdate = ImGui::Button("Frust");
 	ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-	seeder->ImGui();
 	ImGui::Text("Camera dist: %.0f", cameraDist);
 	ImGui::Text("Ratio: %.1f", renderEngine->getFar() / renderEngine->getNear());
 	ImGui::Text("Near: %.0f", renderEngine->getNear());
@@ -169,6 +168,7 @@ void Program::mainLoop() {
 		ImGui_ImplSDL2_NewFrame(window);
 		ImGui::NewFrame();
 
+		seeder->ImGui();
 		renderEngine->ImGui();
 		ImGui();
 

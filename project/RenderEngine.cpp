@@ -15,10 +15,13 @@
 void RenderEngine::ImGui() {
 	ImGui::Begin("Render params");
 	ImGui::Checkbox("Specular highlights", &specular);
+	ImGui::Checkbox("Diffuse", &diffuse);
+	ImGui::Checkbox("Colour scale", &colourScale);
+	ImGui::Checkbox("Pause time", &pause);
 	ImGui::InputFloat("Time scale factor", &timeMultiplier, 100.f, 1000.f);
 	ImGui::InputFloat("Time repeat interval", &timeRepeat, 100.f, 1000.f);
-	ImGui::SliderFloat("Alpha multiplier/s", &alphaPerSecond, 0.0f, 1.0f);
-	ImGui::SliderFloat("Altitude scale factor", &scaleFactor, 0.0f, 100.f);
+	ImGui::SliderFloat("Alpha multiplier/s", &alphaPerSecond, 0.f, 1.f);
+	ImGui::SliderFloat("Altitude scale factor", &scaleFactor, 1.f, 100.f);
 	ImGui::End();
 }
 
@@ -34,9 +37,11 @@ RenderEngine::RenderEngine(SDL_Window* window, double cameraDist) :
 	timeMultiplier(30000.f),
 	timeRepeat(100000.f),
 	alphaPerSecond(0.3f),
-	fade(true),
 	scaleFactor(10.f),
-	specular(false) {
+	specular(false),
+	diffuse(true),
+	colourScale(true),
+	pause(false) {
 
 	SDL_GetWindowSize(window, &width, &height);
 
@@ -71,8 +76,10 @@ RenderEngine::RenderEngine(SDL_Window* window, double cameraDist) :
 void RenderEngine::render(const std::vector<Renderable*>& objects, const glm::dmat4& view, float dTimeS) {
 	
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-	totalTime += dTimeS * timeMultiplier;
-	totalTime = fmod(totalTime, timeRepeat);
+	if (!pause) {
+		totalTime += dTimeS * timeMultiplier;
+		totalTime = fmod(totalTime, timeRepeat);
+	}
 
 	for (size_t i = objects.size(); i >= 1; i--) {
 
@@ -116,7 +123,8 @@ void RenderEngine::render(const std::vector<Renderable*>& objects, const glm::dm
 		glUniform1f(glGetUniformLocation(program, "altScale"), scaleFactor);
 		glUniform1f(glGetUniformLocation(program, "radiusEarthM"), (float)RADIUS_EARTH_M);
 
-		glUniform1i(glGetUniformLocation(program, "fade"), fade);
+		glUniform1i(glGetUniformLocation(program, "scale"), colourScale);
+		glUniform1i(glGetUniformLocation(program, "diff"), diffuse);
 		glUniform1f(glGetUniformLocation(program, "totalTime"), totalTime);
 		glUniform1f(glGetUniformLocation(program, "timeMultiplier"), timeMultiplier);
 		glUniform1f(glGetUniformLocation(program, "timeRepeat"), timeRepeat);
