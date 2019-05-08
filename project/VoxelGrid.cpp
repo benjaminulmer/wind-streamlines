@@ -54,7 +54,7 @@ bool VoxelGrid::testPoint(const Eigen::Vector3d& p) const {
 
 				if (grid.find(indexToOffset(x, y, z)) != grid.end()) {
 					const auto cell = grid.at(indexToOffset(x, y, z));
-					for (const Eigen::Vector3d t : cell) {
+					for (const Eigen::Vector3d& t : cell) {
 
 						double pLen = p.norm();
 						double tLen = t.norm();

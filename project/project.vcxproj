@@ -171,6 +171,8 @@
     <None Include="shaders\main.vert" />
     <None Include="shaders\streamline.frag" />
     <None Include="shaders\streamline.vert" />
+    <None Include="shaders\streamline2.frag" />
+    <None Include="shaders\streamline2.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

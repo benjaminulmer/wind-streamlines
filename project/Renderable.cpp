@@ -22,15 +22,19 @@ ColourRenderable::ColourRenderable(const rapidjson::Document& d) {
 
 			addVert(glm::dvec3(sin(lng)*cos(lat), sin(lat), cos(lng)*cos(lat)) * RADIUS_EARTH_M);
 			colours.push_back(glm::u8vec3(255, 255, 255));
-			c2s.push_back(glm::u8vec3(255, 255, 255));
 
 			if (j != 0 && j != coordArray.Size() - 1) {
 				addVert(glm::dvec3(sin(lng)*cos(lat), sin(lat), cos(lng)*cos(lat)) * RADIUS_EARTH_M);
 				colours.push_back(glm::u8vec3(255, 255, 255));
-				c2s.push_back(glm::u8vec3(255, 255, 255));
 			}
 		}
 	}
+}
+
+
+// Delete GPU buffers for object
+void Renderable::deleteBufferData() {
+	glDeleteVertexArrays(1, &vao);
 }
 
 
@@ -82,11 +86,9 @@ void DoublePrecisionRenderable::setBufferData() {
 
 // Delete GPU buffers for object
 void DoublePrecisionRenderable::deleteBufferData() {
-
 	glDeleteBuffers(1, &vertexHighBuffer);
 	glDeleteBuffers(1, &vertexLowBuffer);
-
-	glDeleteVertexArrays(1, &vao);
+	Renderable::deleteBufferData();
 }
 
 
@@ -100,12 +102,6 @@ void ColourRenderable::assignBuffers() {
 	glBindBuffer(GL_ARRAY_BUFFER, colourBuffer);
 	glVertexAttribPointer(2, 3, GL_UNSIGNED_BYTE, GL_TRUE, 0, (void*)0);
 	glEnableVertexAttribArray(2);
-
-	// Colour buffer
-	glGenBuffers(1, &c2);
-	glBindBuffer(GL_ARRAY_BUFFER, c2);
-	glVertexAttribPointer(3, 3, GL_UNSIGNED_BYTE, GL_TRUE, 0, (void*)0);
-	glEnableVertexAttribArray(3);
 }
 
 
@@ -117,19 +113,13 @@ void ColourRenderable::setBufferData() {
 	// Colour buffer
 	glBindBuffer(GL_ARRAY_BUFFER, colourBuffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::u8vec3)*colours.size(), colours.data(), GL_DYNAMIC_DRAW);
-
-	glBindBuffer(GL_ARRAY_BUFFER, c2);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::u8vec3)*c2s.size(), c2s.data(), GL_DYNAMIC_DRAW);
 }
 
 
 // Delete GPU buffers for object
 void ColourRenderable::deleteBufferData() {
-
 	glDeleteBuffers(1, &colourBuffer);
-	glDeleteBuffers(1, &c2);
 	DoublePrecisionRenderable::deleteBufferData();
-
 }
 
 
@@ -147,14 +137,14 @@ void StreamlineRenderable::assignBuffers() {
 	// Tangent buffer
 	glGenBuffers(1, &tangentBuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, tangentBuffer);
-	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-	glEnableVertexAttribArray(4);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glEnableVertexAttribArray(3);
 
 	// Time buffer
 	glGenBuffers(1, &timeBuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, timeBuffer);
-	glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, 0, (void*)0);
-	glEnableVertexAttribArray(5);
+	glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glEnableVertexAttribArray(4);
 }
 
 
@@ -175,7 +165,6 @@ void StreamlineRenderable::setBufferData() {
 
 // Delete GPU buffers for object
 void StreamlineRenderable::deleteBufferData() {
-
 	glDeleteBuffers(1, &timeBuffer);
 	glDeleteBuffers(1, &tangentBuffer);
 	ColourRenderable::deleteBufferData();

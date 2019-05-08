@@ -42,14 +42,18 @@ private:
 	float timeMultiplier;
 	float timeRepeat;
 	float alphaPerSecond;
+	bool pause;
+
 	bool specular;
 	bool diffuse;
-	bool colourScale;
-	bool pause;
+
+	float lineWidth;
+	float outlineWidth;
+	float scaleFactor;
 
 	GLuint mainProgram;
 	GLuint streamlineProgram;
-	float scaleFactor;
+	GLuint streamlineProgram2;
 
 	glm::dmat4 projection;
 };

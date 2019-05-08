@@ -9,10 +9,12 @@
 // Default constructor
 //
 // field - Spherical vector field the streamline belongs to
-Streamline::Streamline(const SphericalVectorField& field) :
+Streamline::Streamline(const SphericalVectorField* field) :
 	totalTime(0.f),
+	sumAlt(0.0),
 	totalLength(0.0),
 	totalAngle(0.0),
+	render(nullptr),
 	field(field) {}
 
 
@@ -21,12 +23,14 @@ Streamline::Streamline(const SphericalVectorField& field) :
 // back - backwards integrated streamline
 // forw - forward integrated streamline
 // field - Spherical vector field the streamline belongs to
-Streamline::Streamline(const Streamline& back, const Streamline& forw, const SphericalVectorField& field) :
+Streamline::Streamline(const Streamline& back, const Streamline& forw, const SphericalVectorField* field) :
 	points(back.size() + forw.size()),
 	localTimes(back.size() + forw.size()),
 	totalTime(back.totalTime + forw.totalTime),
+	sumAlt(back.sumAlt + forw.sumAlt),
 	totalLength(back.totalLength + forw.totalLength),
 	totalAngle(back.totalAngle + forw.totalAngle),
+	render(nullptr),
 	field(field) {
 
 	for (size_t i = 0; i < back.size(); i++) {
@@ -39,7 +43,6 @@ Streamline::Streamline(const Streamline& back, const Streamline& forw, const Sph
 		localTimes[back.size() + i] = forw.localTimes[i] + back.totalTime;;
 	}
 }
-
 
 
 // Adds a spherical point to the steamline and updates total length and angle
@@ -57,6 +60,8 @@ void Streamline::addPoint(const Eigen::Vector3d & pSph, float time) {
 // pCart - pSph in cartesian coordinates
 // time - integration time of point in seconds
 void Streamline::addPoint(const Eigen::Vector3d& pSph, const Eigen::Vector3d& pCart, float time) {
+
+	sumAlt += mbarsToAlt(pSph.z());
 
 	// Need two points for first distance
 	if (size() > 0) {
@@ -85,8 +90,6 @@ void Streamline::addPoint(const Eigen::Vector3d& pSph, const Eigen::Vector3d& pC
 // sepDist - seperation distance seeds are from line
 // return - list of candidate seed points in cartesian coordinates
 std::vector<Eigen::Vector3d> Streamline::getSeeds(double sepDist) {
-
-	sepDist *= 1.001;
 
 	std::vector<Eigen::Vector3d> seeds;
 
@@ -139,11 +142,17 @@ std::vector<Eigen::Vector3d> Streamline::getSeeds(double sepDist) {
 // Adds the streamline to a renderable object
 //
 // r - renderable to add steamline geometry to
-void Streamline::addToRenderable(StreamlineRenderable& r) const {
+void Streamline::createRenderable(const glm::vec3& c1, const glm::vec3& c2) {
+
+	if (render != nullptr) {
+		delete render;
+	}
+	render = new StreamlineRenderable();
+	render->setDrawMode(GL_LINES);
 
 	double maxAlt = mbarsToAlt(1.0);
-	ColorSpace::Rgb lowRGB(0.0, 0.0, 0.545);
-	ColorSpace::Rgb highRGB(0.0, 1.0, 1.0);
+	ColorSpace::Rgb lowRGB(c1.x, c1.y, c1.z);
+	ColorSpace::Rgb highRGB(c2.x, c2.y, c2.z);
 
 	ColorSpace::Lab lowLab;
 	ColorSpace::Lab highLab;
@@ -163,10 +172,10 @@ void Streamline::addToRenderable(StreamlineRenderable& r) const {
 	lab.b = (1.0 - n0) * lowLab.b + n0 * highLab.b;
 	lab.ToRgb(&RGB);
 
-	r.addVert(glm::dvec3(cart0.x(), cart0.y(), cart0.z()));
-	r.addColour(glm::u8vec3(255 * (RGB.r / 1.0), 255 * (RGB.g / 1.0), 255 * (RGB.b / 1.0)));
-	r.addTangent(glm::vec3(tangent0.x(), tangent0.y(), tangent0.z()));
-	r.addLocalTime(localTimes[0]);
+	render->addVert(glm::dvec3(cart0.x(), cart0.y(), cart0.z()));
+	render->addColour(glm::u8vec3(255 * (RGB.r / 1.0), 255 * (RGB.g / 1.0), 255 * (RGB.b / 1.0)));
+	render->addTangent(glm::vec3(tangent0.x(), tangent0.y(), tangent0.z()));
+	render->addLocalTime(localTimes[0]);
 
 	// Non-end point geometry is duplicated for drawing lines
 	for (size_t i = 1; i < size() - 2; i++) {
@@ -179,14 +188,14 @@ void Streamline::addToRenderable(StreamlineRenderable& r) const {
 		lab.b = (1.0 - n) * lowLab.b + n * highLab.b;
 		lab.ToRgb(&RGB);
 
-		r.addVert(glm::dvec3(cart.x(), cart.y(), cart.z()));
-		r.addVert(glm::dvec3(cart.x(), cart.y(), cart.z()));
-		r.addColour(glm::u8vec3(255 * (RGB.r / 1.0), 255 * (RGB.g / 1.0), 255 * (RGB.b / 1.0)));
-		r.addColour(glm::u8vec3(255 * (RGB.r / 1.0), 255 * (RGB.g / 1.0), 255 * (RGB.b / 1.0)));
-		r.addTangent(glm::vec3(tangent.x(), tangent.y(), tangent.z()));
-		r.addTangent(glm::vec3(tangent.x(), tangent.y(), tangent.z()));
-		r.addLocalTime(localTimes[i]);
-		r.addLocalTime(localTimes[i]);
+		render->addVert(glm::dvec3(cart.x(), cart.y(), cart.z()));
+		render->addVert(glm::dvec3(cart.x(), cart.y(), cart.z()));
+		render->addColour(glm::u8vec3(255 * (RGB.r / 1.0), 255 * (RGB.g / 1.0), 255 * (RGB.b / 1.0)));
+		render->addColour(glm::u8vec3(255 * (RGB.r / 1.0), 255 * (RGB.g / 1.0), 255 * (RGB.b / 1.0)));
+		render->addTangent(glm::vec3(tangent.x(), tangent.y(), tangent.z()));
+		render->addTangent(glm::vec3(tangent.x(), tangent.y(), tangent.z()));
+		render->addLocalTime(localTimes[i]);
+		render->addLocalTime(localTimes[i]);
 	}
 
 	// Last point
@@ -198,8 +207,8 @@ void Streamline::addToRenderable(StreamlineRenderable& r) const {
 	lab.b = (1.0 - nE) * lowLab.b + nE * highLab.b;
 	lab.ToRgb(&RGB);
 
-	r.addVert(glm::dvec3(cartE.x(), cartE.y(), cartE.z()));
-	r.addColour(glm::u8vec3(255 * (RGB.r / 1.0), 255 * (RGB.g / 1.0), 255 * (RGB.b / 1.0)));
-	r.addTangent(glm::vec3(tangentE.x(), tangentE.y(), tangentE.z()));
-	r.addLocalTime(localTimes.back());
+	render->addVert(glm::dvec3(cartE.x(), cartE.y(), cartE.z()));
+	render->addColour(glm::u8vec3(255 * (RGB.r / 1.0), 255 * (RGB.g / 1.0), 255 * (RGB.b / 1.0)));
+	render->addTangent(glm::vec3(tangentE.x(), tangentE.y(), tangentE.z()));
+	render->addLocalTime(localTimes.back());
 }

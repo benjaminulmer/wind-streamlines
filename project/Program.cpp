@@ -26,17 +26,16 @@
 
 // Dear ImGUI window. Show misc statuses
 void Program::ImGui() {
-	ImGui::Begin("Status");
-	//frustumUpdate = ImGui::Button("Frust");
-	ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-	ImGui::Text("Camera dist: %.0f", cameraDist);
-	ImGui::Text("Ratio: %.1f", renderEngine->getFar() / renderEngine->getNear());
-	ImGui::Text("Near: %.0f", renderEngine->getNear());
-	ImGui::Text("Far: %.0f", renderEngine->getFar());
-	ImGui::Text("FOV Y: %.1f", renderEngine->getFovY() * 180.0 / M_PI);
-	ImGui::Text("FOV X: %.1f", renderEngine->getFovY() * renderEngine->getAspectRatio() * 180.0 / M_PI);
-	ImGui::Text("Aspect ratio: %.3f", renderEngine->getAspectRatio());
-	ImGui::End();
+	if (ImGui::CollapsingHeader("Status")) {
+		ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::Text("Camera dist: %.0f", cameraDist);
+		ImGui::Text("Near: %.0f", renderEngine->getNear());
+		ImGui::Text("Far: %.0f", renderEngine->getFar());
+		ImGui::Text("Near / far: %.1f", renderEngine->getFar() / renderEngine->getNear());
+		ImGui::Text("FOV X: %.1f", renderEngine->getFovY() * renderEngine->getAspectRatio() * 180.0 / M_PI);
+		ImGui::Text("FOV Y: %.1f", renderEngine->getFovY() * 180.0 / M_PI);
+		ImGui::Text("X / Y: %.3f", renderEngine->getAspectRatio());
+	}
 }
 
 
@@ -87,7 +86,7 @@ void Program::start() {
 
 	// Start integration and rendering in separate threads
 	//std::thread t1(&SeedingEngine::seedGlobal, seeder);
-	seeder->seedGlobal();
+	seeder->seed();
 	mainLoop();
 }
 
@@ -168,9 +167,14 @@ void Program::mainLoop() {
 		ImGui_ImplSDL2_NewFrame(window);
 		ImGui::NewFrame();
 
+		//ImGui::ShowDemoWindow();
+
+		ImGui::Begin("Options");
+		ImGui();
 		seeder->ImGui();
 		renderEngine->ImGui();
-		ImGui();
+		ImGui::End();
+
 
 		// Update time since last frame
 		std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();

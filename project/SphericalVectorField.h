@@ -21,10 +21,6 @@ public:
 	SphericalVectorField() = default;
 	SphericalVectorField(const netCDF::NcFile& file);
 
-	double getMaxMagSq() const { return maxMagSq; }
-	const std::vector<Eigen::Vector3d>& getHighVertPoints() const { return highVertPoints; }
-	int level(size_t i) { return levels[i]; }
-
 	std::vector<std::pair<Eigen::Matrix<size_t, 3, 1>, int>> findCriticalPoints() const;
 
 	Streamline streamline(const Eigen::Vector3d& seed, double maxDist, double tol, double maxStep,
@@ -32,6 +28,7 @@ public:
 	Eigen::Vector3d velocityAt(const Eigen::Vector3d& pos) const;
 	Eigen::Vector3d velocityAtM(const Eigen::Vector3d& pos) const;
 
+	int level(size_t i) { return levels[i]; }
 	Eigen::Vector3d sphCoords(size_t i) const;
 	Eigen::Vector3d sphCoords(size_t lat, size_t lng, size_t lvl) const;
 	Eigen::Vector3d sphCoords(const Eigen::Matrix<size_t, 3, 1>& i) const;
@@ -51,9 +48,6 @@ public:
 
 private:
 	std::vector<Eigen::Vector3d> data;
-
-	double maxMagSq;
-	std::vector<Eigen::Vector3d> highVertPoints;
 
 	std::vector<int> levels;
 	std::vector<double> lats;

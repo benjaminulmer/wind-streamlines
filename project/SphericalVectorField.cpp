@@ -54,8 +54,6 @@ SphericalVectorField::SphericalVectorField(const netCDF::NcFile& file) :
 	vVar.getVar(vArry);
 	wVar.getVar(wArry);
 
-	maxMagSq = 0.0;
-
 	// Apply scale and offset and add to data vector
 	for (size_t i = 0; i < size; i++) {
 		double u = uArry[i] * uScale + uOffset;
@@ -63,26 +61,7 @@ SphericalVectorField::SphericalVectorField(const netCDF::NcFile& file) :
 		double w = wArry[i] * wScale + wOffset;
 
 		data[i] = (Eigen::Vector3d(v, u, w));
-
-		Eigen::Matrix<size_t, 3, 1> index = offsetToIndex(i);
-
-		// Convert vertical to m/s to find max magnitude
-		double r0 = mbarsToAlt(levels[index.z()]);
-		double r1 = mbarsToAlt(levels[index.z()] + 0.01 * w);
-
-		Eigen::Vector3d vel = data[i];
-		vel.z() = r1 - r0;
-		double magSq = vel.squaredNorm();
-
-		maxMagSq = std::max(maxMagSq, magSq);
-
-		if (vel.z() > 0.6) {
-			highVertPoints.push_back(sphCoords(i));
-		}
 	}
-	std::cout << maxMagSq << std::endl;
-	std::cout << highVertPoints.size() << std::endl;
-	std::cout << " ******* " << std::endl;
 
 	delete[] uArry;
 	delete[] vArry;
@@ -228,8 +207,8 @@ int SphericalVectorField::criticalPointInTet(size_t i0, size_t i1, size_t i2, si
 Streamline SphericalVectorField::streamline(const Eigen::Vector3d& seed, double maxDist, double tol, double maxStep,
                                             const VoxelGrid& vg) const {
 
-	Streamline forw(*this);
-	Streamline back(*this);
+	Streamline forw(this);
+	Streamline back(this);
 
 	Eigen::Vector3d currPos = seed;
 	double totalTime = 0.0;
@@ -277,7 +256,7 @@ Streamline SphericalVectorField::streamline(const Eigen::Vector3d& seed, double 
 	}
 
 	// Combine forward and backward paths into one chronological path
-	Streamline streamline(back, forw, *this);
+	Streamline streamline(back, forw, this);
 	return streamline;
 }
 

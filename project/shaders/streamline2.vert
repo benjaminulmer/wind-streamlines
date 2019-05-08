@@ -15,11 +15,6 @@ layout (location = 2) in vec3 colour;
 layout (location = 3) in vec3 tangent;
 layout (location = 4) in float localTime;
 
-out vec3 C;
-out vec3 L;
-out vec3 V;
-out vec3 T;
-
 out float t;
 
 void main(void) {	
@@ -39,10 +34,6 @@ void main(void) {
 	vec3 vertex = highDiff + lowDiff;
 	vec3 lightPos = eyeHigh;
 
-	L = normalize(lightPos - vertexHigh);
-	V = normalize(eyeHigh - vertexHigh);
-	T = tangent;
-	C = colour;
 	t = localTime;
 
 	vec4 pCamera = modelView * vec4(vertex, 1.f);

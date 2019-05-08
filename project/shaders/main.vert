@@ -9,12 +9,9 @@ uniform vec3 eyeLow;
 uniform float altScale;
 uniform float radiusEarthM;
 
-uniform bool scale;
-
 layout (location = 0) in vec3 vertexHigh;
 layout (location = 1) in vec3 vertexLow;
 layout (location = 2) in vec3 colour;
-layout (location = 3) in vec3 c2;
 
 out vec3 C;
 
@@ -35,8 +32,6 @@ void main(void) {
 	vec3 vertex = highDiff + lowDiff;
 
 	C = colour;
-	if (!scale)
-		C = c2;
 
 	vec4 pCamera = modelView * vec4(vertex, 1.f);
 
