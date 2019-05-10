@@ -130,7 +130,7 @@ bool ContentReadWrite::loadOBJ(const char* path, ColourRenderable& r) {
 
 		// Put the attributes in buffers
 		r.addVert(vertex);
-		r.addColour(glm::u8vec3(76, 76, 76));
+		r.addColour(glm::u8vec3(50, 50, 50));
 		//r.verts.push_back(vertex);
 		//r.colours.push_back(normal);
 		//r.uvs.push_back(uv);

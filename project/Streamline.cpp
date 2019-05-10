@@ -107,7 +107,7 @@ std::vector<Eigen::Vector3d> Streamline::getSeeds(double sepDist) {
 	seeds.push_back(cart0 - cart0.normalized() * (sepDist / RADIAL_DIST_SCALE));
 
 	// Middle points
-	for (size_t i = 1; i < size() - 2; i+=50) {
+	for (size_t i = 1; i < size() - 1; i+=50) {
 
 		Eigen::Vector3d cart = points[i];
 		Eigen::Vector3d tangent = (points[i + 1] - points[i - 1]).normalized();
@@ -178,7 +178,7 @@ void Streamline::createRenderable(const glm::vec3& c1, const glm::vec3& c2) {
 	render->addLocalTime(localTimes[0]);
 
 	// Non-end point geometry is duplicated for drawing lines
-	for (size_t i = 1; i < size() - 2; i++) {
+	for (size_t i = 1; i < size() - 1; i++) {
 
 		Eigen::Vector3d cart = points[i];
 		Eigen::Vector3d tangent = (points[i + 1] - points[i - 1]).normalized();

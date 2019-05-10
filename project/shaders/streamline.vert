@@ -3,6 +3,8 @@
 uniform mat4 modelView;
 uniform mat4 projection;
 
+uniform vec3 light;
+
 uniform vec3 eyeHigh;
 uniform vec3 eyeLow;
 
@@ -37,9 +39,8 @@ void main(void) {
 	vec3 lowDiff = t2 - (highDiff - t1);
 
 	vec3 vertex = highDiff + lowDiff;
-	vec3 lightPos = eyeHigh;
 
-	L = normalize(lightPos - vertexHigh);
+	L = normalize(light - vertexHigh);
 	V = normalize(eyeHigh - vertexHigh);
 	T = tangent;
 	C = colour;

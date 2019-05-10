@@ -11,6 +11,7 @@ public:
 
 	glm::dmat4 getLookAt() const;
 	glm::dvec3 getPosition() const;
+	glm::vec3 getPositionNoTilt() const;
 	glm::dvec3 getUp() const;
 	glm::dvec3 getLookDir() const;
 

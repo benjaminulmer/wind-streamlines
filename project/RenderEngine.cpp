@@ -76,14 +76,14 @@ RenderEngine::RenderEngine(SDL_Window* window, double cameraDist) :
 // objects - list of renderables to render
 // view - view matrix
 // dTimeS - time since last render in seconds
-void RenderEngine::render(const std::vector<Renderable*>& objects, const glm::dmat4& view, float dTimeS) {
+void RenderEngine::render(const std::vector<Renderable*>& objects, const glm::dmat4& view, const glm::vec3& light, float dTimeS) {
 	
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	if (!pause) {
 		totalTime += dTimeS * timeMultiplier;
 		totalTime = fmod(totalTime, timeRepeat);
 	}
-
+	
 	int numPasses = (outlineWidth > lineWidth) ? 2 : 1;
 
 	for (int pass = 1; pass <= numPasses; pass++) {
@@ -134,6 +134,8 @@ void RenderEngine::render(const std::vector<Renderable*>& objects, const glm::dm
 			glm::vec3 eyeLow = eyePos - (glm::dvec3)eyeHigh;
 
 			// Set uniforms
+			glUniform3fv(glGetUniformLocation(program, "light"), 1, glm::value_ptr(light));
+
 			glUniform3fv(glGetUniformLocation(program, "eyeHigh"), 1, glm::value_ptr(eyeHigh));
 			glUniform3fv(glGetUniformLocation(program, "eyeLow"), 1, glm::value_ptr(eyeLow));
 

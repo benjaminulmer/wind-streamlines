@@ -24,12 +24,19 @@ void main(void) {
 	float lDt = dot(L, T);
 	float vDt = dot(V, T);
 
+
+	vec3 B = normalize(cross(T, V));
+	vec3 N = normalize(cross(B, T));
+	vec3 Lproj = L - (T * lDt);
+
+	float theta = acos(dot(N, normalize(Lproj)));
+
 	// L dot N
-	float diffuse = max(sqrt(1.f - (lDt * lDt)), diffuseToggle);
-	diffuse *= diffuse;
+	float lDn = max(sqrt(1.f - (lDt * lDt)), diffuseToggle);
+	float diffuse = lDn * (sin(theta) + (3.14159 - theta) * cos(theta)) / 4.f;
 
 	// R dot V
-	float spec = max(diffuse * sqrt(1.f - (vDt * vDt)) - lDt * vDt, 0.f);
+	float spec = max(lDn * sqrt(1.f - (vDt * vDt)) - lDt * vDt, 0.f);
 
 	// Phong reflection model
 	float n = 32.f;

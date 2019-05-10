@@ -65,6 +65,19 @@ glm::dvec3 Camera::getPosition() const {
 }
 
 
+glm::vec3 Camera::getPositionNoTilt() const {
+
+	glm::dvec3 rightW(1.0, 0.0, 0.0);
+	glm::dvec3 forwW(0.0, 0.0, 1.0);
+	glm::dvec3 downW(0.0, -1.0, 0.0);
+
+	glm::dvec3 toReturn = glm::rotate(eye, latRot, rightW);
+	toReturn = glm::rotate(toReturn, lngRot, downW);
+
+	return toReturn;
+}
+
+
 // Returns up vector of the camera
 //
 // return - up vector

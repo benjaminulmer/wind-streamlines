@@ -42,6 +42,31 @@ SeedingEngine::SeedingEngine(SphericalVectorField & field) :
 // Seed streamlines
 void SeedingEngine::seed() {
 
+	//streamlines.push_back(std::vector<Streamline>());
+	//Streamline s(&field);
+
+	//for (int i = 0; i < 300; i++) {
+	//	double h = 0.0;
+	//	if (i % 4 == 0) {
+	//		h = 1000.0;
+	//	}
+	//	else if (i % 4 == 1) {
+	//		h = 100.0;
+	//	}
+	//	else if (i % 4 == 2) {
+	//		h = 1.0;
+	//	}
+	//	else {
+	//		h = 100.0;
+	//	}
+	//	s.addPoint(Eigen::Vector3d(0.0, 0.01 * i, h), 100000.0 * i);
+	//}
+	//s.createRenderable(col1, col2);
+	//std::cout << s.getRender()->size() << std::endl;
+	//streamlines[0].push_back(s);
+
+	//return;
+
 	double minLength = 1000000.0 * 1.25;
 	double sepDist = 200000.0 * 1.25;
 

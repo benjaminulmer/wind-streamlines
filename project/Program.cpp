@@ -190,8 +190,7 @@ void Program::mainLoop() {
 			objects.push_back(&sphereRender);
 			frustumUpdate = false;
 		}
-		
-		renderEngine->render(objects, (glm::dmat4)camera->getLookAt(), dTimeS.count());
+		renderEngine->render(objects, (glm::dmat4)camera->getLookAt(), camera->getPositionNoTilt(), dTimeS.count());
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		SDL_GL_SwapWindow(window);
 	}

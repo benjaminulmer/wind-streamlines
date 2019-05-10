@@ -16,7 +16,7 @@ class RenderEngine {
 public:
 	RenderEngine(SDL_Window* window, double cameraDist);
 
-	void render(const std::vector<Renderable*>& objects, const glm::dmat4& view, float dTimeS);
+	void render(const std::vector<Renderable*>& objects, const glm::dmat4& view, const glm::vec3& light, float dTimeS);
 
 	void setWindowSize(int newWidth, int newHeight);
 	void updateScaleFactor(int dir);
