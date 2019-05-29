@@ -1,5 +1,3 @@
-#define _USE_MATH_DEFINES
-#define GLM_ENABLE_EXPERIMENTAL
 #include "Program.h"
 
 #include "imgui/imgui_impl_sdl.h"

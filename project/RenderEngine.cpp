@@ -1,5 +1,3 @@
-#define _USE_MATH_DEFINES
-#define GLM_ENABLE_EXPERIMENTAL
 #include "RenderEngine.h"
 
 #include "Conversions.h"
@@ -67,7 +65,7 @@ RenderEngine::RenderEngine(SDL_Window* window, double cameraDist) :
 
 	glPointSize(2.f);
 	glLineWidth(lineWidth);
-	glClearColor(0.f, 0.f, 0.f, 1.f);
+	glClearColor(1.f, 1.f, 1.f, 1.f);
 }
 
 

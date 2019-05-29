@@ -1,4 +1,3 @@
-#define _USE_MATH_DEFINES
 #include "Comparison.h"
 #include "Utils.h"
 #include <cmath>

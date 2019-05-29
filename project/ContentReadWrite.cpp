@@ -1,4 +1,3 @@
-#define _USE_MATH_DEFINES
 #include "ContentReadWrite.h"
 
 #include "Conversions.h"

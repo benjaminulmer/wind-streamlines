@@ -1,4 +1,3 @@
-#define _USE_MATH_DEFINES
 #include "Conversion.h"
 #include "ColorSpace.h"
 #include "Utils.h"
