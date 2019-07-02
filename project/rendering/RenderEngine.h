@@ -9,19 +9,24 @@
 class Renderable;
 
 
-// Class for managine rendering to an SDL OpenGL window
+// Class for managing and rendering to an SDL OpenGL window
 // TODO better integration/communication with Renderable classes
 class RenderEngine {
 
 public:
-	RenderEngine(SDL_Window* window, double cameraDist);
+	RenderEngine(double cameraDist);
+	~RenderEngine();
 
+	void preRender();
 	void render(const std::vector<Renderable*>& objects, const glm::dmat4& view, float dTimeS);
+	void postRender();
 
 	void setWindowSize(int newWidth, int newHeight);
 	void updateScaleFactor(int dir);
 	void updatePlanes(double cameraDist);
 
+	int getWidth() const { return width; }
+	int getHeight() const { return height; }
 	double getFovY() const { return fovYRad; }
 	double getAspectRatio() const { return (float)width/height; }
 	double getNear() const { return near; }
@@ -32,6 +37,7 @@ public:
 	
 private:
 	SDL_Window* window;
+	SDL_GLContext context;
 	int width, height;
 
 	double fovYRad;

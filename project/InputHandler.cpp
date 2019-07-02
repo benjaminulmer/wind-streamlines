@@ -1,8 +1,10 @@
 #include "InputHandler.h"
 
-#include "Camera.h"
-#include "RenderEngine.h"
+#include "imgui/imgui_impl_sdl.h"
+
 #include "Program.h"
+#include "rendering/Camera.h"
+#include "rendering/RenderEngine.h"
 
 
 // Construct with reference to a camera, render engine, and main program
@@ -22,6 +24,18 @@ InputHandler::InputHandler(Camera* camera, RenderEngine* renderEngine, Program* 
 //
 // e - event to process
 void InputHandler::pollEvent(SDL_Event& e) {
+
+	// If Dear ImGUI wants the event don't handle it
+	ImGui_ImplSDL2_ProcessEvent(&e);
+	if (ImGui::GetIO().WantCaptureMouse && (e.type == SDL_MOUSEBUTTONDOWN || e.type == SDL_MOUSEBUTTONUP ||
+		                                    e.type == SDL_MOUSEMOTION || e.type == SDL_MOUSEWHEEL)) {
+		return;
+	}
+	if (ImGui::GetIO().WantCaptureKeyboard && (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)) {
+		return;
+	}
+
+	// Event goes to the program
 	if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) {
 		InputHandler::key(e.key);
 	}
@@ -108,6 +122,5 @@ void InputHandler::scroll(SDL_MouseWheelEvent& e) {
 void InputHandler::reshape(SDL_WindowEvent& e) {
 	if (e.event == SDL_WINDOWEVENT_RESIZED) {
 		renderEngine->setWindowSize(e.data1, e.data2);
-		program->setWindowSize(e.data1, e.data2);
 	}
 }

@@ -3,14 +3,14 @@
 #include "imgui/imgui_impl_sdl.h"
 #include "imgui/imgui_impl_opengl3.h"
 
-#include "Camera.h"
 #include "ContentReadWrite.h"
 #include "Conversions.h"
 #include "Frustum.h"
 #include "InputHandler.h"
-#include "RenderEngine.h"
-#include "SeedingEngine.h"
 #include "VoxelGrid.h"
+#include "rendering/Camera.h"
+#include "rendering/RenderEngine.h"
+#include "streamlines/SeedingEngine.h"
 
 #include <GL/glew.h>
 #include <glm/gtx/intersect.hpp>
@@ -38,47 +38,39 @@ void Program::ImGui() {
 
 
 Program::Program() :
-	window(nullptr),
-	width(800),
-	height(800),
-	io(nullptr),
 	renderEngine(nullptr),
 	camera(nullptr),
 	input(nullptr),
 	seeder(nullptr),
-	frustumUpdate(true),
 	cameraDist(RADIUS_EARTH_M * 3.0) {}
 
 
 // Called to start the program. Conducts set up then enters the main loop
 void Program::start() {	
 
-	setupWindow();
-	GLenum err = glewInit();
-	if (glewInit() != GLEW_OK) {
-		std::cerr << "glewInit error: " << glewGetErrorString(err) << std::endl;
+	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+		std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
 		system("pause");
 		exit(EXIT_FAILURE);
 	}
 
+	renderEngine = new RenderEngine(cameraDist);
 	camera = new Camera(cameraDist);
-	renderEngine = new RenderEngine(window, cameraDist);
 	input = new InputHandler(camera, renderEngine, this);
 
 	// Load coastline vector data and set up renderable for it
-	rapidjson::Document cl = ContentReadWrite::readJSON("data/coastlines.json");
+	rapidjson::Document cl = ContentReadWrite::readJSON("./data/coastlines.json");
 	coastRender = ColourRenderable(cl);
 
-	ContentReadWrite::loadOBJ("sphere.obj", sphereRender);
+	ContentReadWrite::loadOBJ("./data/sphere.obj", sphereRender);
 
-	//objects.push_back(&coastRender);
 	coastRender.assignBuffers();
 	coastRender.setBufferData();
 	sphereRender.assignBuffers();
 	sphereRender.setBufferData();
 
 	// Load vector field
-	netCDF::NcFile file("data/2018-05-27T12.nc", netCDF::NcFile::read);
+	netCDF::NcFile file("./data/2018-05-27T12.nc", netCDF::NcFile::read);
 	field = SphericalVectorField(file);
 	seeder = new SeedingEngine(field);
 
@@ -86,54 +78,6 @@ void Program::start() {
 	//std::thread t1(&SeedingEngine::seedGlobal, seeder);
 	seeder->seed();
 	mainLoop();
-}
-
-
-// Creates SDL OpenGL window for the program and connects it with Dear ImGUI 
-void Program::setupWindow() {
-
-	if (SDL_Init(SDL_INIT_VIDEO) != 0){
-		std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
-		system("pause");
-		exit(EXIT_FAILURE);
-	}
-
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-
-	window = SDL_CreateWindow("615 Project", 10, 30, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
-	if (window == nullptr) {
-		std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
-		system("pause");
-		SDL_Quit();
-		exit(EXIT_FAILURE);
-	}
-
-	context = SDL_GL_CreateContext(window);
-	if (context == NULL) {
-		std::cerr << "SDL_GL_CreateContext Error: " << SDL_GetError() << std::endl;
-		system("pause");
-		SDL_Quit();
-		exit(EXIT_FAILURE);
-	}
-	SDL_GL_SetSwapInterval(0); // Vsync on
-
-	// Set up IMGUI
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	io = &ImGui::GetIO();
-	io->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
-	
-	ImGui::StyleColorsDark();
-
-	// Setup Platform/Renderer bindings
-	ImGui_ImplSDL2_InitForOpenGL(window, context);
-	const char* glsl_version = "#version 430 core";
-	ImGui_ImplOpenGL3_Init(glsl_version);
 }
 
 
@@ -148,31 +92,16 @@ void Program::mainLoop() {
 		// Process SDL events
 		SDL_Event e;
 		while (SDL_PollEvent(&e)) {
-
-			ImGui_ImplSDL2_ProcessEvent(&e);
-			if (io->WantCaptureMouse && (e.type == SDL_MOUSEBUTTONDOWN || e.type == SDL_MOUSEBUTTONUP || 
-				                         e.type == SDL_MOUSEMOTION || e.type == SDL_MOUSEWHEEL)) {
-				continue;
-			}
-			if (io->WantCaptureKeyboard && (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)) {
-				continue;
-			}
 			input->pollEvent(e);
 		}
 
-		// Dear ImGUI setup
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplSDL2_NewFrame(window);
-		ImGui::NewFrame();
-
-		//ImGui::ShowDemoWindow();
+		renderEngine->preRender();
 
 		ImGui::Begin("Options");
 		ImGui();
 		seeder->ImGui();
 		renderEngine->ImGui();
 		ImGui::End();
-
 
 		// Update time since last frame
 		std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
@@ -182,16 +111,12 @@ void Program::mainLoop() {
 		// Render everything
 		ImGui::Render();
 		
-		if (true) {
-			objects = seeder->getLinesToRender(Frustum(*camera, *renderEngine), cameraDist);
-			objects.push_back(&coastRender);
-			objects.push_back(&sphereRender);
-			frustumUpdate = false;
-		}
+		objects = seeder->getLinesToRender(Frustum(*camera, *renderEngine), cameraDist);
+		objects.push_back(&coastRender);
+		objects.push_back(&sphereRender);
 		
 		renderEngine->render(objects, (glm::dmat4)camera->getLookAt(), dTimeS.count());
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-		SDL_GL_SwapWindow(window);
+		renderEngine->postRender();
 	}
 }
 
@@ -205,17 +130,15 @@ void Program::mainLoop() {
 // skew - true tilts the camera, otherwise rotates the Earth
 void Program::updateRotation(int oldX, int newX, int oldY, int newY, bool skew) {
 
-	frustumUpdate = true;
-
 	glm::dmat4 projView = renderEngine->getProjection() * camera->getLookAt();
 	glm::dmat4 invProjView = glm::inverse(projView);
 
-	double oldXN = (2.0 * oldX) / (width) - 1.0; 
-	double oldYN = (2.0 * oldY) / (height) - 1.0;
+	double oldXN = (2.0 * oldX) / (renderEngine->getWidth()) - 1.0; 
+	double oldYN = (2.0 * oldY) / (renderEngine->getHeight()) - 1.0;
 	oldYN *= -1.0;
 
-	double newXN = (2.0 * newX) / (width) - 1.0;
-	double newYN = (2.0 * newY) / (height) - 1.0;
+	double newXN = (2.0 * newX) / (renderEngine->getWidth()) - 1.0;
+	double newYN = (2.0 * newY) / (renderEngine->getHeight()) - 1.0;
 	newYN *= -1.0;
 
 	glm::dvec4 worldOld(oldXN, oldYN, -1.0, 1.0);
@@ -261,8 +184,6 @@ void Program::updateRotation(int oldX, int newX, int oldY, int newY, bool skew) 
 // dir - direction of change, possitive for closer and negative for farther
 void Program::updateCameraDist(int dir) {
 
-	frustumUpdate = true;
-
 	if (dir > 0) {
 		cameraDist /= 1.2f;
 	}
@@ -275,13 +196,13 @@ void Program::updateCameraDist(int dir) {
 
 
 // Perform cleanup and exit
+// TODO cleanup steamline renders
 void Program::cleanup() {
 
 	coastRender.deleteBufferData();
 	sphereRender.deleteBufferData();
 	//streamlineRender.deleteBufferData();
 
-	SDL_DestroyWindow(window);
 	delete renderEngine;
 	delete camera;
 	delete input;
@@ -290,8 +211,6 @@ void Program::cleanup() {
 	ImGui_ImplSDL2_Shutdown();
 	ImGui::DestroyContext();
 
-	SDL_GL_DeleteContext(context);
-	SDL_DestroyWindow(window);
 	SDL_Quit();
 	exit(0);
 }

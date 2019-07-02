@@ -1,8 +1,8 @@
 #include "Frustum.h"
 
-#include "Camera.h"
 #include "Conversions.h"
-#include "RenderEngine.h"
+#include "rendering/Camera.h"
+#include "rendering/RenderEngine.h"
 
 
 // Construct frustum from camera and projection matrix information

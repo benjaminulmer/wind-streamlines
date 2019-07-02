@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Renderable.h"
-#include "SphericalVectorField.h"
-#include "Streamline.h"
+#include "rendering/Renderable.h"
+#include "streamlines/SphericalVectorField.h"
+#include "streamlines/Streamline.h"
 
 class Camera;
 class InputHandler;
@@ -28,21 +28,11 @@ public:
 
 	void updateRotation(int oldX, int newX, int oldY, int newY, bool skew);
 	void updateCameraDist(int dir);
-	void setWindowSize(int newWidth, int newHeight) {
-		width = newWidth;
-		height = newHeight;
-	}
 	void cleanup();
 
 	void ImGui();
 
 private:
-	SDL_Window* window;
-	SDL_GLContext context;
-	int width, height;
-
-	ImGuiIO* io;
-
 	RenderEngine* renderEngine;
 	Camera* camera;
 	InputHandler* input;
@@ -50,12 +40,10 @@ private:
 
 	ColourRenderable sphereRender;
 	ColourRenderable coastRender;
-	bool frustumUpdate;
 
 	SphericalVectorField field;
 
 	double cameraDist;
 
-	void setupWindow();
 	void mainLoop();
 };

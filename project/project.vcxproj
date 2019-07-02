@@ -69,7 +69,12 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -84,7 +89,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;GLM_ENABLE_EXPERIMENTAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;GLM_ENABLE_EXPERIMENTAL;RAPIDJSON_NOMEMBERITERATORCLASS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -116,7 +121,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;GLM_ENABLE_EXPERIMENTAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;GLM_ENABLE_EXPERIMENTAL;RAPIDJSON_NOMEMBERITERATORCLASS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -126,7 +131,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="rendering\Camera.cpp" />
     <ClCompile Include="Color\ColorSpace.cpp" />
     <ClCompile Include="Color\Comparison.cpp" />
     <ClCompile Include="Color\Conversion.cpp" />
@@ -137,16 +142,16 @@
     <ClCompile Include="InputHandler.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Program.cpp" />
-    <ClCompile Include="Renderable.cpp" />
-    <ClCompile Include="RenderEngine.cpp" />
-    <ClCompile Include="SeedingEngine.cpp" />
-    <ClCompile Include="ShaderTools.cpp" />
-    <ClCompile Include="SphericalVectorField.cpp" />
-    <ClCompile Include="Streamline.cpp" />
+    <ClCompile Include="rendering\Renderable.cpp" />
+    <ClCompile Include="rendering\RenderEngine.cpp" />
+    <ClCompile Include="streamlines\SeedingEngine.cpp" />
+    <ClCompile Include="rendering\ShaderTools.cpp" />
+    <ClCompile Include="streamlines\SphericalVectorField.cpp" />
+    <ClCompile Include="streamlines\Streamline.cpp" />
     <ClCompile Include="VoxelGrid.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Camera.h" />
+    <ClInclude Include="rendering\Camera.h" />
     <ClInclude Include="Color\ColorSpace.h" />
     <ClInclude Include="Color\Comparison.h" />
     <ClInclude Include="Color\Conversion.h" />
@@ -158,12 +163,12 @@
     <ClInclude Include="imgui\imgui_impl_sdl.h" />
     <ClInclude Include="InputHandler.h" />
     <ClInclude Include="Program.h" />
-    <ClInclude Include="Renderable.h" />
-    <ClInclude Include="RenderEngine.h" />
-    <ClInclude Include="SeedingEngine.h" />
-    <ClInclude Include="ShaderTools.h" />
-    <ClInclude Include="SphericalVectorField.h" />
-    <ClInclude Include="Streamline.h" />
+    <ClInclude Include="rendering\Renderable.h" />
+    <ClInclude Include="rendering\RenderEngine.h" />
+    <ClInclude Include="streamlines\SeedingEngine.h" />
+    <ClInclude Include="rendering\ShaderTools.h" />
+    <ClInclude Include="streamlines\SphericalVectorField.h" />
+    <ClInclude Include="streamlines\Streamline.h" />
     <ClInclude Include="VoxelGrid.h" />
   </ItemGroup>
   <ItemGroup>

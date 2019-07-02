@@ -2,7 +2,6 @@
 
 class ColourRenderable;
 
-#define RAPIDJSON_NOMEMBERITERATORCLASS
 #include <rapidjson/document.h>
 
 

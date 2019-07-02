@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderable.h"
+#include "rendering/Renderable.h"
 
 class SphericalVectorField;
 

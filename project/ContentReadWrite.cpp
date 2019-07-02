@@ -1,7 +1,7 @@
 #include "ContentReadWrite.h"
 
 #include "Conversions.h"
-#include "Renderable.h"
+#include "rendering/Renderable.h"
 
 #include <fstream>
 #include <iostream>
