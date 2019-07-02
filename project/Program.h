@@ -5,6 +5,7 @@
 #include "streamlines/Streamline.h"
 
 class Camera;
+class EarthViewController;
 class InputHandler;
 class RenderEngine;
 class SeedingEngine;
@@ -25,9 +26,6 @@ public:
 	Program();
 
 	void start();
-
-	void updateRotation(int oldX, int newX, int oldY, int newY, bool skew);
-	void updateCameraDist(int dir);
 	void cleanup();
 
 	void ImGui();
@@ -35,6 +33,7 @@ public:
 private:
 	RenderEngine* renderEngine;
 	Camera* camera;
+	EarthViewController* evc;
 	InputHandler* input;
 	SeedingEngine* seeder;
 
@@ -42,8 +41,6 @@ private:
 	ColourRenderable coastRender;
 
 	SphericalVectorField field;
-
-	double cameraDist;
 
 	void mainLoop();
 };

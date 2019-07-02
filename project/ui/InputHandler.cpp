@@ -2,6 +2,7 @@
 
 #include "imgui/imgui_impl_sdl.h"
 
+#include "EarthViewController.h"
 #include "Program.h"
 #include "rendering/Camera.h"
 #include "rendering/RenderEngine.h"
@@ -12,9 +13,10 @@
 // camera - pointer to camera object that should be updated
 // renderEngine - pointer to render engine object that should be updated
 // program - pointer to main program object that should be updated
-InputHandler::InputHandler(Camera* camera, RenderEngine* renderEngine, Program* program) : 
+InputHandler::InputHandler(Camera& camera, RenderEngine& renderEngine, EarthViewController& evc, Program& program) :
 	camera(camera),
 	renderEngine(renderEngine),
+	evc(evc),
 	program(program),
 	mouseOldX(0), 
 	mouseOldY(0) {}
@@ -53,7 +55,7 @@ void InputHandler::pollEvent(SDL_Event& e) {
 		InputHandler::reshape(e.window);
 	}
 	else if (e.type == SDL_QUIT) {
-		program->cleanup();
+		program.cleanup();
 	}
 }
 
@@ -67,13 +69,13 @@ void InputHandler::key(SDL_KeyboardEvent& e) {
 
 	if (e.state == SDL_PRESSED) {
 		if (key == SDLK_i) {
-			renderEngine->updateScaleFactor(1);
+			renderEngine.updateScaleFactor(1);
 		}
 		else if (key == SDLK_k) {
-			renderEngine->updateScaleFactor(-1);
+			renderEngine.updateScaleFactor(-1);
 		}
 		else if (key == SDLK_c) {
-			camera->reset();
+			evc.resetCameraTilt();
 		}
 	}
 }
@@ -89,10 +91,10 @@ void InputHandler::motion(SDL_MouseMotionEvent& e) {
 
 	// left mouse button moves camera
 	if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)) {
-		program->updateRotation(mouseOldX, e.x, mouseOldY, e.y, false);
+		evc.updateRotation(mouseOldX, e.x, mouseOldY, e.y, false);
 	}
 	else if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_RIGHT)) {
-		program->updateRotation(mouseOldX, e.x, mouseOldY, e.y, true);
+		evc.updateRotation(mouseOldX, e.x, mouseOldY, e.y, true);
 	}
 
 	// Update current position of the mouse
@@ -112,7 +114,7 @@ void InputHandler::motion(SDL_MouseMotionEvent& e) {
 //
 // e - mouse scroll event
 void InputHandler::scroll(SDL_MouseWheelEvent& e) {
-	program->updateCameraDist(e.y);
+	evc.updateCameraDist(e.y);
 }
 
 
@@ -121,6 +123,6 @@ void InputHandler::scroll(SDL_MouseWheelEvent& e) {
 // e - window event
 void InputHandler::reshape(SDL_WindowEvent& e) {
 	if (e.event == SDL_WINDOWEVENT_RESIZED) {
-		renderEngine->setWindowSize(e.data1, e.data2);
+		renderEngine.setWindowSize(e.data1, e.data2);
 	}
 }

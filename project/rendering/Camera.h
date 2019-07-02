@@ -1,42 +1,25 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 
 
-// Class for camera information in look at format
+// Class for camera in look at format
 class Camera {
 
 public:
 	Camera(double initialDist);
 
-	glm::dmat4 getLookAt() const;
-	glm::dvec3 getPosition() const;
-	glm::dvec3 getUp() const;
-	glm::dvec3 getLookDir() const;
+	void setVectors(glm::dvec3& eye, glm::dvec3& centre, glm::dvec3& up);
 
-	void setDist(double newDist);
-
-	void updateFromVertRot(double rad);
-	void updateNorthRot(double rad);
-	void updateLatRot(double rad);
-	void updateLngRot(double rad);
-
-	void reset();
+	glm::dmat4 getLookAt() const { return glm::lookAt(eye, centre, up); }
+	glm::dvec3 getPosition() const { return eye; }
+	glm::dvec3 getCentre() const { return centre; }
+	glm::dvec3 getUp() const { return up; }
+	glm::dvec3 getLookDir() const { return glm::normalize(centre - eye); }
 
 private:
-
 	glm::dvec3 eye;
-	glm::dvec3 up;
 	glm::dvec3 centre;
-
-	glm::dvec3 rotatedEye;
-	glm::dvec3 rotatedUp;
-	glm::dvec3 rotatedCentre;
-
-	double latRot;
-	double lngRot;
-	double fromVertRot;
-	double northRot;
-
-	void rotateVectors();
+	glm::dvec3 up;
 };

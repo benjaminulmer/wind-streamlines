@@ -28,7 +28,6 @@
       <Filter>imgui</Filter>
     </ClCompile>
     <ClCompile Include="ContentReadWrite.cpp" />
-    <ClCompile Include="InputHandler.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Program.cpp" />
     <ClCompile Include="VoxelGrid.cpp" />
@@ -40,6 +39,8 @@
     <ClCompile Include="rendering\Renderable.cpp" />
     <ClCompile Include="rendering\RenderEngine.cpp" />
     <ClCompile Include="rendering\ShaderTools.cpp" />
+    <ClCompile Include="ui\InputHandler.cpp" />
+    <ClCompile Include="ui\EarthViewController.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Color\ColorSpace.h">
@@ -62,7 +63,6 @@
     </ClInclude>
     <ClInclude Include="Conversions.h" />
     <ClInclude Include="ContentReadWrite.h" />
-    <ClInclude Include="InputHandler.h" />
     <ClInclude Include="Program.h" />
     <ClInclude Include="VoxelGrid.h" />
     <ClInclude Include="Frustum.h" />
@@ -73,6 +73,8 @@
     <ClInclude Include="rendering\Renderable.h" />
     <ClInclude Include="rendering\RenderEngine.h" />
     <ClInclude Include="rendering\ShaderTools.h" />
+    <ClInclude Include="ui\InputHandler.h" />
+    <ClInclude Include="ui\EarthViewController.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\main.frag">

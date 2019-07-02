@@ -1,6 +1,7 @@
 #pragma once
 
 class Camera;
+class EarthViewController;
 class RenderEngine;
 class Program;
 
@@ -11,7 +12,7 @@ class Program;
 class InputHandler {
 
 public:
-	InputHandler(Camera* camera, RenderEngine* renderEngine, Program* program);
+	InputHandler(Camera& camera, RenderEngine& renderEngine, EarthViewController& evc, Program& program);
 
 	void pollEvent(SDL_Event& e);
 
@@ -21,9 +22,10 @@ public:
 	void reshape(SDL_WindowEvent& e);
 
 private: 
-	Camera* camera;
-	RenderEngine* renderEngine;
-	Program* program;
+	Camera& camera;
+	RenderEngine& renderEngine;
+	EarthViewController& evc;
+	Program& program;
 
 	int mouseOldX;
 	int mouseOldY;
