@@ -28,7 +28,19 @@ EarthViewController::EarthViewController(Camera& camera, RenderEngine& renderEng
 // newX - new x pixel location of mouse
 // newY - new y pixel location of mouse
 // skew - true tilts the camera, otherwise rotates the Earth
-void EarthViewController::updateRotation(int oldX, int newX, int oldY, int newY, bool skew) {
+void EarthViewController::updateRotation(int oldX, int newX, int oldY, int newY, unsigned int buttonMask) {
+
+	bool skew;
+
+	if (buttonMask & SDL_BUTTON(SDL_BUTTON_LEFT)) {
+		skew = false;
+	}
+	else if (buttonMask & SDL_BUTTON(SDL_BUTTON_RIGHT)) {
+		skew = true;
+	}
+	else {
+		return;
+	}
 
 	glm::dmat4 projView = renderEngine.getProjection() * camera.getLookAt();
 	glm::dmat4 invProjView = glm::inverse(projView);
@@ -50,7 +62,7 @@ void EarthViewController::updateRotation(int oldX, int newX, int oldY, int newY,
 	worldNew = invProjView * worldNew;
 	worldNew /= worldNew.w;
 
-	glm::dvec3 rayO = camera.getPosition();
+	glm::dvec3 rayO = camera.getEye();
 	glm::dvec3 rayDOld = glm::normalize(glm::dvec3(worldOld) - rayO);
 	glm::dvec3 rayDNew = glm::normalize(glm::dvec3(worldNew) - rayO);
 	double sphereRad = RADIUS_EARTH_M;
@@ -58,42 +70,93 @@ void EarthViewController::updateRotation(int oldX, int newX, int oldY, int newY,
 
 	glm::dvec3 iPosOld, iPosNew, iNorm;
 
-	if (glm::intersectRaySphere(rayO, rayDOld, sphereO, sphereRad, iPosOld, iNorm) &&
-		glm::intersectRaySphere(rayO, rayDNew, sphereO, sphereRad, iPosNew, iNorm)) {
+	if (skew) {
+		updateFromVertRot(newYN - oldYN);
+		updateNorthRot(oldXN - newXN);
+	}
+
+	else if (glm::intersectRaySphere(rayO, rayDOld, sphereO, sphereRad, iPosOld, iNorm) &&
+	         glm::intersectRaySphere(rayO, rayDNew, sphereO, sphereRad, iPosNew, iNorm)) {
 
 		double longOld = atan2(iPosOld.x, iPosOld.z);
 		double latOld = M_PI_2 - acos(iPosOld.y / sphereRad);
+		//double latOld = atan2(iPosOld.y, iPosOld.z);
 
 		double longNew = atan2(iPosNew.x, iPosNew.z);
 		double latNew = M_PI_2 - acos(iPosNew.y / sphereRad);
+		//double latNew = atan2(iPosNew.y, iPosNew.z);
 
-		if (skew) {
-			updateFromVertRot(newYN - oldYN);
-			updateNorthRot(oldXN - newXN);
-		}
-		else {
-			updateLatRot(latNew - latOld);
-			updateLngRot(longNew - longOld);
-		}
+		updateLatRot(latNew - latOld);
+		updateLngRot(longNew - longOld);
 	}
 }
 
-
+#include <iostream>
 // Moves camera towards or away from Earth
 //
 // dir - direction of change, possitive for closer and negative for farther
-void EarthViewController::updateCameraDist(int dir) {
+void EarthViewController::updateCameraDist(int dir, int x, int y) {
+
+	double oldXN = (2.0 * x) / (renderEngine.getWidth()) - 1.0;
+	double oldYN = (2.0 * y) / (renderEngine.getHeight()) - 1.0;
+	oldYN *= -1.0;
+
+	double newXN = (2.0 * x) / (renderEngine.getWidth()) - 1.0;
+	double newYN = (2.0 * y) / (renderEngine.getHeight()) - 1.0;
+	newYN *= -1.0;
+
+	glm::dvec3 rayOOld = camera.getEye();
+	glm::dmat4 projView = renderEngine.getProjection() * camera.getLookAt();
+	glm::dmat4 invProjView = glm::inverse(projView);
 
 	if (dir > 0) {
-		cameraDist /= 1.2f;
+		cameraDist /= 1.2;
 	}
 	else if (dir < 0) {
-		cameraDist *= 1.2f;
+		cameraDist *= 1.2;
 	}
 	eye = glm::dvec3(0.0, 0.0, RADIUS_EARTH_M + cameraDist);
 	centre = glm::dvec3(0.0, 0.0, RADIUS_EARTH_M);
 	newCameraVectors();
 	renderEngine.updatePlanes(cameraDist);
+
+	glm::dmat4 projViewNew = renderEngine.getProjection() * camera.getLookAt();
+	glm::dmat4 invProjViewNew = glm::inverse(projViewNew);
+
+	glm::dvec4 worldOld(oldXN, oldYN, -1.0, 1.0);
+	glm::dvec4 worldNew(newXN, newYN, -1.0, 1.0);
+
+	worldOld = invProjView * worldOld;
+	worldOld /= worldOld.w;
+
+	worldNew = invProjViewNew * worldNew;
+	worldNew /= worldNew.w;
+
+	std::cout << worldOld.x << ", " << worldOld.y << ", " << worldOld.z << std::endl;
+	std::cout << worldNew.x << ", " << worldNew.y << ", " << worldNew.z << std::endl;
+
+	glm::dvec3 rayONew = camera.getEye();
+	glm::dvec3 rayDOld = glm::normalize(glm::dvec3(worldOld) - rayOOld);
+	glm::dvec3 rayDNew = glm::normalize(glm::dvec3(worldNew) - rayONew);
+	double sphereRad = RADIUS_EARTH_M;
+	glm::dvec3 sphereO = glm::dvec3(0.0);
+
+	glm::dvec3 iPosOld, iPosNew, iNorm;
+
+	if (glm::intersectRaySphere(rayOOld, rayDOld, sphereO, sphereRad, iPosOld, iNorm) &&
+	    glm::intersectRaySphere(rayONew, rayDNew, sphereO, sphereRad, iPosNew, iNorm)) {
+
+		double longOld = atan2(iPosOld.x, iPosOld.z);
+		double latOld = M_PI_2 - acos(iPosOld.y / sphereRad);
+		//double latOld = atan2(iPosOld.y, iPosOld.z);
+
+		double longNew = atan2(iPosNew.x, iPosNew.z);
+		double latNew = M_PI_2 - acos(iPosNew.y / sphereRad);
+		//double latNew = atan2(iPosNew.y, iPosNew.z);
+
+		updateLatRot(latNew - latOld);
+		updateLngRot(longNew - longOld);
+	}
 }
 
 
@@ -114,7 +177,7 @@ void EarthViewController::newCameraVectors() {
 
 	glm::dvec3 rotatedEye, rotatedUp, rotatedCentre;
 
-	// Tile and north rotation
+	// Tilt and north rotation
 	rotatedEye = glm::rotate((eye - centre), fromVertRot, rightW);
 	rotatedEye = glm::rotate(rotatedEye, northRot, forwW);
 	rotatedUp = glm::rotate(up, fromVertRot, rightW);

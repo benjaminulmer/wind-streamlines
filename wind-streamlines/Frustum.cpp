@@ -15,7 +15,7 @@ Frustum::Frustum(const Camera& c, const RenderEngine& r) :
 	tanAng(tan(r.getFovY() * 0.5)),
 	aspectRatio(r.getAspectRatio()) {
 
-	glm::dvec3 eyeG = c.getPosition();
+	glm::dvec3 eyeG = c.getEye();
 	glm::dvec3 dirG = c.getLookDir();
 	glm::dvec3 upG = c.getUp();
 

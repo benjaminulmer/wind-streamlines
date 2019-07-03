@@ -40,19 +40,14 @@ Program::Program() :
 	renderEngine(nullptr),
 	camera(nullptr),
 	input(nullptr),
+	evc(nullptr),
 	seeder(nullptr) {}
 
 
 // Called to start the program. Conducts set up then enters the main loop
 void Program::start() {	
 
-	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-		std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
-		system("pause");
-		exit(EXIT_FAILURE);
-	}
-
-	double initialCameraDist = RADIUS_EARTH_M * 3.0;
+	const double initialCameraDist = RADIUS_EARTH_M * 3.0;
 
 	renderEngine = new RenderEngine(initialCameraDist);
 	camera = new Camera(initialCameraDist);
@@ -75,7 +70,7 @@ void Program::start() {
 	field = SphericalVectorField(file);
 	seeder = new SeedingEngine(field);
 
-	// Start integration and rendering in separate threads
+	// TODO work out multithreading
 	//std::thread t1(&SeedingEngine::seedGlobal, seeder);
 	seeder->seed();
 	mainLoop();
@@ -132,7 +127,9 @@ void Program::cleanup() {
 
 	delete renderEngine;
 	delete camera;
+	delete evc;
 	delete input;
+	delete seeder;
 
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplSDL2_Shutdown();

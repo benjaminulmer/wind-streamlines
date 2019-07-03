@@ -15,11 +15,7 @@ public:
 	InputHandler(Camera& camera, RenderEngine& renderEngine, EarthViewController& evc, Program& program);
 
 	void pollEvent(SDL_Event& e);
-
-	void key(SDL_KeyboardEvent& e);
-	void motion(SDL_MouseMotionEvent& e);
-	void scroll(SDL_MouseWheelEvent& e);
-	void reshape(SDL_WindowEvent& e);
+	void keyDownSwitch(SDL_KeyboardEvent& e);
 
 private: 
 	Camera& camera;

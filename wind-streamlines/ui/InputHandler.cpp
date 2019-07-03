@@ -37,25 +37,29 @@ void InputHandler::pollEvent(SDL_Event& e) {
 		return;
 	}
 
-	// Event goes to the program
-	if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) {
-		InputHandler::key(e.key);
-	}
-	else if (e.type == SDL_MOUSEBUTTONUP) {
-		mouseOldX = e.button.x;
-		mouseOldY = e.button.y;
-	}
-	else if (e.type == SDL_MOUSEMOTION) {
-		InputHandler::motion(e.motion);
-	}
-	else if (e.type == SDL_MOUSEWHEEL) {
-		InputHandler::scroll(e.wheel);
-	}
-	else if (e.type == SDL_WINDOWEVENT) {
-		InputHandler::reshape(e.window);
-	}
-	else if (e.type == SDL_QUIT) {
-		program.cleanup();
+	switch (e.type) {
+		case SDL_KEYDOWN:
+			keyDownSwitch(e.key);
+			break;
+		//case SDL_KEYUP:
+		case SDL_MOUSEMOTION:
+			evc.updateRotation(mouseOldX, e.motion.x, mouseOldY, e.motion.y, e.motion.state);
+			mouseOldX = e.motion.x;
+			mouseOldY = e.motion.y;
+			break;
+		case SDL_MOUSEWHEEL:
+			evc.updateCameraDist(e.wheel.y, mouseOldX, mouseOldY);
+			break;
+		//case SDL_MOUSEBUTTONDOWN:
+		//case SDL_MOUSEBUTTONUP:
+		case SDL_WINDOWEVENT:
+			if (e.window.event == SDL_WINDOWEVENT_RESIZED) {
+				renderEngine.setWindowSize(e.window.data1, e.window.data2);
+			}
+			break;
+		case SDL_QUIT:
+			program.cleanup();
+			break;
 	}
 }
 
@@ -63,66 +67,17 @@ void InputHandler::pollEvent(SDL_Event& e) {
 // Handle key press
 //
 // e - keyboard event
-void InputHandler::key(SDL_KeyboardEvent& e) {
+void InputHandler::keyDownSwitch(SDL_KeyboardEvent& e) {
 	
 	auto key = e.keysym.sym;
 
-	if (e.state == SDL_PRESSED) {
-		if (key == SDLK_i) {
-			renderEngine.updateScaleFactor(1);
-		}
-		else if (key == SDLK_k) {
-			renderEngine.updateScaleFactor(-1);
-		}
-		else if (key == SDLK_c) {
-			evc.resetCameraTilt();
-		}
+	if (key == SDLK_i) {
+		renderEngine.updateScaleFactor(1);
 	}
-}
-
-
-// Handle mouse motion event
-//
-// e - mouse motion event
-void InputHandler::motion(SDL_MouseMotionEvent& e) {
-	int dx, dy;
-	dx = e.x - mouseOldX;
-	dy = e.y - mouseOldY;
-
-	// left mouse button moves camera
-	if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)) {
-		evc.updateRotation(mouseOldX, e.x, mouseOldY, e.y, false);
+	else if (key == SDLK_k) {
+		renderEngine.updateScaleFactor(-1);
 	}
-	else if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_RIGHT)) {
-		evc.updateRotation(mouseOldX, e.x, mouseOldY, e.y, true);
-	}
-
-	// Update current position of the mouse
-	int width, height;
-	SDL_Window* window = SDL_GetWindowFromID(e.windowID);
-	SDL_GetWindowSize(window, &width, &height);
-
-	int iX = e.x;
-	int iY = height - e.y;
-
-	mouseOldX = e.x;
-	mouseOldY = e.y;
-}
-
-
-// Handle mouse scroll event
-//
-// e - mouse scroll event
-void InputHandler::scroll(SDL_MouseWheelEvent& e) {
-	evc.updateCameraDist(e.y);
-}
-
-
-// Handle resizing of window
-//
-// e - window event
-void InputHandler::reshape(SDL_WindowEvent& e) {
-	if (e.event == SDL_WINDOWEVENT_RESIZED) {
-		renderEngine.setWindowSize(e.data1, e.data2);
+	else if (key == SDLK_c) {
+		evc.resetCameraTilt();
 	}
 }

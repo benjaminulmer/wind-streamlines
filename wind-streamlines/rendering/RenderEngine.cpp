@@ -30,7 +30,7 @@ void RenderEngine::ImGui() {
 }
 
 
-// Create engine for the provided window and camera distance
+// Create an SDL window and OpenGL context to render to and sets up for rendering
 //
 // cameraDist - distance camera is from surface of Earth. Used for setting near and far planes
 RenderEngine::RenderEngine(double cameraDist) :
