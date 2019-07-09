@@ -151,6 +151,7 @@
     <ClCompile Include="streamlines\SphericalVectorField.cpp" />
     <ClCompile Include="streamlines\Streamline.cpp" />
     <ClCompile Include="VoxelGrid.cpp" />
+    <ClCompile Include="rendering\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ui\EarthViewController.h" />
@@ -173,6 +174,7 @@
     <ClInclude Include="streamlines\SphericalVectorField.h" />
     <ClInclude Include="streamlines\Streamline.h" />
     <ClInclude Include="VoxelGrid.h" />
+    <ClInclude Include="rendering\Window.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\main.frag" />

@@ -6,6 +6,7 @@
 #include "Conversions.h"
 #include "Renderable.h"
 #include "ShaderTools.h"
+#include "Window.h"
 
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -30,14 +31,20 @@ void RenderEngine::ImGui() {
 }
 
 
-// Create an SDL window and OpenGL context to render to and sets up for rendering
+// Sets up for rendering to the provided window with provided viewport parameters
 //
-// cameraDist - distance camera is from surface of Earth. Used for setting near and far planes
-RenderEngine::RenderEngine(double cameraDist) :
-	window(nullptr),
-	context(nullptr),
-	width(800),
-	height(800),
+// window - window to render to
+// x - left viewport x
+// y - lower viewport y
+// width - viewport width
+// height - viewport height
+// cameraDist - distance camera is from surface of Earth
+RenderEngine::RenderEngine(const Window& window, int x, int y, int width, int height, double cameraDist) :
+	window(window),
+	x(x),
+	y(y),
+	width(width),
+	height(height),
 	fovYRad(60.0 * (M_PI / 180.0)),
 	totalTime(0.f),
 	timeMultiplier(30000.f),
@@ -49,52 +56,6 @@ RenderEngine::RenderEngine(double cameraDist) :
 	lineWidth(1.f),
 	outlineWidth(1.f),
 	scaleFactor(10.f) {
-
-	// Set SDL GL attributes
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-
-	// Create window
-	window = SDL_CreateWindow("615 Project", 10, 30, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
-	if (window == nullptr) {
-		std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
-		system("pause");
-		SDL_Quit();
-		exit(EXIT_FAILURE);
-	}
-
-	// Create context
-	context = SDL_GL_CreateContext(window);
-	if (context == NULL) {
-		std::cerr << "SDL_GL_CreateContext Error: " << SDL_GetError() << std::endl;
-		system("pause");
-		SDL_Quit();
-		exit(EXIT_FAILURE);
-	}
-	SDL_GL_SetSwapInterval(0); // Vsync on
-
-	// Initialize extensions 
-	GLenum err = glewInit();
-	if (glewInit() != GLEW_OK) {
-		std::cerr << "glewInit error: " << glewGetErrorString(err) << std::endl;
-		system("pause");
-		exit(EXIT_FAILURE);
-	}
-
-	// Setup Dear ImGUI
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
-	ImGui::StyleColorsDark();
-
-	// Setup Platform/Renderer bindings
-	ImGui_ImplSDL2_InitForOpenGL(window, context);
-	const char* glsl_version = "#version 430 core";
-	ImGui_ImplOpenGL3_Init(glsl_version);
 
 	// Compile shaders
 	// TODO this could be static - does not need to be done for each engine
@@ -120,11 +81,18 @@ RenderEngine::RenderEngine(double cameraDist) :
 }
 
 
-// Sets up for rendering. Call before any rendering or Dear ImGUI calls
-void RenderEngine::preRender() {
-	ImGui_ImplOpenGL3_NewFrame();
-	ImGui_ImplSDL2_NewFrame(window);
-	ImGui::NewFrame();
+// Sets up for rendering to the provided window for the full window
+//
+// window - window to render to
+// cameraDist - distance camera is from surface of Earth
+RenderEngine::RenderEngine(const Window& window, double cameraDist) :
+	RenderEngine(window, 0, 0, window.getWidth(), window.getHeight(), cameraDist) {}
+
+
+void RenderEngine::clearViewport() {
+	glEnable(GL_SCISSOR_TEST);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	glDisable(GL_SCISSOR_TEST);
 }
 
 
@@ -135,7 +103,7 @@ void RenderEngine::preRender() {
 // dTimeS - time since last render in seconds
 void RenderEngine::render(const std::vector<Renderable*>& objects, const glm::dmat4& view, float dTimeS) {
 	
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	glViewport(x, y, width, height);
 	if (!pause) {
 		totalTime += dTimeS * timeMultiplier;
 		totalTime = fmod(totalTime, timeRepeat);
@@ -214,14 +182,6 @@ void RenderEngine::render(const std::vector<Renderable*>& objects, const glm::dm
 }
 
 
-// Finalizes rendering. Draws Dear ImGUI frame and swaps buffers
-void RenderEngine::postRender() {
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-	SDL_GL_SwapWindow(window);
-}
-
-
-
 // Sets projection and viewport for new width and height
 //
 // newWidth - new window width
@@ -278,10 +238,4 @@ void RenderEngine::updatePlanes(double cameraDist) {
 	}
 
 	projection = glm::perspective(fovYRad, (double)width / height, near, far);
-}
-
-
-RenderEngine::~RenderEngine() {
-	SDL_DestroyWindow(window);
-	SDL_GL_DeleteContext(context);
 }

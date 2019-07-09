@@ -1,6 +1,7 @@
 #pragma once
 
 #include "rendering/Renderable.h"
+#include "rendering/Window.h"
 #include "streamlines/SphericalVectorField.h"
 #include "streamlines/Streamline.h"
 
@@ -31,6 +32,7 @@ public:
 	void ImGui();
 
 private:
+	Window window;
 	RenderEngine* renderEngine;
 	Camera* camera;
 	EarthViewController* evc;

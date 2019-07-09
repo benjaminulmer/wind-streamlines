@@ -37,6 +37,7 @@ void Program::ImGui() {
 
 
 Program::Program() :
+	window("test", 50, 50, 800, 800),
 	renderEngine(nullptr),
 	camera(nullptr),
 	input(nullptr),
@@ -49,7 +50,7 @@ void Program::start() {
 
 	const double initialCameraDist = RADIUS_EARTH_M * 3.0;
 
-	renderEngine = new RenderEngine(initialCameraDist);
+	renderEngine = new RenderEngine(window, initialCameraDist);
 	camera = new Camera(initialCameraDist);
 	evc = new EarthViewController(*camera, *renderEngine, initialCameraDist);
 	input = new InputHandler(*camera, *renderEngine, *evc, *this);
@@ -91,7 +92,7 @@ void Program::mainLoop() {
 			input->pollEvent(e);
 		}
 
-		renderEngine->preRender();
+		window.renderSetup();
 
 		ImGui::Begin("Options");
 		ImGui();
@@ -111,8 +112,9 @@ void Program::mainLoop() {
 		objects.push_back(&coastRender);
 		objects.push_back(&sphereRender);
 		
+		renderEngine->clearViewport();
 		renderEngine->render(objects, (glm::dmat4)camera->getLookAt(), dTimeS.count());
-		renderEngine->postRender();
+		window.finalizeRender();
 	}
 }
 

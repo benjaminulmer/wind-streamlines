@@ -7,6 +7,7 @@
 #include <vector>
 
 class Renderable;
+class Window;
 
 
 // Class for managing and rendering to an SDL OpenGL window
@@ -14,12 +15,11 @@ class Renderable;
 class RenderEngine {
 
 public:
-	RenderEngine(double cameraDist);
-	~RenderEngine();
-
-	void preRender();
+	RenderEngine(const Window& window, double cameraDist);
+	RenderEngine(const Window& window, int x, int y, int width, int height, double cameraDist);
+ 
+	void clearViewport();
 	void render(const std::vector<Renderable*>& objects, const glm::dmat4& view, float dTimeS);
-	void postRender();
 
 	void setWindowSize(int newWidth, int newHeight);
 	void updateScaleFactor(int dir);
@@ -36,8 +36,8 @@ public:
 	void ImGui();
 	
 private:
-	SDL_Window* window;
-	SDL_GLContext context;
+	const Window& window;
+	int x, y;
 	int width, height;
 
 	double fovYRad;
