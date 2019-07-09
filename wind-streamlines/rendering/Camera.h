@@ -17,6 +17,8 @@ public:
 	glm::dvec3 getCentre() const { return centre; }
 	glm::dvec3 getUp() const { return up; }
 	glm::dvec3 getLookDir() const { return glm::normalize(centre - eye); }
+	
+	double getDist() const { return glm::length(eye - centre); }
 
 private:
 	glm::dvec3 eye;

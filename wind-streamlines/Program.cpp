@@ -11,6 +11,7 @@
 #include "rendering/RenderEngine.h"
 #include "streamlines/SeedingEngine.h"
 #include "ui/EarthViewController.h"
+#include "ui/SubWindow.h"
 #include "ui/InputHandler.h"
 
 #include <GL/glew.h>
@@ -25,7 +26,7 @@
 void Program::ImGui() {
 	if (ImGui::CollapsingHeader("Status")) {
 		ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-		ImGui::Text("Camera dist: %.0f", evc->getCameraDist());
+		ImGui::Text("Camera dist: %.0f", camera->getDist());
 		ImGui::Text("Near: %.0f", renderEngine->getNear());
 		ImGui::Text("Far: %.0f", renderEngine->getFar());
 		ImGui::Text("Near / far: %.1f", renderEngine->getFar() / renderEngine->getNear());
@@ -67,7 +68,7 @@ void Program::start() {
 	sphereRender.setBufferData();
 
 	// Load vector field
-	netCDF::NcFile file("./data/2018-05-27T12.nc", netCDF::NcFile::read);
+	netCDF::NcFile file("./data/2017-09-05T12.nc", netCDF::NcFile::read);
 	field = SphericalVectorField(file);
 	seeder = new SeedingEngine(field);
 
@@ -83,6 +84,13 @@ void Program::mainLoop() {
 
 	std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
 	std::vector<Renderable*> objects;
+
+
+	// Temp test code for multiview focus & context
+	BaseSubWindow s1(window, 550, 50, 200, 200, 0.3, -1.2);
+	std::vector<Renderable*> objects2;
+	// End temp test code
+
 
 	while (true) {
 		
@@ -108,12 +116,19 @@ void Program::mainLoop() {
 		// Render everything
 		ImGui::Render();
 		
-		objects = seeder->getLinesToRender(Frustum(*camera, *renderEngine), evc->getCameraDist());
+		objects = seeder->getLinesToRender(Frustum(*camera, *renderEngine), camera->getDist());
 		objects.push_back(&coastRender);
 		objects.push_back(&sphereRender);
 		
-		renderEngine->clearViewport();
-		renderEngine->render(objects, (glm::dmat4)camera->getLookAt(), dTimeS.count());
+		renderEngine->render(objects, camera->getLookAt(), dTimeS.count());
+
+
+		objects2 = seeder->getLinesToRender(s1.getFrustum(), s1.getCameraDist());
+		objects2.push_back(&coastRender);
+		objects2.push_back(&sphereRender);
+
+		s1.render(objects2, dTimeS.count());
+
 		window.finalizeRender();
 	}
 }

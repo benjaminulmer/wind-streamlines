@@ -37,6 +37,7 @@ public:
 	
 private:
 	const Window& window;
+
 	int x, y;
 	int width, height;
 

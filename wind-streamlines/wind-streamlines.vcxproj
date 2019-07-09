@@ -132,6 +132,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ui\SubWindow.cpp" />
     <ClCompile Include="ui\EarthViewController.cpp" />
     <ClCompile Include="rendering\Camera.cpp" />
     <ClCompile Include="Color\ColorSpace.cpp" />
@@ -154,6 +155,7 @@
     <ClCompile Include="rendering\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ui\SubWindow.h" />
     <ClInclude Include="ui\EarthViewController.h" />
     <ClInclude Include="rendering\Camera.h" />
     <ClInclude Include="Color\ColorSpace.h" />

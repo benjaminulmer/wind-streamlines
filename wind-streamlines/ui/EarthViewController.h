@@ -14,9 +14,13 @@ public:
 
 	void updateRotation(int oldX, int newX, int oldY, int newY, unsigned int buttonMask);
 	void updateCameraDist(int dir, int x, int y);
+
 	void resetCameraTilt();
 
-	double getCameraDist() const { return cameraDist; }
+	void updateFromVertRot(double rad);
+	void updateNorthRot(double rad);
+	void updateLatRot(double rad);
+	void updateLngRot(double rad);
 
 private:
 	Camera& camera;
@@ -34,9 +38,4 @@ private:
 	double northRot;
 
 	void newCameraVectors();
-
-	void updateFromVertRot(double rad);
-	void updateNorthRot(double rad);
-	void updateLatRot(double rad);
-	void updateLngRot(double rad);
 };
