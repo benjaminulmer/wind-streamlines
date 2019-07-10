@@ -190,13 +190,17 @@ void RenderEngine::render(const std::vector<Renderable*>& objects, const glm::dm
 
 // Sets projection and viewport for new width and height
 //
-// newWidth - new window width
-// newHeight - new window height
-void RenderEngine::setWindowSize(int newWidth, int newHeight) {
+// newX - new left viewport x
+// newY - new lower viewport y
+// newWidth - new viewport width
+// newHeight - new viewport height
+void RenderEngine::setViewport(int newX, int newY, int newWidth, int newHeight) {
+	x = newX;
+	y = newY;
 	width = newWidth;
 	height = newHeight;
 	projection = glm::perspective(fovYRad, (double)width / height, near, far);
-	glViewport(0, 0, width, height);
+	glViewport(x, y, width, height);
 }
 
 
@@ -244,4 +248,27 @@ void RenderEngine::updatePlanes(double cameraDist) {
 	}
 
 	projection = glm::perspective(fovYRad, (double)width / height, near, far);
+}
+
+
+// Converts window pixel location to normalized device coordinate of viewport
+//
+// xPix - x in pixels right
+// yPix - y in pixels down
+// return - pair (x, y) normalized device coordinates
+std::pair<double, double> RenderEngine::pixelToNormDevice(int _x, int _y) {
+
+	int winWidth = window.getWidth();
+	int winHeight = window.getHeight();
+
+	int top = winHeight - (y + height);
+
+	int localX = _x - x;
+	int localY = _y - top;
+
+	double xNorm = (2.0 * localX) / width - 1.0;
+	double yNorm = (2.0 * localY) / height - 1.0;
+	yNorm *= -1.0;
+
+	return std::pair<double, double>(xNorm, yNorm);
 }

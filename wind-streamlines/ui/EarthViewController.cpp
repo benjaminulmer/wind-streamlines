@@ -21,93 +21,83 @@ EarthViewController::EarthViewController(Camera& camera, RenderEngine& renderEng
 	northRot(0.0) {}
 
 
+// Intersect ray shot at given pixel with the Earth and return intersection as lat long
+//
+// x - x pixel location
+// y - y pixel location
+// return - optional of (lat long) in rad
+std::optional<glm::dvec2> EarthViewController::raySphereIntersectFromPixel(int x, int y) const {
+
+	glm::dmat4 projView = renderEngine.getProjection() * camera.getLookAt();
+	glm::dmat4 invProjView = glm::inverse(projView);
+
+	std::pair<double, double> norm = renderEngine.pixelToNormDevice(x, y);
+
+	glm::dvec4 world(norm.first, norm.second, -1.0, 1.0);
+
+	world = invProjView * world;
+	world /= world.w;
+
+	glm::dvec3 rayO = camera.getEye();
+	glm::dvec3 rayD = glm::normalize(glm::dvec3(world) - rayO);
+	double sphereRad = RADIUS_EARTH_M;
+	glm::dvec3 sphereO = glm::dvec3(0.0);
+
+	glm::dvec3 iPos, iNorm;
+
+	if (glm::intersectRaySphere(rayO, rayD, sphereO, sphereRad, iPos, iNorm)) {
+
+		double lng = atan2(iPos.x, iPos.z);
+		double lat = M_PI_2 - acos(iPos.y / sphereRad);
+
+		return glm::dvec2(lat, lng);
+	}
+	else {
+		return {};
+	}
+}
+
 // Updates rotation/orientation of Earth model
 //
 // oldX - old x pixel location of mouse
 // oldY - old y pixel location of mouse
 // newX - new x pixel location of mouse
 // newY - new y pixel location of mouse
-// skew - true tilts the camera, otherwise rotates the Earth
+// buttonMask - SDL button mask for which buttons are pressed
 void EarthViewController::updateRotation(int oldX, int newX, int oldY, int newY, unsigned int buttonMask) {
 
-	bool skew;
-
 	if (buttonMask & SDL_BUTTON(SDL_BUTTON_LEFT)) {
-		skew = false;
+
+		auto oldInt = raySphereIntersectFromPixel(oldX, oldY);
+		auto newInt = raySphereIntersectFromPixel(newX, newY);
+
+		if (oldInt && newInt) {
+			updateLatRot(newInt->x - oldInt->x);
+			updateLngRot(newInt->y - oldInt->y);
+		}
 	}
 	else if (buttonMask & SDL_BUTTON(SDL_BUTTON_RIGHT)) {
-		skew = true;
+
+		std::pair<double, double> oldNorm = renderEngine.pixelToNormDevice(oldX, oldY);
+		std::pair<double, double> newNorm = renderEngine.pixelToNormDevice(newX, newY);
+
+		updateFromVertRot(newNorm.second - oldNorm.second);
+		updateNorthRot(oldNorm.first - newNorm.first);
 	}
 	else {
 		return;
 	}
-
-	glm::dmat4 projView = renderEngine.getProjection() * camera.getLookAt();
-	glm::dmat4 invProjView = glm::inverse(projView);
-
-	double oldXN = (2.0 * oldX) / (renderEngine.getWidth()) - 1.0;
-	double oldYN = (2.0 * oldY) / (renderEngine.getHeight()) - 1.0;
-	oldYN *= -1.0;
-
-	double newXN = (2.0 * newX) / (renderEngine.getWidth()) - 1.0;
-	double newYN = (2.0 * newY) / (renderEngine.getHeight()) - 1.0;
-	newYN *= -1.0;
-
-	glm::dvec4 worldOld(oldXN, oldYN, -1.0, 1.0);
-	glm::dvec4 worldNew(newXN, newYN, -1.0, 1.0);
-
-	worldOld = invProjView * worldOld;
-	worldOld /= worldOld.w;
-
-	worldNew = invProjView * worldNew;
-	worldNew /= worldNew.w;
-
-	glm::dvec3 rayO = camera.getEye();
-	glm::dvec3 rayDOld = glm::normalize(glm::dvec3(worldOld) - rayO);
-	glm::dvec3 rayDNew = glm::normalize(glm::dvec3(worldNew) - rayO);
-	double sphereRad = RADIUS_EARTH_M;
-	glm::dvec3 sphereO = glm::dvec3(0.0);
-
-	glm::dvec3 iPosOld, iPosNew, iNorm;
-
-	if (skew) {
-		updateFromVertRot(newYN - oldYN);
-		updateNorthRot(oldXN - newXN);
-	}
-
-	else if (glm::intersectRaySphere(rayO, rayDOld, sphereO, sphereRad, iPosOld, iNorm) &&
-	         glm::intersectRaySphere(rayO, rayDNew, sphereO, sphereRad, iPosNew, iNorm)) {
-
-		double longOld = atan2(iPosOld.x, iPosOld.z);
-		double latOld = M_PI_2 - acos(iPosOld.y / sphereRad);
-		//double latOld = atan2(iPosOld.y, iPosOld.z);
-
-		double longNew = atan2(iPosNew.x, iPosNew.z);
-		double latNew = M_PI_2 - acos(iPosNew.y / sphereRad);
-		//double latNew = atan2(iPosNew.y, iPosNew.z);
-
-		updateLatRot(latNew - latOld);
-		updateLngRot(longNew - longOld);
-	}
 }
 
-#include <iostream>
-// Moves camera towards or away from Earth
+
+// Moves camera towards or away from Earth 
 //
 // dir - direction of change, possitive for closer and negative for farther
+// x - x pixel location of mouse
+// y - y pixel location of mouse
 void EarthViewController::updateCameraDist(int dir, int x, int y) {
 
-	double oldXN = (2.0 * x) / (renderEngine.getWidth()) - 1.0;
-	double oldYN = (2.0 * y) / (renderEngine.getHeight()) - 1.0;
-	oldYN *= -1.0;
-
-	double newXN = (2.0 * x) / (renderEngine.getWidth()) - 1.0;
-	double newYN = (2.0 * y) / (renderEngine.getHeight()) - 1.0;
-	newYN *= -1.0;
-
-	glm::dvec3 rayOOld = camera.getEye();
-	glm::dmat4 projView = renderEngine.getProjection() * camera.getLookAt();
-	glm::dmat4 invProjView = glm::inverse(projView);
+	auto oldInt = raySphereIntersectFromPixel(x, y);
 
 	if (dir > 0) {
 		cameraDist /= 1.2;
@@ -120,42 +110,11 @@ void EarthViewController::updateCameraDist(int dir, int x, int y) {
 	newCameraVectors();
 	renderEngine.updatePlanes(cameraDist);
 
-	glm::dmat4 projViewNew = renderEngine.getProjection() * camera.getLookAt();
-	glm::dmat4 invProjViewNew = glm::inverse(projViewNew);
+	auto newInt = raySphereIntersectFromPixel(x, y);
 
-	glm::dvec4 worldOld(oldXN, oldYN, -1.0, 1.0);
-	glm::dvec4 worldNew(newXN, newYN, -1.0, 1.0);
-
-	worldOld = invProjView * worldOld;
-	worldOld /= worldOld.w;
-
-	worldNew = invProjViewNew * worldNew;
-	worldNew /= worldNew.w;
-
-	std::cout << worldOld.x << ", " << worldOld.y << ", " << worldOld.z << std::endl;
-	std::cout << worldNew.x << ", " << worldNew.y << ", " << worldNew.z << std::endl;
-
-	glm::dvec3 rayONew = camera.getEye();
-	glm::dvec3 rayDOld = glm::normalize(glm::dvec3(worldOld) - rayOOld);
-	glm::dvec3 rayDNew = glm::normalize(glm::dvec3(worldNew) - rayONew);
-	double sphereRad = RADIUS_EARTH_M;
-	glm::dvec3 sphereO = glm::dvec3(0.0);
-
-	glm::dvec3 iPosOld, iPosNew, iNorm;
-
-	if (glm::intersectRaySphere(rayOOld, rayDOld, sphereO, sphereRad, iPosOld, iNorm) &&
-	    glm::intersectRaySphere(rayONew, rayDNew, sphereO, sphereRad, iPosNew, iNorm)) {
-
-		double longOld = atan2(iPosOld.x, iPosOld.z);
-		double latOld = M_PI_2 - acos(iPosOld.y / sphereRad);
-		//double latOld = atan2(iPosOld.y, iPosOld.z);
-
-		double longNew = atan2(iPosNew.x, iPosNew.z);
-		double latNew = M_PI_2 - acos(iPosNew.y / sphereRad);
-		//double latNew = atan2(iPosNew.y, iPosNew.z);
-
-		updateLatRot(latNew - latOld);
-		updateLngRot(longNew - longOld);
+	if (oldInt && newInt) {
+		updateLatRot(newInt->x - oldInt->x);
+		updateLngRot(newInt->y - oldInt->y);
 	}
 }
 

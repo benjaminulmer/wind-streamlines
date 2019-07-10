@@ -290,5 +290,5 @@ void ImGui_ImplSDL2_NewFrame(SDL_Window* window)
     g_Time = current_time;
 
     ImGui_ImplSDL2_UpdateMousePosAndButtons();
-    ImGui_ImplSDL2_UpdateMouseCursor();
+    //ImGui_ImplSDL2_UpdateMouseCursor();
 }

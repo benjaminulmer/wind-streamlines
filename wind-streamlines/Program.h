@@ -1,14 +1,15 @@
 #pragma once
 
+#include "Conversions.h"
+#include "rendering/Camera.h"
 #include "rendering/Renderable.h"
+#include "rendering/RenderEngine.h"
 #include "rendering/Window.h"
 #include "streamlines/SphericalVectorField.h"
-#include "streamlines/Streamline.h"
+#include "ui/EarthViewController.h"
+#include "ui/InputHandler.h"
+#include "ui/SubWindowManager.h"
 
-class Camera;
-class EarthViewController;
-class InputHandler;
-class RenderEngine;
 class SeedingEngine;
 
 #include <imgui.h>
@@ -32,11 +33,14 @@ public:
 	void ImGui();
 
 private:
+	static constexpr double initialCameraDist = RADIUS_EARTH_M * 3.0;
+
 	Window window;
-	RenderEngine* renderEngine;
-	Camera* camera;
-	EarthViewController* evc;
-	InputHandler* input;
+	RenderEngine renderEngine;
+	Camera camera;
+	EarthViewController evc;
+	SubWindowManager swm;
+	InputHandler input;
 	SeedingEngine* seeder;
 
 	ColourRenderable sphereRender;

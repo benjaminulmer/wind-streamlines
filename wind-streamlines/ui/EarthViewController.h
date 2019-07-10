@@ -5,12 +5,16 @@ class RenderEngine;
 
 #include <glm/glm.hpp>
 
+#include <optional>
+
 
 // Class for managing a Camera and RenderEngine for viewing a virtual Earth
 class EarthViewController {
 
 public:
 	EarthViewController(Camera& camera, RenderEngine& renderEngine, double cameraDist);
+
+	std::optional<glm::dvec2> raySphereIntersectFromPixel(int x, int y) const;
 
 	void updateRotation(int oldX, int newX, int oldY, int newY, unsigned int buttonMask);
 	void updateCameraDist(int dir, int x, int y);

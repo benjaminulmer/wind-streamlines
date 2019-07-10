@@ -10,20 +10,40 @@ class Window;
 #include <vector>
 
 
+enum class SubWindowMouseState {
+	INSIDE,
+	TOP,
+	RIGHT,
+	BOTTOM,
+	LEFT,
+	TOP_RIGHT,
+	BOTTOM_RIGHT,
+	BOTTOM_LEFT,
+	TOP_LEFT,
+	OUTSIDE
+};
+
+
 class SubWindow {
 
 public:
 	SubWindow(const Window& window, int x, int y, int width, int height);
 
-	//virtual void setSize() = 0;
-	//virtual void setPos() = 0;
+	virtual void render(const std::vector<Renderable*>& objects , float dTimeS);
 
-	virtual void render(const std::vector<Renderable*>& objects, float dTimeS);
+	Frustum getFrustum() const { return Frustum(camera, renderEngine); }
+	double getCameraDist() const { return camera.getDist(); }
 
-	Frustum getFrustum() { return Frustum(camera, renderEngine); }
-	double getCameraDist() { return camera.getDist(); }
+	SubWindowMouseState testMousePos(int _x, int _y);
+	void move(int dx, int dy);
+	void expandLeft(int amount);
+	void expandRight(int amount);
+	void expandUp(int amount);
+	void expandDown(int amount);
 
 protected:
+	static constexpr int selectionBuffer = 5;
+
 	const Window& window;
 	Camera camera;
 	RenderEngine renderEngine;
@@ -33,6 +53,8 @@ protected:
 	int width, height;
 
 	std::vector<SubWindow*> children;
+
+	void updateViewport();
 };
 
 

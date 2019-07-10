@@ -13,10 +13,10 @@
 // camera - pointer to camera object that should be updated
 // renderEngine - pointer to render engine object that should be updated
 // program - pointer to main program object that should be updated
-InputHandler::InputHandler(Camera& camera, RenderEngine& renderEngine, EarthViewController& evc, Program& program) :
-	camera(camera),
+InputHandler::InputHandler(RenderEngine& renderEngine, EarthViewController& evc, SubWindowManager& swm, Program& program) :
 	renderEngine(renderEngine),
 	evc(evc),
+	swm(swm),
 	program(program),
 	mouseOldX(0), 
 	mouseOldY(0) {}
@@ -43,18 +43,24 @@ void InputHandler::pollEvent(SDL_Event& e) {
 			break;
 		//case SDL_KEYUP:
 		case SDL_MOUSEMOTION:
+			// before sending to evc see if subwindow manager wants it
 			evc.updateRotation(mouseOldX, e.motion.x, mouseOldY, e.motion.y, e.motion.state);
 			mouseOldX = e.motion.x;
 			mouseOldY = e.motion.y;
+			//program.test(e.motion.x, e.motion.y);
 			break;
 		case SDL_MOUSEWHEEL:
 			evc.updateCameraDist(e.wheel.y, mouseOldX, mouseOldY);
 			break;
-		//case SDL_MOUSEBUTTONDOWN:
+		case SDL_MOUSEBUTTONDOWN:
+			swm.createSubWindow(e.button.x, e.button.y);
+			break;
+			// left click - see if subwindow manager wants to close window
+			//            - if not and mod is down try to spawn new subwindow
 		//case SDL_MOUSEBUTTONUP:
 		case SDL_WINDOWEVENT:
 			if (e.window.event == SDL_WINDOWEVENT_RESIZED) {
-				renderEngine.setWindowSize(e.window.data1, e.window.data2);
+				renderEngine.setViewport(0, 0, e.window.data1, e.window.data2);
 			}
 			break;
 		case SDL_QUIT:

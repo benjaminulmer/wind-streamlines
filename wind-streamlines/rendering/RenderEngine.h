@@ -21,12 +21,12 @@ public:
 	void clearViewport();
 	void render(const std::vector<Renderable*>& objects, const glm::dmat4& view, float dTimeS);
 
-	void setWindowSize(int newWidth, int newHeight);
+	void setViewport(int newX, int newY, int newWidth, int newHeight);
 	void updateScaleFactor(int dir);
 	void updatePlanes(double cameraDist);
 
-	int getWidth() const { return width; }
-	int getHeight() const { return height; }
+	std::pair<double, double> pixelToNormDevice(int _x, int _y);
+
 	double getFovY() const { return fovYRad; }
 	double getAspectRatio() const { return (float)width/height; }
 	double getNear() const { return near; }

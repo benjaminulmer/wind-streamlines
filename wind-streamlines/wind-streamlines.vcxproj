@@ -132,6 +132,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ui\SubWindowManager.cpp" />
     <ClCompile Include="ui\SubWindow.cpp" />
     <ClCompile Include="ui\EarthViewController.cpp" />
     <ClCompile Include="rendering\Camera.cpp" />
@@ -155,6 +156,7 @@
     <ClCompile Include="rendering\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ui\SubWindowManager.h" />
     <ClInclude Include="ui\SubWindow.h" />
     <ClInclude Include="ui\EarthViewController.h" />
     <ClInclude Include="rendering\Camera.h" />
