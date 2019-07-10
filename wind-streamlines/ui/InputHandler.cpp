@@ -36,36 +36,38 @@ void InputHandler::pollEvent(SDL_Event& e) {
 	if (ImGui::GetIO().WantCaptureKeyboard && (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)) {
 		return;
 	}
+	SDL_Keymod mods = SDL_GetModState();
 
 	switch (e.type) {
-		case SDL_KEYDOWN:
-			keyDownSwitch(e.key);
-			break;
-		//case SDL_KEYUP:
-		case SDL_MOUSEMOTION:
-			// before sending to evc see if subwindow manager wants it
-			evc.updateRotation(mouseOldX, e.motion.x, mouseOldY, e.motion.y, e.motion.state);
-			mouseOldX = e.motion.x;
-			mouseOldY = e.motion.y;
-			//program.test(e.motion.x, e.motion.y);
-			break;
-		case SDL_MOUSEWHEEL:
-			evc.updateCameraDist(e.wheel.y, mouseOldX, mouseOldY);
-			break;
-		case SDL_MOUSEBUTTONDOWN:
+	case SDL_KEYDOWN:
+		keyDownSwitch(e.key);
+		break;
+	case SDL_MOUSEMOTION:
+		// before sending to evc see if subwindow manager wants it
+		swm.handleMouseMove(mouseOldX, e.motion.x, mouseOldY, e.motion.y, e.motion.state);
+		evc.updateRotation(mouseOldX, e.motion.x, mouseOldY, e.motion.y, e.motion.state);
+		mouseOldX = e.motion.x;
+		mouseOldY = e.motion.y;
+		break;
+	case SDL_MOUSEWHEEL:
+		evc.updateCameraDist(e.wheel.y, mouseOldX, mouseOldY);
+		break;
+	case SDL_MOUSEBUTTONDOWN:
+		if ((mods & KMOD_LSHIFT) == KMOD_LSHIFT) {
 			swm.createSubWindow(e.button.x, e.button.y);
-			break;
-			// left click - see if subwindow manager wants to close window
-			//            - if not and mod is down try to spawn new subwindow
-		//case SDL_MOUSEBUTTONUP:
-		case SDL_WINDOWEVENT:
-			if (e.window.event == SDL_WINDOWEVENT_RESIZED) {
-				renderEngine.setViewport(0, 0, e.window.data1, e.window.data2);
-			}
-			break;
-		case SDL_QUIT:
-			program.cleanup();
-			break;
+		}
+		else if ((mods & KMOD_LCTRL) == KMOD_LCTRL) {
+			swm.deleteSubWindow(e.button.x, e.button.y);
+		}
+		break;
+	case SDL_WINDOWEVENT:
+		if (e.window.event == SDL_WINDOWEVENT_RESIZED) {
+			renderEngine.setViewport(0, 0, e.window.data1, e.window.data2);
+		}
+		break;
+	case SDL_QUIT:
+		program.cleanup();
+		break;
 	}
 }
 

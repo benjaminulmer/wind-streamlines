@@ -11,7 +11,7 @@ class Window;
 
 
 enum class SubWindowMouseState {
-	INSIDE,
+	INSIDE = 0,
 	TOP,
 	RIGHT,
 	BOTTOM,

@@ -83,54 +83,6 @@ SubWindowMouseState SubWindow::testMousePos(int _x, int _y) {
 	return SubWindowMouseState();
 }
 
-/*void test(int x, int y) {
-
-	SDL_Cursor* curs;
-
-	switch (s1->testMousePos(x, y)) {
-		case SubWindowMouseState::TOP:
-			curs = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENS);
-			SDL_SetCursor(curs);
-			break;
-		case SubWindowMouseState::BOTTOM:
-			curs = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENS);
-			SDL_SetCursor(curs);
-			break;
-		case SubWindowMouseState::LEFT:
-			curs = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEWE);
-			SDL_SetCursor(curs);
-			break;
-		case SubWindowMouseState::RIGHT:
-			curs = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEWE);
-			SDL_SetCursor(curs);
-			break;
-		case SubWindowMouseState::TOP_LEFT:
-			curs = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENWSE);
-			SDL_SetCursor(curs);
-			break;
-		case SubWindowMouseState::BOTTOM_RIGHT:
-			curs = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENWSE);
-			SDL_SetCursor(curs);
-			break;
-		case SubWindowMouseState::TOP_RIGHT:
-			curs = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENESW);
-			SDL_SetCursor(curs);
-			break;
-		case SubWindowMouseState::BOTTOM_LEFT:
-			curs = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENESW);
-			SDL_SetCursor(curs);
-			break;
-		case SubWindowMouseState::INSIDE:
-			curs = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEALL);
-			SDL_SetCursor(curs);
-			break;
-		case SubWindowMouseState::OUTSIDE:
-			curs = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
-			SDL_SetCursor(curs);
-			break;
-	}
-}*/
-
 
 void SubWindow::move(int dx, int dy) {
 	x += dx;
