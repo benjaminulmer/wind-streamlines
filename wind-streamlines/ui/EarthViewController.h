@@ -4,6 +4,7 @@ class Camera;
 class RenderEngine;
 
 #include <glm/glm.hpp>
+#include <SDL2/SDL.h>
 
 #include <optional>
 
@@ -16,9 +17,11 @@ public:
 
 	std::optional<glm::dvec2> raySphereIntersectFromPixel(int x, int y) const;
 
-	void updateRotation(int oldX, int newX, int oldY, int newY, unsigned int buttonMask);
-	void updateCameraDist(int dir, int x, int y);
+	bool mouseDown(SDL_MouseButtonEvent e);
+	void updateRotation(SDL_MouseMotionEvent e);
+	void updateHeadingAndTilt(SDL_MouseMotionEvent e);
 
+	void updateCameraDist(int dir, int x, int y);
 	void resetCameraTilt();
 
 	void updateFromVertRot(double rad);

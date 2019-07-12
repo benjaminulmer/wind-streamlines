@@ -11,7 +11,8 @@ class Window;
 
 
 enum class SubWindowMouseState {
-	INSIDE = 0,
+	INSIDE_EARTH,
+	INSIDE_NOEARTH,
 	TOP,
 	RIGHT,
 	BOTTOM,
@@ -33,6 +34,7 @@ public:
 
 	Frustum getFrustum() const { return Frustum(camera, renderEngine); }
 	double getCameraDist() const { return camera.getDist(); }
+	EarthViewController& getEVC() { return evc; }
 
 	SubWindowMouseState testMousePos(int _x, int _y);
 	void move(int dx, int dy);
@@ -41,8 +43,15 @@ public:
 	void expandUp(int amount);
 	void expandDown(int amount);
 
+	static bool stateInside(SubWindowMouseState state) {
+		return (state == SubWindowMouseState::INSIDE_EARTH || state == SubWindowMouseState::INSIDE_NOEARTH);
+	}
+	static bool stateResize(SubWindowMouseState state) {
+		return (state != SubWindowMouseState::INSIDE_EARTH && state != SubWindowMouseState::INSIDE_NOEARTH && state != SubWindowMouseState::OUTSIDE);
+	}
+
 protected:
-	static constexpr int selectionBuffer = 5;
+	static constexpr int selectionBuffer = 10;
 
 	const Window& window;
 	Camera camera;

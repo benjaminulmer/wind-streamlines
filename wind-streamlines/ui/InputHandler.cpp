@@ -36,35 +36,110 @@ void InputHandler::pollEvent(SDL_Event& e) {
 	if (ImGui::GetIO().WantCaptureKeyboard && (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)) {
 		return;
 	}
+
 	SDL_Keymod mods = SDL_GetModState();
 
 	switch (e.type) {
 	case SDL_KEYDOWN:
 		keyDownSwitch(e.key);
 		break;
-	case SDL_MOUSEMOTION:
-		// before sending to evc see if subwindow manager wants it
-		swm.handleMouseMove(mouseOldX, e.motion.x, mouseOldY, e.motion.y, e.motion.state);
-		evc.updateRotation(mouseOldX, e.motion.x, mouseOldY, e.motion.y, e.motion.state);
+
+	case SDL_MOUSEMOTION: {
+
+		switch (clicked) {
+		case Clicked::MAIN_VIEW_ROTATE:
+			evc.updateRotation(e.motion);
+			break;
+
+		case Clicked::MAIN_VIEW_HEADING_TILT:
+			evc.updateHeadingAndTilt(e.motion);
+			break;
+
+		case Clicked::SUBWINDOW_ROTATE:
+			swm.getActive().first->getEVC().updateRotation(e.motion);
+			break;
+
+		case Clicked::SUBWINDOW_HEADING_TILT:
+			swm.getActive().first->getEVC().updateHeadingAndTilt(e.motion);
+			break;
+
+		case Clicked::SUBWINDOW_MOVE:
+			swm.move(e.motion.x - e.motion.xrel, e.motion.y - e.motion.yrel, e.motion.x, e.motion.y);
+			break;
+
+		case Clicked::SUBWINDOW_RESIZE:
+			swm.resize(e.motion.x - e.motion.xrel, e.motion.y - e.motion.yrel, e.motion.x, e.motion.y);
+			break;
+
+		}
+
 		mouseOldX = e.motion.x;
 		mouseOldY = e.motion.y;
 		break;
-	case SDL_MOUSEWHEEL:
-		evc.updateCameraDist(e.wheel.y, mouseOldX, mouseOldY);
-		break;
-	case SDL_MOUSEBUTTONDOWN:
-		if ((mods & KMOD_LSHIFT) == KMOD_LSHIFT) {
-			swm.createSubWindow(e.button.x, e.button.y);
+	}
+	case SDL_MOUSEWHEEL: {
+
+		auto result = swm.getHover(mouseOldX, mouseOldY, false);
+		SubWindowMouseState state = result.second;
+
+		if (SubWindow::stateInside(state)) {
+			result.first->getEVC().updateCameraDist(e.wheel.y, mouseOldX, mouseOldY);
 		}
-		else if ((mods & KMOD_LCTRL) == KMOD_LCTRL) {
-			swm.deleteSubWindow(e.button.x, e.button.y);
+		else {
+			evc.updateCameraDist(e.wheel.y, mouseOldX, mouseOldY);
 		}
 		break;
+	}
+	case SDL_MOUSEBUTTONDOWN: {
+
+		SDL_Keymod mods = SDL_GetModState();
+		SubWindowMouseState state = swm.getHover(e.button.x, e.button.y, true).second;
+
+		if (e.button.button == SDL_BUTTON_LEFT) {
+
+			if (mods & KMOD_LCTRL) {
+				if (!swm.deleteSubWindow()) {
+					swm.createSubWindow(e.button.x, e.button.y);
+				}
+			}
+			else if (mods & KMOD_LSHIFT) {
+				if (SubWindow::stateInside(state)) {
+					clicked = Clicked::SUBWINDOW_MOVE;
+				}
+			}
+			else {
+				if (state == SubWindowMouseState::INSIDE_EARTH) {
+					clicked = Clicked::SUBWINDOW_ROTATE;
+				}
+				else if (SubWindow::stateResize(state)) {
+					clicked = Clicked::SUBWINDOW_RESIZE;
+				}
+				else if (state == SubWindowMouseState::OUTSIDE && evc.raySphereIntersectFromPixel(e.button.x, e.button.y)) {
+					clicked = Clicked::MAIN_VIEW_ROTATE;
+				}
+			}
+		}
+		else if (e.button.button == SDL_BUTTON_RIGHT) {
+			if (SubWindow::stateInside(state)) {
+				clicked = Clicked::SUBWINDOW_HEADING_TILT;
+			}
+			else {
+				clicked = Clicked::MAIN_VIEW_HEADING_TILT;
+			}
+		}
+		break;
+	}
+	case SDL_MOUSEBUTTONUP:
+		clicked = Clicked::NONE;
+		swm.resetActive();
+		break;
+
 	case SDL_WINDOWEVENT:
 		if (e.window.event == SDL_WINDOWEVENT_RESIZED) {
 			renderEngine.setViewport(0, 0, e.window.data1, e.window.data2);
 		}
 		break;
+
 	case SDL_QUIT:
 		program.cleanup();
 		break;
@@ -88,4 +163,13 @@ void InputHandler::keyDownSwitch(SDL_KeyboardEvent& e) {
 	else if (key == SDLK_c) {
 		evc.resetCameraTilt();
 	}
+}
+
+void InputHandler::updateCursor() {
+
+	int x, y;
+
+	SDL_Keymod mods = SDL_GetModState();
+	SDL_GetMouseState(&x, &y);
+	swm.updateCursor(x, y, mods & KMOD_LSHIFT);
 }

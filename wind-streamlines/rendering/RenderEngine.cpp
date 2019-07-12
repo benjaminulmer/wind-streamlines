@@ -92,11 +92,16 @@ RenderEngine::RenderEngine(const Window& window, double cameraDist) :
 void RenderEngine::clearViewport() {
 
 	glEnable(GL_SCISSOR_TEST);
-	glScissor(x - 1, y - 1, width + 2, height + 2);
 
+	// Black border
+	glScissor(x - 1, y - 1, width + 2, height + 2);
 	glClearColor(0.f, 0.f, 0.f, 1.f);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	glClearColor(1.f, 1.f, 1.f, 1.f);
+
+	// White background
+	glScissor(x, y, width, height);
+	glClear(GL_COLOR_BUFFER_BIT);
 
 	glDisable(GL_SCISSOR_TEST);
 }

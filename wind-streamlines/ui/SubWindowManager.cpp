@@ -7,15 +7,18 @@
 #include <algorithm>
 
 
-const SDL_SystemCursor SubWindowManager::stateToCurs[] =
-	{SDL_SYSTEM_CURSOR_SIZEALL, SDL_SYSTEM_CURSOR_SIZENS, SDL_SYSTEM_CURSOR_SIZEWE, SDL_SYSTEM_CURSOR_SIZENS,
-	SDL_SYSTEM_CURSOR_SIZEWE, SDL_SYSTEM_CURSOR_SIZENESW, SDL_SYSTEM_CURSOR_SIZENWSE, SDL_SYSTEM_CURSOR_SIZENESW,
-	SDL_SYSTEM_CURSOR_SIZENWSE, SDL_SYSTEM_CURSOR_ARROW};
+const SDL_SystemCursor SubWindowManager::stateToCurs[] = {
+	SDL_SYSTEM_CURSOR_ARROW, SDL_SYSTEM_CURSOR_ARROW, SDL_SYSTEM_CURSOR_SIZENS, SDL_SYSTEM_CURSOR_SIZEWE,
+	SDL_SYSTEM_CURSOR_SIZENS, SDL_SYSTEM_CURSOR_SIZEWE, SDL_SYSTEM_CURSOR_SIZENESW, SDL_SYSTEM_CURSOR_SIZENWSE,
+	SDL_SYSTEM_CURSOR_SIZENESW, SDL_SYSTEM_CURSOR_SIZENWSE, SDL_SYSTEM_CURSOR_ARROW
+};
 
 
 SubWindowManager::SubWindowManager(const Window& window, const EarthViewController& evc) : 
 	window(window),
-	evc(evc) {}
+	evc(evc),
+	activeState(SubWindowMouseState::OUTSIDE),
+	activeWindow(nullptr) {}
 
 
 void SubWindowManager::renderAll(const std::vector<Renderable*>& objects, float dTimeS) {
@@ -42,24 +45,15 @@ bool SubWindowManager::createSubWindow(int x, int y) {
 }
 
 
-bool SubWindowManager::deleteSubWindow(int x, int y) {
+bool SubWindowManager::deleteSubWindow() {
 	
-	SubWindow* active = nullptr;
-	SubWindowMouseState activeState = SubWindowMouseState::OUTSIDE;
 
-	for (SubWindow* s : windows) {
+	if (activeWindow != nullptr) {
 
-		SubWindowMouseState state = s->testMousePos(x, y);
-		if (state != SubWindowMouseState::OUTSIDE) {
-			active = s;
-			activeState = state;
-		}
-	}
-	if (activeState == SubWindowMouseState::INSIDE) {
+		windows.erase(std::remove(windows.begin(), windows.end(), activeWindow), windows.end());
+		delete activeWindow;
 
-		windows.erase(std::remove(windows.begin(), windows.end(), active), windows.end());
-		delete active;
-
+		resetActive();
 		return true;
 	}
 	else {
@@ -68,67 +62,104 @@ bool SubWindowManager::deleteSubWindow(int x, int y) {
 }
 
 
-bool SubWindowManager::handleMouseMove(int oldX, int newX, int oldY, int newY, unsigned int buttonMask) {
-	
-	SubWindow* active = nullptr;
-	SubWindowMouseState activeState = SubWindowMouseState::OUTSIDE;
+std::pair<SubWindow*, SubWindowMouseState> SubWindowManager::getHover(int x, int y, bool active) {
 
-	for (SubWindow* s : windows) {
+	SubWindow* window = nullptr;
+	SubWindowMouseState state = SubWindowMouseState::OUTSIDE;
 
-		SubWindowMouseState state = s->testMousePos(oldX, oldY);
-		if (state != SubWindowMouseState::OUTSIDE) {
-			active = s;
-			activeState = state;
+	for (SubWindow* w : windows) {
+
+		SubWindowMouseState s = w->testMousePos(x, y);
+		if (s != SubWindowMouseState::OUTSIDE) {
+			window = w;
+			state = s;
 		}
 	}
-	SDL_Cursor* curs = SDL_CreateSystemCursor(stateToCurs[(int)activeState]);
+	if (active) {
+		activeWindow = window;
+		activeState = state;
+	}
+
+	return std::pair<SubWindow*, SubWindowMouseState>(window, state);
+}
+
+void SubWindowManager::move(int oldX, int oldY, int newX, int newY) {
+	activeWindow->move(newX - oldX, newY - oldY);
+}
+
+
+void SubWindowManager::resize(int oldX, int oldY, int newX, int newY) {
+
+	int dx = newX - oldX;
+	int dy = newY - oldY;
+
+	switch (activeState) {
+	case SubWindowMouseState::TOP:
+		activeWindow->expandUp(-dy);
+		break;
+
+	case SubWindowMouseState::BOTTOM:
+		activeWindow->expandDown(dy);
+		break;
+
+	case SubWindowMouseState::LEFT:
+		activeWindow->expandLeft(-dx);
+		break;
+
+	case SubWindowMouseState::RIGHT:
+		activeWindow->expandRight(dx);
+		break;
+
+	case SubWindowMouseState::TOP_LEFT:
+		activeWindow->expandUp(-dy);
+		activeWindow->expandLeft(-dx);
+		break;
+
+	case SubWindowMouseState::BOTTOM_RIGHT:
+		activeWindow->expandDown(dy);
+		activeWindow->expandRight(dx);
+		break;
+
+	case SubWindowMouseState::TOP_RIGHT:
+		activeWindow->expandUp(-dy);
+		activeWindow->expandRight(dx);
+		break;
+
+	case SubWindowMouseState::BOTTOM_LEFT:
+		activeWindow->expandDown(dy);
+		activeWindow->expandLeft(-dx);
+		break;
+	}
+}
+
+
+std::pair<SubWindow*, SubWindowMouseState> SubWindowManager::getActive() {
+	return std::pair<SubWindow*, SubWindowMouseState>(activeWindow, activeState);
+}
+
+
+void SubWindowManager::resetActive() {
+	activeWindow = nullptr;
+	activeState = SubWindowMouseState::OUTSIDE;
+}
+
+
+
+#include <iostream>
+void SubWindowManager::updateCursor(int x, int y, bool move) {
+
+	SubWindowMouseState state = (activeWindow != nullptr) ? activeState : getHover(x, y, false).second;
+	SDL_Cursor* curs = SDL_CreateSystemCursor(stateToCurs[(int)state]);
+
+	if (SubWindow::stateInside(state) && move) {
+		curs = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEALL);
+	}
+
 	SDL_SetCursor(curs);
-
-	if (active != nullptr) {
-		if (buttonMask & SDL_BUTTON(SDL_BUTTON_LEFT)) {
-			handleSubWindowState(activeState, active, newX - oldX, newY - oldY);
-		}
-		return true;
-	}
-	else {
-		return false;
-	}
 }
 
 
 void SubWindowManager::handleSubWindowState(SubWindowMouseState state, SubWindow* sw, int dx, int dy) {
 
-	switch (state) {
-	case SubWindowMouseState::TOP:
-		sw->expandUp(-dy);
-		break;
-	case SubWindowMouseState::BOTTOM:
-		sw->expandDown(dy);
-		break;
-	case SubWindowMouseState::LEFT:
-		sw->expandLeft(-dx);
-		break;
-	case SubWindowMouseState::RIGHT:
-		sw->expandRight(dx);
-		break;
-	case SubWindowMouseState::TOP_LEFT:
-		sw->expandUp(-dy);
-		sw->expandLeft(-dx);
-		break;
-	case SubWindowMouseState::BOTTOM_RIGHT:
-		sw->expandDown(dy);
-		sw->expandRight(dx);
-		break;
-	case SubWindowMouseState::TOP_RIGHT:
-		sw->expandUp(-dy);
-		sw->expandRight(dx);
-		break;
-	case SubWindowMouseState::BOTTOM_LEFT:
-		sw->expandDown(dy);
-		sw->expandLeft(-dx);
-		break;
-	case SubWindowMouseState::INSIDE:
-		sw->move(dx, dy);
-		break;
-	}
+
 }

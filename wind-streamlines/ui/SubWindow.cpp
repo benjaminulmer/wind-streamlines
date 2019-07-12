@@ -73,7 +73,12 @@ SubWindowMouseState SubWindow::testMousePos(int _x, int _y) {
 			}
 		}
 		else {
-			return SubWindowMouseState::INSIDE;
+			if (evc.raySphereIntersectFromPixel(_x, _y)) {
+				return SubWindowMouseState::INSIDE_EARTH;
+			}
+			else {
+				return SubWindowMouseState::INSIDE_NOEARTH;
+			}
 		}
 	}
 	else {
@@ -118,6 +123,9 @@ void SubWindow::expandDown(int amount) {
 
 
 void SubWindow::updateViewport() {
+	if (width <= 10) width = 10;
+	if (height <= 10) height = 10;
+
 	renderEngine.setViewport(x, window.getHeight() - (y + height), width, height);
 }
 

@@ -89,6 +89,7 @@ void Program::mainLoop() {
 	while (true) {
 		
 		window.renderSetup();
+		input.updateCursor();
 
 		// Process SDL events
 		SDL_Event e;

@@ -57,6 +57,12 @@ std::optional<glm::dvec2> EarthViewController::raySphereIntersectFromPixel(int x
 	}
 }
 
+
+bool EarthViewController::mouseDown(SDL_MouseButtonEvent e) {
+	return (raySphereIntersectFromPixel(e.x, e.y).has_value());
+}
+
+
 // Updates rotation/orientation of Earth model
 //
 // oldX - old x pixel location of mouse
@@ -64,29 +70,26 @@ std::optional<glm::dvec2> EarthViewController::raySphereIntersectFromPixel(int x
 // newX - new x pixel location of mouse
 // newY - new y pixel location of mouse
 // buttonMask - SDL button mask for which buttons are pressed
-void EarthViewController::updateRotation(int oldX, int newX, int oldY, int newY, unsigned int buttonMask) {
+void EarthViewController::updateRotation(SDL_MouseMotionEvent e) {
 
-	if (buttonMask & SDL_BUTTON(SDL_BUTTON_LEFT)) {
+	auto oldInt = raySphereIntersectFromPixel(e.x - e.xrel, e.y - e.yrel);
+	auto newInt = raySphereIntersectFromPixel(e.x, e.y);
 
-		auto oldInt = raySphereIntersectFromPixel(oldX, oldY);
-		auto newInt = raySphereIntersectFromPixel(newX, newY);
-
-		if (oldInt && newInt) {
-			updateLatRot(newInt->x - oldInt->x);
-			updateLngRot(newInt->y - oldInt->y);
-		}
+	if (oldInt && newInt) {
+		updateLatRot(newInt->x - oldInt->x);
+		updateLngRot(newInt->y - oldInt->y);
 	}
-	else if (buttonMask & SDL_BUTTON(SDL_BUTTON_RIGHT)) {
 
-		std::pair<double, double> oldNorm = renderEngine.pixelToNormDevice(oldX, oldY);
-		std::pair<double, double> newNorm = renderEngine.pixelToNormDevice(newX, newY);
+}
 
-		updateFromVertRot(newNorm.second - oldNorm.second);
-		updateNorthRot(oldNorm.first - newNorm.first);
-	}
-	else {
-		return;
-	}
+
+void EarthViewController::updateHeadingAndTilt(SDL_MouseMotionEvent e) {
+
+	std::pair<double, double> oldNorm = renderEngine.pixelToNormDevice(e.x - e.xrel, e.y - e.yrel);
+	std::pair<double, double> newNorm = renderEngine.pixelToNormDevice(e.x, e.y);
+
+	updateFromVertRot(newNorm.second - oldNorm.second);
+	updateNorthRot(oldNorm.first - newNorm.first);
 }
 
 
