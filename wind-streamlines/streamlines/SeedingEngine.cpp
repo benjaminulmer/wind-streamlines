@@ -30,7 +30,7 @@ void SeedingEngine::ImGui() {
 // field - spherical vector field that will be seeded
 SeedingEngine::SeedingEngine(SphericalVectorField & field) :
 	field(field),
-	numLevels(2),
+	numLevels(5),
 	showLevels(1),
 	updateCols(false),
 	bothCols(true),

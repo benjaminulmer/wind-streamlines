@@ -79,13 +79,6 @@ void Program::mainLoop() {
 	std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
 	std::vector<Renderable*> objects;
 
-
-	// Temp test code for multiview focus & context
-	//s1 = new BaseSubWindow(window, 50, 500, 200, 200, 0.3, -1.2);
-	//std::vector<Renderable*> objects2;
-	// End temp test code
-
-
 	while (true) {
 		
 		window.renderSetup();
@@ -116,7 +109,7 @@ void Program::mainLoop() {
 		objects.push_back(&sphereRender);
 		
 		renderEngine.render(objects, camera.getLookAt(), dTimeS.count());
-		swm.renderAll(objects, dTimeS.count());
+		swm.renderAll(*seeder, {&coastRender, &sphereRender}, dTimeS.count());
 
 		window.finalizeRender();
 	}

@@ -3,6 +3,7 @@
 #include "EarthViewController.h"
 #include "SubWindow.h"
 #include "rendering/Window.h"
+#include "streamlines/SeedingEngine.h"
 
 #include <algorithm>
 
@@ -21,10 +22,18 @@ SubWindowManager::SubWindowManager(const Window& window, const EarthViewControll
 	activeWindow(nullptr) {}
 
 
-void SubWindowManager::renderAll(const std::vector<Renderable*>& objects, float dTimeS) {
+void SubWindowManager::renderAll(SeedingEngine& seeder, const std::vector<Renderable*>& objects, float dTimeS) {
+
+	std::vector<Renderable*> lines;
 
 	for (SubWindow* s : windows) {
-		s->render(objects, dTimeS);
+
+		lines = seeder.getLinesToRender(s->getFrustum(), s->getCameraDist());
+		for (Renderable* r : objects) {
+			lines.push_back(r);
+		}
+
+		s->render(lines , dTimeS);
 	}
 }
 

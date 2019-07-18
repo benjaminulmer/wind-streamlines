@@ -4,6 +4,7 @@
 
 class EarthViewController;
 class Renderable;
+class SeedingEngine;
 class Window;
 
 #include <vector>
@@ -21,7 +22,7 @@ class SubWindowManager {
 public:
 	SubWindowManager(const Window& window, const EarthViewController& evc);
 
-	void renderAll(const std::vector<Renderable*>& objects, float dTimeS);
+	void renderAll(SeedingEngine& seeder, const std::vector<Renderable*>& objects, float dTimeS);
 
 	bool createSubWindow(int x, int y);
 	bool deleteSubWindow();
