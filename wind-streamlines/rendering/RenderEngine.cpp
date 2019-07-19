@@ -34,8 +34,8 @@ void RenderEngine::ImGui() {
 // Sets up for rendering to the provided window with provided viewport parameters
 //
 // window - window to render to
-// x - left viewport x
-// y - lower viewport y
+// x - viewport left location
+// y - viewport lower location
 // width - viewport width
 // height - viewport height
 // cameraDist - distance camera is from surface of Earth
@@ -89,6 +89,7 @@ RenderEngine::RenderEngine(const Window& window, double cameraDist) :
 	RenderEngine(window, 0, 0, window.getWidth(), window.getHeight(), cameraDist) {}
 
 
+// Clears viewport and makes a 1 pixel black border around the viewport
 void RenderEngine::clearViewport() {
 
 	glEnable(GL_SCISSOR_TEST);
@@ -107,7 +108,7 @@ void RenderEngine::clearViewport() {
 }
 
 
-// Render provided object. Render engine stores all information about how to render
+// Render provided objects. Render engine stores all information about how to render
 //
 // objects - list of renderables to render
 // view - view matrix
@@ -120,8 +121,8 @@ void RenderEngine::render(const std::vector<Renderable*>& objects, const glm::dm
 		totalTime = fmod(totalTime, timeRepeat);
 	}
 
+	// Two passes are used when lines require an outline
 	int numPasses = (outlineWidth > lineWidth) ? 2 : 1;
-
 	for (int pass = 1; pass <= numPasses; pass++) {
 
 		if (pass == 1) {
@@ -131,6 +132,7 @@ void RenderEngine::render(const std::vector<Renderable*>& objects, const glm::dm
 			glLineWidth(outlineWidth);
 		}
 
+		// Reverse order so that Earth reference is drawn first
 		for (size_t i = objects.size(); i >= 1; i--) {
 
 			Renderable* r = objects[i - 1];
@@ -142,6 +144,7 @@ void RenderEngine::render(const std::vector<Renderable*>& objects, const glm::dm
 			}
 			glBindVertexArray(r->getVAO());
 
+			// Get appropriate shader to use. If second pass and not a streamline, skip
 			if (r->getShaderType() == Shader::DEFAULT && pass == 1) {
 				program = mainProgram;
 			}
@@ -156,18 +159,17 @@ void RenderEngine::render(const std::vector<Renderable*>& objects, const glm::dm
 			}
 			glUseProgram(program);
 
-			// Get eye position from view matrix
+			// Get eye position from model view matrix
 			glm::dmat4 modelViewD = view;
 
 			glm::dmat4 inv = glm::inverse(modelViewD);
 			glm::dvec3 eyePos = inv[3];
-
-			modelViewD[3] = glm::dvec4(0.0, 0.0, 0.0, 1.0);
-
-			glm::mat4 modelView = modelViewD;
-
 			glm::vec3 eyeHigh = eyePos;
 			glm::vec3 eyeLow = eyePos - (glm::dvec3)eyeHigh;
+			
+			// Set eye position to origin
+			modelViewD[3] = glm::dvec4(0.0, 0.0, 0.0, 1.0);
+			glm::mat4 modelView = modelViewD;
 
 			// Set uniforms
 			glUniform3fv(glGetUniformLocation(program, "eyeHigh"), 1, glm::value_ptr(eyeHigh));

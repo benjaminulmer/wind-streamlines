@@ -10,13 +10,7 @@ class Window;
 #include <vector>
 
 
-enum class Action {
-	NONE,
-	CLICK,
-	SCROLL
-};
-
-
+// Class for managing all subwindows that are active in a window, including creating a destroying them
 class SubWindowManager {
 
 public:
@@ -35,7 +29,6 @@ public:
 
 	void resetActive();
 
-
 	void updateCursor(int x, int y, bool move);
 
 private:
@@ -48,7 +41,4 @@ private:
 
 	SubWindow* activeWindow;
 	SubWindowMouseState activeState;
-
-
-	void handleSubWindowState(SubWindowMouseState state, SubWindow* sw, int dx, int dy);
 };

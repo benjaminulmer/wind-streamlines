@@ -10,14 +10,16 @@
 
 // Construct with reference to a camera, render engine, and main program
 //
-// camera - pointer to camera object that should be updated
-// renderEngine - pointer to render engine object that should be updated
-// program - pointer to main program object that should be updated
+// renderEngine - render engine that should be updated
+// evc - earth view controller that should be updated
+// swm - subwindow manager that should be updated
+// program - program that should be updated (only used for exiting application)
 InputHandler::InputHandler(RenderEngine& renderEngine, EarthViewController& evc, SubWindowManager& swm, Program& program) :
 	renderEngine(renderEngine),
 	evc(evc),
 	swm(swm),
 	program(program),
+	clicked(Clicked::NONE),
 	mouseOldX(0), 
 	mouseOldY(0) {}
 
@@ -37,98 +39,23 @@ void InputHandler::pollEvent(SDL_Event& e) {
 		return;
 	}
 
-	SDL_Keymod mods = SDL_GetModState();
-
 	switch (e.type) {
 	case SDL_KEYDOWN:
-		keyDownSwitch(e.key);
+		keyDown(e.key);
 		break;
 
-	case SDL_MOUSEMOTION: {
-
-		switch (clicked) {
-		case Clicked::MAIN_VIEW_ROTATE:
-			evc.updateRotation(e.motion);
-			break;
-
-		case Clicked::MAIN_VIEW_HEADING_TILT:
-			evc.updateHeadingAndTilt(e.motion);
-			break;
-
-		case Clicked::SUBWINDOW_ROTATE:
-			swm.getActive().first->getEVC().updateRotation(e.motion);
-			break;
-
-		case Clicked::SUBWINDOW_HEADING_TILT:
-			swm.getActive().first->getEVC().updateHeadingAndTilt(e.motion);
-			break;
-
-		case Clicked::SUBWINDOW_MOVE:
-			swm.move(e.motion.x - e.motion.xrel, e.motion.y - e.motion.yrel, e.motion.x, e.motion.y);
-			break;
-
-		case Clicked::SUBWINDOW_RESIZE:
-			swm.resize(e.motion.x - e.motion.xrel, e.motion.y - e.motion.yrel, e.motion.x, e.motion.y);
-			break;
-
-		}
-
-		mouseOldX = e.motion.x;
-		mouseOldY = e.motion.y;
+	case SDL_MOUSEMOTION:
+		mouseMotion(e.motion);
 		break;
-	}
-	case SDL_MOUSEWHEEL: {
 
-		auto result = swm.getHover(mouseOldX, mouseOldY, false);
-		SubWindowMouseState state = result.second;
-
-		if (SubWindow::stateInside(state)) {
-			result.first->getEVC().updateCameraDist(e.wheel.y, mouseOldX, mouseOldY);
-		}
-		else {
-			evc.updateCameraDist(e.wheel.y, mouseOldX, mouseOldY);
-		}
+	case SDL_MOUSEWHEEL:
+		mouseWheel(e.wheel);
 		break;
-	}
-	case SDL_MOUSEBUTTONDOWN: {
 
-		SDL_Keymod mods = SDL_GetModState();
-		SubWindowMouseState state = swm.getHover(e.button.x, e.button.y, true).second;
-
-		if (e.button.button == SDL_BUTTON_LEFT) {
-
-			if (mods & KMOD_LCTRL) {
-				if (!swm.deleteSubWindow()) {
-					swm.createSubWindow(e.button.x, e.button.y);
-				}
-			}
-			else if (mods & KMOD_LSHIFT) {
-				if (SubWindow::stateInside(state)) {
-					clicked = Clicked::SUBWINDOW_MOVE;
-				}
-			}
-			else {
-				if (state == SubWindowMouseState::INSIDE_EARTH) {
-					clicked = Clicked::SUBWINDOW_ROTATE;
-				}
-				else if (SubWindow::stateResize(state)) {
-					clicked = Clicked::SUBWINDOW_RESIZE;
-				}
-				else if (state == SubWindowMouseState::OUTSIDE && evc.raySphereIntersectFromPixel(e.button.x, e.button.y)) {
-					clicked = Clicked::MAIN_VIEW_ROTATE;
-				}
-			}
-		}
-		else if (e.button.button == SDL_BUTTON_RIGHT) {
-			if (SubWindow::stateInside(state)) {
-				clicked = Clicked::SUBWINDOW_HEADING_TILT;
-			}
-			else {
-				clicked = Clicked::MAIN_VIEW_HEADING_TILT;
-			}
-		}
+	case SDL_MOUSEBUTTONDOWN:
+		mouseDown(e.button);
 		break;
-	}
+
 	case SDL_MOUSEBUTTONUP:
 		clicked = Clicked::NONE;
 		swm.resetActive();
@@ -150,7 +77,7 @@ void InputHandler::pollEvent(SDL_Event& e) {
 // Handle key press
 //
 // e - keyboard event
-void InputHandler::keyDownSwitch(SDL_KeyboardEvent& e) {
+void InputHandler::keyDown(SDL_KeyboardEvent& e) {
 	
 	auto key = e.keysym.sym;
 
@@ -165,6 +92,105 @@ void InputHandler::keyDownSwitch(SDL_KeyboardEvent& e) {
 	}
 }
 
+
+// Handle mouse motion 
+//
+// e - mouse motion event
+void InputHandler::mouseMotion(SDL_MouseMotionEvent& e) {
+
+	switch (clicked) {
+	case Clicked::MAIN_VIEW_ROTATE:
+		evc.updateRotation(e);
+		break;
+
+	case Clicked::MAIN_VIEW_HEADING_TILT:
+		evc.updateHeadingAndTilt(e);
+		break;
+
+	case Clicked::SUBWINDOW_ROTATE:
+		swm.getActive().first->getEVC().updateRotation(e);
+		break;
+
+	case Clicked::SUBWINDOW_HEADING_TILT:
+		swm.getActive().first->getEVC().updateHeadingAndTilt(e);
+		break;
+
+	case Clicked::SUBWINDOW_MOVE:
+		swm.move(e.x - e.xrel, e.y - e.yrel, e.x, e.y);
+		break;
+
+	case Clicked::SUBWINDOW_RESIZE:
+		swm.resize(e.x - e.xrel, e.y - e.yrel, e.x, e.y);
+		break;
+
+	}
+
+	mouseOldX = e.x;
+	mouseOldY = e.y;
+}
+
+
+// Handle mouse wheel event
+//
+// e - mouse wheel event
+void InputHandler::mouseWheel(SDL_MouseWheelEvent& e) {
+	
+	auto result = swm.getHover(mouseOldX, mouseOldY, false);
+	SubWindowMouseState state = result.second;
+
+	if (SubWindow::stateInside(state)) {
+		result.first->getEVC().updateCameraDist(e.y, mouseOldX, mouseOldY);
+	}
+	else {
+		evc.updateCameraDist(e.y, mouseOldX, mouseOldY);
+	}
+}
+
+
+// Handle mouse down event
+//
+// e - mouse down event
+void InputHandler::mouseDown(SDL_MouseButtonEvent& e) {
+
+	SDL_Keymod mods = SDL_GetModState();
+	SubWindowMouseState state = swm.getHover(e.x, e.y, true).second;
+
+	if (e.button == SDL_BUTTON_LEFT) {
+
+		if (mods & KMOD_LCTRL) {
+			if (!swm.deleteSubWindow()) {
+				swm.createSubWindow(e.x, e.y);
+			}
+		}
+		else if (mods & KMOD_LSHIFT) {
+			if (SubWindow::stateInside(state)) {
+				clicked = Clicked::SUBWINDOW_MOVE;
+			}
+		}
+		else {
+			if (state == SubWindowMouseState::INSIDE_EARTH) {
+				clicked = Clicked::SUBWINDOW_ROTATE;
+			}
+			else if (SubWindow::stateResize(state)) {
+				clicked = Clicked::SUBWINDOW_RESIZE;
+			}
+			else if (state == SubWindowMouseState::OUTSIDE && evc.raySphereIntersectFromPixel(e.x, e.y)) {
+				clicked = Clicked::MAIN_VIEW_ROTATE;
+			}
+		}
+	}
+	else if (e.button == SDL_BUTTON_RIGHT) {
+		if (SubWindow::stateInside(state)) {
+			clicked = Clicked::SUBWINDOW_HEADING_TILT;
+		}
+		else {
+			clicked = Clicked::MAIN_VIEW_HEADING_TILT;
+		}
+	}
+}
+
+
+// Update which cursor is being displayed
 void InputHandler::updateCursor() {
 
 	int x, y;

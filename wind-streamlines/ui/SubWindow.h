@@ -10,6 +10,7 @@ class Window;
 #include <vector>
 
 
+// Enum for state of mouse in relation to subwindow
 enum class SubWindowMouseState {
 	INSIDE_EARTH,
 	INSIDE_NOEARTH,
@@ -25,6 +26,7 @@ enum class SubWindowMouseState {
 };
 
 
+// Abstract class for managing a subwindow. Has its own rendering engine and camera
 class SubWindow {
 
 public:
@@ -67,6 +69,7 @@ protected:
 };
 
 
+// Base level subwindow that references the main Earth reference
 class BaseSubWindow : public SubWindow {
 
 public:
@@ -77,6 +80,7 @@ private:
 };
 
 
+// Child subwindow that references another subwindow. Not currently implemented or used
 class ChildSubWindow : public SubWindow {
 
 public:
